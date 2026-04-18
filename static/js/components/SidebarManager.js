@@ -3,6 +3,7 @@
  */
 import { getStorageItem, setStorageItem } from '../utils/storageHelpers.js';
 import { getModelApiClient } from '../api/modelApiFactory.js';
+import { MODEL_TYPES } from '../api/apiConfig.js';
 import { translate } from '../utils/i18nHelpers.js';
 import { state } from '../state/index.js';
 import { bulkManager } from '../managers/BulkManager.js';
@@ -23,8 +24,16 @@ export class SidebarManager {
         this.hoverTimeout = null;
         this.isHovering = false;
         this.isInitialized = false;
-        this.displayMode = 'tree'; // 'tree' or 'list'
+        this.displayMode = 'tree'; // 'tree' | 'list' | 'user'（用户视图仅 LoRA 页）
         this.foldersList = [];
+        /** @type {{ users: Array<{ username: string, base_models: Array<{ name: string, tags: string[] }> }> } | null} */
+        this.userNavTreeData = null;
+        this.selectedUserNavKey = '';
+        /** @type {string|null} 设置排序后滚动定位到该创作者 username */
+        this._pendingUserNavScrollCreator = null;
+        /** 用户视图：排序数字弹窗根节点 */
+        this._userNavSortModalBackdrop = null;
+        this._userNavSortModalKeyHandler = null;
         this.recursiveSearchEnabled = true;
         this.draggedFilePaths = null;
         this.draggedRootPath = null;
@@ -66,6 +75,8 @@ export class SidebarManager {
         this.handleSidebarDrop = this.handleSidebarDrop.bind(this);
         this.handleCreateFolderSubmit = this.handleCreateFolderSubmit.bind(this);
         this.handleCreateFolderCancel = this.handleCreateFolderCancel.bind(this);
+        this.handleUserNavContextMenu = this.handleUserNavContextMenu.bind(this);
+        this.handleUserNavSortDblClick = this.handleUserNavSortDblClick.bind(this);
     }
 
     setHostPageControls(pageControls) {
@@ -87,6 +98,7 @@ export class SidebarManager {
         this.pageControls = pageControls;
         this.pageType = pageControls.pageType;
         this.lastPageControls = pageControls;
+        this._ensureUserNavPageState();
         this.apiClient = pageControls?.getSidebarApiClient?.()
             || pageControls?.sidebarApiClient
             || getModelApiClient();
@@ -152,6 +164,10 @@ export class SidebarManager {
         this.apiClient = null;
         this.isInitialized = false;
         this.recursiveSearchEnabled = true;
+        this.userNavTreeData = null;
+        this.selectedUserNavKey = '';
+        this._removeUserNavContextMenu();
+        this._closeUserNavSortDialog();
 
         // Reset container margin
         const container = document.querySelector('.container');
@@ -185,6 +201,8 @@ export class SidebarManager {
         }
         if (folderTree) {
             folderTree.removeEventListener('click', this.handleTreeClick);
+            folderTree.removeEventListener('contextmenu', this.handleUserNavContextMenu);
+            folderTree.removeEventListener('dblclick', this.handleUserNavSortDblClick);
         }
         if (sidebarBreadcrumbNav) {
             sidebarBreadcrumbNav.removeEventListener('click', this.handleBreadcrumbClick);
@@ -977,6 +995,8 @@ export class SidebarManager {
         const folderTree = document.getElementById('sidebarFolderTree');
         if (folderTree) {
             folderTree.addEventListener('click', this.handleTreeClick);
+            folderTree.addEventListener('contextmenu', this.handleUserNavContextMenu);
+            folderTree.addEventListener('dblclick', this.handleUserNavSortDblClick);
         }
 
         // Breadcrumb click handler
@@ -1034,12 +1054,25 @@ export class SidebarManager {
         if (this.openDropdown && !event.target.closest('.breadcrumb-dropdown')) {
             this.closeDropdown();
         }
+        if (!event.target.closest('.sidebar-user-nav-context-menu')) {
+            this._removeUserNavContextMenu();
+        }
+        if (
+            this._userNavSortModalBackdrop
+            && !event.target.closest('.sidebar-user-nav-sort-modal')
+        ) {
+            this._closeUserNavSortDialog();
+        }
     }
 
     handleSidebarHeaderClick(event) {
         // Only trigger root selection if clicking on the title area, not the buttons
         if (!event.target.closest('.sidebar-header-actions')) {
-            this.selectFolder(null);
+            if (this._isUserNavMode()) {
+                this.selectUserNav(null, null, null);
+            } else {
+                this.selectFolder(null);
+            }
         }
     }
 
@@ -1250,6 +1283,19 @@ export class SidebarManager {
 
     async loadFolderTree() {
         try {
+            if (this._isUserNavMode()) {
+                const response = await fetch('/api/lm/loras/creator-nav-tree');
+                const data = await response.json();
+                this.userNavTreeData = data.success
+                    ? { users: data.users || [] }
+                    : { users: [] };
+                if (!data.success) {
+                    console.error('creator-nav-tree failed:', data.error);
+                }
+                this.renderFolderDisplay();
+                return;
+            }
+            this.userNavTreeData = null;
             if (this.displayMode === 'tree') {
                 const response = await this.apiClient.fetchUnifiedFolderTree();
                 this.treeData = response.tree || {};
@@ -1265,7 +1311,9 @@ export class SidebarManager {
     }
 
     renderFolderDisplay() {
-        if (this.displayMode === 'tree') {
+        if (this._isUserNavMode()) {
+            this.renderUserNavTree();
+        } else if (this.displayMode === 'tree') {
             this.renderTree();
         } else {
             this.renderFolderList();
@@ -1370,6 +1418,11 @@ export class SidebarManager {
             return;
         }
 
+        if (this._isUserNavMode()) {
+            this.handleUserNavTreeClick(event);
+            return;
+        }
+
         const expandIcon = event.target.closest('.sidebar-tree-expand-icon');
         const nodeContent = event.target.closest('.sidebar-tree-node-content');
 
@@ -1447,6 +1500,14 @@ export class SidebarManager {
         // Update selected path
         this.selectedPath = normalizedPath;
 
+        if (this.pageControls?.pageState?.userSidebarNav) {
+            this.pageControls.pageState.userSidebarNav = {
+                creator: null,
+                baseModel: null,
+                tag: null,
+            };
+        }
+
         // Update UI
         this.updateTreeSelection();
         this.updateBreadcrumbs();
@@ -1474,15 +1535,31 @@ export class SidebarManager {
         }
     }
 
-    handleDisplayModeToggle(event) {
+    async handleDisplayModeToggle(event) {
         event.stopPropagation();
-        this.displayMode = this.displayMode === 'tree' ? 'list' : 'tree';
+        const modes = this.pageType === MODEL_TYPES.LORA
+            ? ['tree', 'list', 'user']
+            : ['tree', 'list'];
+        const idx = modes.indexOf(this.displayMode);
+        const prevMode = this.displayMode;
+        this.displayMode = modes[(idx + 1) % modes.length];
+        this._ensureUserNavPageState();
+        if (prevMode === 'user' || this.displayMode === 'user') {
+            this._resetUserNavSelection();
+        }
         this.updateDisplayModeButton();
         this.updateCollapseAllButton();
         this.updateRecursiveToggleButton();
         this.updateSearchRecursiveOption();
         this.saveDisplayMode();
-        this.loadFolderTree(); // Reload with new display mode
+        await this.loadFolderTree();
+        if (this.pageControls && (prevMode === 'user' || this.displayMode === 'user')) {
+            try {
+                await this.pageControls.resetAndReload();
+            } catch (e) {
+                console.error('reload after sidebar mode change failed', e);
+            }
+        }
     }
 
     async handleRecursiveToggle(event) {
@@ -1513,8 +1590,13 @@ export class SidebarManager {
             if (this.displayMode === 'tree') {
                 icon.className = 'fas fa-sitemap';
                 displayModeBtn.title = translate('sidebar.switchToListView');
-            } else {
+            } else if (this.displayMode === 'list') {
                 icon.className = 'fas fa-list';
+                displayModeBtn.title = this.pageType === MODEL_TYPES.LORA
+                    ? translate('sidebar.switchToUserView')
+                    : translate('sidebar.switchToTreeView');
+            } else {
+                icon.className = 'fas fa-users';
                 displayModeBtn.title = translate('sidebar.switchToTreeView');
             }
         }
@@ -1569,6 +1651,17 @@ export class SidebarManager {
     updateTreeSelection() {
         const folderTree = document.getElementById('sidebarFolderTree');
         if (!folderTree) return;
+
+        if (this._isUserNavMode()) {
+            folderTree.querySelectorAll('.sidebar-tree-node-content[data-user-nav-key]').forEach((node) => {
+                const isSel = Boolean(
+                    this.selectedUserNavKey
+                    && node.dataset.userNavKey === this.selectedUserNavKey
+                );
+                node.classList.toggle('selected', isSel);
+            });
+            return;
+        }
 
         if (this.displayMode === 'list') {
             // Remove all selections in list mode
@@ -1655,6 +1748,28 @@ export class SidebarManager {
     updateBreadcrumbs() {
         const sidebarBreadcrumbNav = document.getElementById('sidebarBreadcrumbNav');
         if (!sidebarBreadcrumbNav) return;
+
+        if (this._isUserNavMode()) {
+            const ps = this.pageControls?.pageState?.userSidebarNav || {};
+            const crumbs = [translate('sidebar.userNav.breadcrumbRoot')];
+            if (ps.creator) {
+                crumbs.push(this._formatUserNavLabel('creator', ps.creator));
+            }
+            if (ps.baseModel) {
+                crumbs.push(this._formatUserNavLabel('base', ps.baseModel));
+            }
+            if (ps.tag) {
+                crumbs.push(this._formatUserNavLabel('tag', ps.tag));
+            }
+            sidebarBreadcrumbNav.innerHTML = `
+                <div class="breadcrumb-dropdown">
+                    <span class="sidebar-breadcrumb-item active">
+                        ${escapeHtml(crumbs.join(' / '))}
+                    </span>
+                </div>
+            `;
+            return;
+        }
 
         const parts = this.selectedPath ? this.selectedPath.split('/') : [];
         let currentPath = '';
@@ -1765,7 +1880,10 @@ export class SidebarManager {
         const sidebarHeader = document.getElementById('sidebarHeader');
         if (!sidebarHeader) return;
 
-        if (!this.selectedPath) {
+        const highlightRoot = this._isUserNavMode()
+            ? this._isUserNavAtRoot()
+            : !this.selectedPath;
+        if (highlightRoot) {
             sidebarHeader.classList.add('root-selected');
         } else {
             sidebarHeader.classList.remove('root-selected');
@@ -1815,8 +1933,12 @@ export class SidebarManager {
     restoreSidebarState() {
         const isPinned = getStorageItem(`${this.pageType}_sidebarPinned`, true);
         const expandedPaths = getStorageItem(`${this.pageType}_expandedNodes`, []);
-        const displayMode = getStorageItem(`${this.pageType}_displayMode`, 'tree'); // 'tree' or 'list', default to 'tree'
+        let displayMode = getStorageItem(`${this.pageType}_displayMode`, 'tree'); // 'tree' | 'list' | 'user'
         const recursiveSearchEnabled = getStorageItem(`${this.pageType}_recursiveSearch`, true);
+
+        if (displayMode === 'user' && this.pageType !== MODEL_TYPES.LORA) {
+            displayMode = 'tree';
+        }
 
         this.isPinned = isPinned;
         this.expandedNodes = new Set(expandedPaths);
@@ -1831,14 +1953,26 @@ export class SidebarManager {
     }
 
     restoreSelectedFolder() {
+        if (this._isUserNavMode()) {
+            this.selectedPath = '';
+            this.updateSidebarHeader();
+            this.updateBreadcrumbs();
+            return;
+        }
         const activeFolder = getStorageItem(`${this.pageType}_activeFolder`);
         if (activeFolder && typeof activeFolder === 'string') {
             this.selectedPath = activeFolder;
+            if (this.pageControls?.pageState) {
+                this.pageControls.pageState.activeFolder = activeFolder;
+            }
             this.updateTreeSelection();
             this.updateBreadcrumbs();
             this.updateSidebarHeader();
         } else {
             this.selectedPath = '';
+            if (this.pageControls?.pageState) {
+                this.pageControls.pageState.activeFolder = '';
+            }
             this.updateSidebarHeader();
             this.updateBreadcrumbs(); // Always update breadcrumbs
         }
@@ -1855,6 +1989,596 @@ export class SidebarManager {
 
     saveDisplayMode() {
         setStorageItem(`${this.pageType}_displayMode`, this.displayMode);
+    }
+
+    _isUserNavMode() {
+        return this.displayMode === 'user' && this.pageType === MODEL_TYPES.LORA;
+    }
+
+    _ensureUserNavPageState() {
+        const ps = this.pageControls?.pageState;
+        if (!ps || this.pageType !== MODEL_TYPES.LORA) {
+            return;
+        }
+        if (!ps.userSidebarNav) {
+            ps.userSidebarNav = { creator: null, baseModel: null, tag: null };
+        }
+    }
+
+    _isUserNavAtRoot() {
+        const ps = this.pageControls?.pageState?.userSidebarNav;
+        if (!ps) {
+            return true;
+        }
+        return !ps.creator && !ps.baseModel && !ps.tag;
+    }
+
+    _resetUserNavSelection() {
+        this.selectedUserNavKey = '';
+        this._ensureUserNavPageState();
+        if (this.pageControls?.pageState?.userSidebarNav) {
+            this.pageControls.pageState.userSidebarNav = {
+                creator: null,
+                baseModel: null,
+                tag: null,
+            };
+        }
+    }
+
+    _userNavMetaStorageKey() {
+        return `${this.pageType}_userNavTreeMeta`;
+    }
+
+    _loadUserNavMeta() {
+        const raw = getStorageItem(this._userNavMetaStorageKey(), { fav: {}, sortRank: {} });
+        raw.fav = raw.fav || {};
+        raw.sortRank = raw.sortRank || {};
+        // 旧版 order 数组 → 数字 sortRank 的一次性迁移
+        if (raw.order && typeof raw.order === 'object' && Object.keys(raw.sortRank).length === 0) {
+            for (const arr of Object.values(raw.order)) {
+                if (!Array.isArray(arr)) {
+                    continue;
+                }
+                arr.forEach((id, idx) => {
+                    if (id && raw.sortRank[id] === undefined) {
+                        raw.sortRank[id] = (idx + 1) * 10;
+                    }
+                });
+            }
+        }
+        return raw;
+    }
+
+    _saveUserNavMeta(meta) {
+        // 仅持久化一级用户行的收藏/排序，忽略历史遗留的 2/3 级键
+        const userOnlyKey = (id) => typeof id === 'string' && id.startsWith('c:') && !id.includes('|');
+        const fav = {};
+        const sortRank = {};
+        Object.keys(meta.fav || {}).forEach((k) => {
+            if (userOnlyKey(k)) {
+                fav[k] = meta.fav[k];
+            }
+        });
+        Object.keys(meta.sortRank || {}).forEach((k) => {
+            if (userOnlyKey(k)) {
+                sortRank[k] = meta.sortRank[k];
+            }
+        });
+        setStorageItem(this._userNavMetaStorageKey(), { fav, sortRank });
+    }
+
+    /** DOM 安全令牌，用于定位用户行（scrollIntoView） */
+    _userNavAttrToken(text) {
+        try {
+            return btoa(unescape(encodeURIComponent(String(text || ''))))
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_');
+        } catch {
+            return '';
+        }
+    }
+
+    _childNodeId(depth, creator, baseModel, tag) {
+        if (depth === 1) {
+            return `c:${encodeURIComponent(creator)}`;
+        }
+        if (depth === 2) {
+            return `c:${encodeURIComponent(creator)}|b:${encodeURIComponent(baseModel)}`;
+        }
+        return `c:${encodeURIComponent(creator)}|b:${encodeURIComponent(baseModel)}|t:${encodeURIComponent(tag)}`;
+    }
+
+    /**
+     * 一级用户排序：模型数量降序 → 数字 sortRank 升序 → 收藏优先 → id
+     * @param {string[]} childIds
+     * @param {Record<string, any>} meta
+     * @param {(id: string) => number} getCount
+     */
+    _sortUserNavLevel1Users(childIds, meta, getCount) {
+        const fav = meta.fav || {};
+        const sortRank = meta.sortRank || {};
+        const rankOf = (id) => {
+            const v = sortRank[id];
+            return Number.isFinite(v) ? v : 1_000_000;
+        };
+        const countOf = (id) => (typeof getCount === 'function' ? (getCount(id) || 0) : 0);
+        return [...childIds].sort((a, b) => {
+            const ca = countOf(a);
+            const cb = countOf(b);
+            if (ca !== cb) {
+                return cb - ca;
+            }
+            const ra = rankOf(a);
+            const rb = rankOf(b);
+            if (ra !== rb) {
+                return ra - rb;
+            }
+            const fa = fav[a] ? 0 : 1;
+            const fb = fav[b] ? 0 : 1;
+            if (fa !== fb) {
+                return fa - fb;
+            }
+            return a.localeCompare(b);
+        });
+    }
+
+    _formatUserNavLabel(kind, raw) {
+        if (kind === 'creator' && raw === '__unknown__') {
+            return translate('sidebar.userNav.unknownCreator');
+        }
+        if (kind === 'base' && raw === '__no_base__') {
+            return translate('sidebar.userNav.noBaseModel');
+        }
+        if (kind === 'tag' && raw === '__no_tags__') {
+            return translate('sidebar.userNav.noTags');
+        }
+        return raw;
+    }
+
+    _expandKeyForUser(depth, creator, baseModel) {
+        if (depth === 1) {
+            return `_u:${encodeURIComponent(creator)}`;
+        }
+        return `_u:${encodeURIComponent(creator)}|_b:${encodeURIComponent(baseModel)}`;
+    }
+
+    /** 展开/折叠只改 class，避免整棵用户树 innerHTML 重绘导致卡顿 */
+    _setUserNavBranchExpanded(treeNode, expanded) {
+        if (!treeNode) {
+            return;
+        }
+        const icon = treeNode.querySelector(':scope > .sidebar-tree-node-content .sidebar-tree-expand-icon');
+        const children = treeNode.querySelector(':scope > .sidebar-tree-children');
+        if (icon) {
+            icon.classList.toggle('expanded', expanded);
+        }
+        if (children) {
+            children.classList.toggle('expanded', expanded);
+        }
+    }
+
+    renderUserNavTree() {
+        const folderTree = document.getElementById('sidebarFolderTree');
+        if (!folderTree) {
+            return;
+        }
+        const payload = this.userNavTreeData;
+        const users = payload?.users || [];
+        if (users.length === 0) {
+            this.renderEmptyState();
+            return;
+        }
+        const meta = this._loadUserNavMeta();
+        const userIds = users.map(u => this._childNodeId(1, u.username, '', ''));
+        const sortedUsers = this._sortUserNavLevel1Users(userIds, meta, (id) => {
+            const u = users.find(x => this._childNodeId(1, x.username, '', '') === id);
+            return u ? (u.model_count || 0) : 0;
+        });
+
+        const blocks = sortedUsers.map((uid) => {
+            const user = users.find(
+                u => this._childNodeId(1, u.username, '', '') === uid
+            );
+            if (!user) {
+                return '';
+            }
+            const creator = user.username;
+            const userChildId = this._childNodeId(1, creator, '', '');
+            const expandKey = this._expandKeyForUser(1, creator, '');
+            const isExpanded = this.expandedNodes.has(expandKey);
+            const navKeySel = JSON.stringify({
+                c: creator,
+                b: null,
+                t: null,
+            });
+            const hasBases = (user.base_models || []).length > 0;
+            // 二级仅按模型数量排序（收藏/自定义排序仅一级用户）
+            const sortedBases = [...(user.base_models || [])].sort((a, b) =>
+                (b.model_count || 0) - (a.model_count || 0)
+                || String(a.name || '').localeCompare(String(b.name || '')));
+
+            const baseHtml = sortedBases.map((bm) => {
+                const baseModel = bm.name;
+                const bExpandKey = this._expandKeyForUser(2, creator, baseModel);
+                const bExpanded = this.expandedNodes.has(bExpandKey);
+                const bNavKey = JSON.stringify({ c: creator, b: baseModel, t: null });
+                const tagList = [...(bm.tags || [])].sort((a, b) => {
+                    const ca = typeof a === 'object' && a ? (a.count || 0) : 0;
+                    const cb = typeof b === 'object' && b ? (b.count || 0) : 0;
+                    if (cb !== ca) {
+                        return cb - ca;
+                    }
+                    const na = typeof a === 'string' ? a : (a && a.name) || '';
+                    const nb = typeof b === 'string' ? b : (b && b.name) || '';
+                    return String(na).localeCompare(String(nb));
+                });
+
+                const tagsHtml = tagList.map((tagEntry) => {
+                    if (tagEntry == null) {
+                        return '';
+                    }
+                    const tag = typeof tagEntry === 'string' ? tagEntry : tagEntry.name;
+                    const tagCount = typeof tagEntry === 'object' && tagEntry
+                        ? (tagEntry.count || 0)
+                        : 0;
+                    const tNavKey = JSON.stringify({ c: creator, b: baseModel, t: tag });
+                    const tagLabel = this._formatUserNavLabel('tag', tag);
+                    return `
+                        <div class="sidebar-tree-node" data-user-nav-depth="3">
+                            <div class="sidebar-tree-node-content sidebar-user-nav-l3-row"
+                                 data-user-nav-depth="3"
+                                 data-user-nav-key="${escapeAttribute(tNavKey)}">
+                                <div class="sidebar-tree-expand-icon" style="opacity:0;pointer-events:none;">
+                                    <i class="fas fa-chevron-right"></i>
+                                </div>
+                                <span class="sidebar-user-nav-l3-label" title="${escapeAttribute(tagLabel)}">${escapeHtml(tagLabel)}</span>
+                                <span class="sidebar-user-nav-modelcount sidebar-user-nav-rail-count">${tagCount}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                const baseLabel = this._formatUserNavLabel('base', baseModel);
+                return `
+                    <div class="sidebar-tree-node" data-user-nav-depth="2">
+                        <div class="sidebar-tree-node-content sidebar-user-nav-l2-row"
+                             data-user-nav-depth="2"
+                             data-user-nav-key="${escapeAttribute(bNavKey)}">
+                            <div class="sidebar-tree-expand-icon ${bExpanded ? 'expanded' : ''}"
+                                 style="${tagList.length ? '' : 'opacity:0;pointer-events:none;'}">
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                            <span class="sidebar-user-nav-l2-type" title="${escapeAttribute(baseLabel)}">${escapeHtml(baseLabel)}</span>
+                            <span class="sidebar-user-nav-modelcount sidebar-user-nav-rail-count">${bm.model_count || 0}</span>
+                        </div>
+                        ${tagList.length ? `
+                        <div class="sidebar-tree-children ${bExpanded ? 'expanded' : ''}">
+                            ${tagsHtml}
+                        </div>` : ''}
+                    </div>
+                `;
+            }).join('');
+
+            const userLabel = this._formatUserNavLabel('creator', creator);
+            const avatarUrl = (user.avatar_url || '').trim();
+            const avatarBlock = avatarUrl
+                ? `<img class="sidebar-user-nav-avatar" src="${escapeAttribute(avatarUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.style.display='none';var f=this.nextElementSibling;if(f)f.style.display='';" /><i class="fas fa-user-circle sidebar-user-nav-avatar-fallback" style="display:none" aria-hidden="true"></i>`
+                : `<i class="fas fa-user-circle sidebar-user-nav-avatar-fallback" aria-hidden="true"></i>`;
+            const userTok = this._userNavAttrToken(creator);
+            const userSortDisp = this._userNavSortDisplay(meta, userChildId);
+            const userFav = meta.fav?.[userChildId]
+                ? 'fas fa-star favorite-active'
+                : 'far fa-star';
+            return `
+                <div class="sidebar-tree-node" data-user-nav-depth="1">
+                    <div class="sidebar-tree-node-content sidebar-user-nav-user"
+                         data-user-nav-depth="1"
+                         data-user-nav-node-id="${escapeAttribute(userChildId)}"
+                         data-user-nav-key="${escapeAttribute(navKeySel)}"
+                         data-user-nav-tok="${escapeAttribute(userTok)}">
+                        <div class="sidebar-tree-expand-icon ${isExpanded ? 'expanded' : ''}"
+                             style="${hasBases ? '' : 'opacity:0;pointer-events:none;'}">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                        <div class="sidebar-user-nav-avatar-wrap">
+                            ${avatarBlock}
+                        </div>
+                        <span class="sidebar-user-nav-username" title="${escapeAttribute(userLabel)}">${escapeHtml(userLabel)}</span>
+                        <span class="sidebar-user-nav-modelcount sidebar-user-nav-rail-count">${user.model_count || 0}</span>
+                        <button type="button" class="sidebar-user-nav-star" data-user-nav-node-id="${escapeAttribute(userChildId)}" title="${escapeAttribute(translate('sidebar.userNav.toggleFavorite'))}" aria-label="${escapeAttribute(translate('sidebar.userNav.toggleFavorite'))}">
+                            <i class="${userFav}"></i>
+                        </button>
+                        <span class="sidebar-user-nav-sortnum sidebar-user-nav-sort-editable"
+                              title="${escapeAttribute(translate('sidebar.userNav.sortDblClickHint', {}, '双击设置排序数字'))}">${escapeHtml(userSortDisp)}</span>
+                    </div>
+                    ${hasBases ? `
+                    <div class="sidebar-tree-children ${isExpanded ? 'expanded' : ''}">
+                        ${baseHtml}
+                    </div>` : ''}
+                </div>
+            `;
+        });
+
+        folderTree.innerHTML = blocks.join('');
+        this.updateTreeSelection();
+        this._scrollUserNavToPending(folderTree);
+    }
+
+    _userNavSortDisplay(meta, childId) {
+        const v = meta.sortRank?.[childId];
+        if (Number.isFinite(v)) {
+            return String(v);
+        }
+        // 未设置排序：用短占位；若 i18n 未就绪会退回整段 key，绝不能挤占后面的模型名/标签列
+        const label = translate('sidebar.userNav.sortUnset', {}, '\u2013');
+        if (typeof label === 'string' && label.startsWith('sidebar.')) {
+            return '\u2013';
+        }
+        return label;
+    }
+
+    _scrollUserNavToPending(folderTree) {
+        if (!this._pendingUserNavScrollCreator) {
+            return;
+        }
+        const tok = this._userNavAttrToken(this._pendingUserNavScrollCreator);
+        this._pendingUserNavScrollCreator = null;
+        if (!tok) {
+            return;
+        }
+        requestAnimationFrame(() => {
+            let row = null;
+            folderTree.querySelectorAll('[data-user-nav-tok]').forEach((el) => {
+                if (el.getAttribute('data-user-nav-tok') === tok) {
+                    row = el;
+                }
+            });
+            if (row) {
+                row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+        });
+    }
+
+    handleUserNavTreeClick(event) {
+        const starBtn = event.target.closest('.sidebar-user-nav-star');
+        if (starBtn) {
+            event.preventDefault();
+            event.stopPropagation();
+            const nodeId = starBtn.dataset.userNavNodeId;
+            if (nodeId) {
+                this._toggleUserNavFavoriteByNodeId(nodeId);
+            }
+            return;
+        }
+
+        // 单击排序数字不触发筛选导航（双击才打开排序弹窗）
+        if (event.target.closest('.sidebar-user-nav-sort-editable')) {
+            return;
+        }
+
+        const expandIcon = event.target.closest('.sidebar-tree-expand-icon');
+        const nodeContent = event.target.closest('.sidebar-tree-node-content[data-user-nav-key]');
+
+        if (expandIcon) {
+            const treeNode = expandIcon.closest('.sidebar-tree-node');
+            const depth = parseInt(treeNode?.dataset.userNavDepth || '0', 10);
+            const content = treeNode?.querySelector(':scope > .sidebar-tree-node-content');
+            const keyRaw = content?.dataset.userNavKey;
+            if (!keyRaw) {
+                return;
+            }
+            let parsed;
+            try {
+                parsed = JSON.parse(keyRaw);
+            } catch {
+                return;
+            }
+            const expandKey = depth === 1
+                ? this._expandKeyForUser(1, parsed.c, '')
+                : this._expandKeyForUser(2, parsed.c, parsed.b);
+            if (this.expandedNodes.has(expandKey)) {
+                this.expandedNodes.delete(expandKey);
+            } else {
+                this.expandedNodes.add(expandKey);
+            }
+            this.saveExpandedState();
+            this._setUserNavBranchExpanded(treeNode, this.expandedNodes.has(expandKey));
+            return;
+        }
+
+        if (nodeContent) {
+            const keyRaw = nodeContent.dataset.userNavKey;
+            let parsed;
+            try {
+                parsed = JSON.parse(keyRaw);
+            } catch {
+                return;
+            }
+            this.selectUserNav(parsed.c, parsed.b, parsed.t);
+        }
+    }
+
+    async selectUserNav(creator, baseModel, tag) {
+        this._ensureUserNavPageState();
+        this.selectedUserNavKey = JSON.stringify({ c: creator, b: baseModel, t: tag });
+        if (this.pageControls?.pageState?.userSidebarNav) {
+            this.pageControls.pageState.userSidebarNav = {
+                creator: creator || null,
+                baseModel: baseModel || null,
+                tag: tag || null,
+            };
+        }
+        this.selectedPath = '';
+        this.updateTreeSelection();
+        this.updateBreadcrumbs();
+        this.updateSidebarHeader();
+
+        // 仅内存清空文件夹过滤；不写 localStorage，避免从用户视图返回树视图时丢失原文件夹
+        this.pageControls.pageState.activeFolder = '';
+
+        await this.pageControls.resetAndReload();
+
+        if (window.innerWidth <= 1024) {
+            this.hideSidebar();
+        }
+    }
+
+    _toggleUserNavFavoriteByNodeId(nodeId) {
+        const meta = this._loadUserNavMeta();
+        meta.fav = meta.fav || {};
+        meta.fav[nodeId] = !meta.fav[nodeId];
+        this._saveUserNavMeta(meta);
+        this.renderUserNavTree();
+    }
+
+    handleUserNavContextMenu(event) {
+        if (!this._isUserNavMode()) {
+            return;
+        }
+        const row = event.target.closest('.sidebar-tree-node-content[data-user-nav-key]');
+        if (!row || row.dataset.userNavDepth !== '1') {
+            return;
+        }
+        // 一级用户：收藏用星标点击，排序用双击数字弹窗；不再提供自定义右键菜单
+        event.preventDefault();
+        this._removeUserNavContextMenu();
+    }
+
+    handleUserNavSortDblClick(event) {
+        if (!this._isUserNavMode()) {
+            return;
+        }
+        const sortEl = event.target.closest('.sidebar-user-nav-sortnum.sidebar-user-nav-sort-editable');
+        if (!sortEl) {
+            return;
+        }
+        const row = sortEl.closest('.sidebar-tree-node-content[data-user-nav-key]');
+        if (!row || row.dataset.userNavDepth !== '1') {
+            return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        const childId = row.dataset.userNavNodeId;
+        let parsed;
+        try {
+            parsed = JSON.parse(row.dataset.userNavKey);
+        } catch {
+            return;
+        }
+        if (!childId || !parsed.c) {
+            return;
+        }
+        this._openUserNavSortDialog({ childId, creator: parsed.c });
+    }
+
+    _closeUserNavSortDialog() {
+        if (this._userNavSortModalKeyHandler) {
+            document.removeEventListener('keydown', this._userNavSortModalKeyHandler);
+            this._userNavSortModalKeyHandler = null;
+        }
+        if (this._userNavSortModalBackdrop) {
+            this._userNavSortModalBackdrop.remove();
+            this._userNavSortModalBackdrop = null;
+        }
+    }
+
+    /**
+     * 屏幕居中弹窗：设置用户排序数字（替代 prompt / 右键菜单）
+     */
+    _openUserNavSortDialog({ childId, creator }) {
+        this._closeUserNavSortDialog();
+        const meta = this._loadUserNavMeta();
+        meta.sortRank = meta.sortRank || {};
+        const current = meta.sortRank[childId];
+        const def = Number.isFinite(current) ? String(current) : '';
+
+        const backdrop = document.createElement('div');
+        backdrop.className = 'sidebar-user-nav-sort-modal-backdrop';
+        backdrop.setAttribute('role', 'dialog');
+        backdrop.setAttribute('aria-modal', 'true');
+        backdrop.setAttribute('aria-label', translate('sidebar.userNav.setSortTitle', {}, '设置排序'));
+
+        const title = escapeHtml(translate('sidebar.userNav.setSortTitle', {}, '设置排序'));
+        const hint = escapeHtml(translate('sidebar.userNav.setSortPrompt'));
+        const ph = escapeAttribute(translate('sidebar.userNav.setSortInputPlaceholder', {}, '整数，越小越靠前'));
+        const cancelT = escapeHtml(translate('common.cancel'));
+        const okT = escapeHtml(translate('common.confirm'));
+
+        backdrop.innerHTML = `
+            <div class="sidebar-user-nav-sort-modal">
+                <div class="sidebar-user-nav-sort-modal-title">${title}</div>
+                <p class="sidebar-user-nav-sort-modal-desc">${hint}</p>
+                <input type="text" class="sidebar-user-nav-sort-modal-input" inputmode="numeric"
+                       autocomplete="off" placeholder="${ph}" value="${escapeAttribute(def)}" />
+                <div class="sidebar-user-nav-sort-modal-actions">
+                    <button type="button" class="sidebar-user-nav-sort-modal-btn" data-act="cancel">${cancelT}</button>
+                    <button type="button" class="sidebar-user-nav-sort-modal-btn primary" data-act="ok">${okT}</button>
+                </div>
+            </div>
+        `;
+
+        const finish = () => {
+            this._closeUserNavSortDialog();
+        };
+
+        const apply = () => {
+            const input = backdrop.querySelector('.sidebar-user-nav-sort-modal-input');
+            const raw = input ? String(input.value).trim() : '';
+            const nextMeta = this._loadUserNavMeta();
+            nextMeta.sortRank = nextMeta.sortRank || {};
+            if (raw === '') {
+                delete nextMeta.sortRank[childId];
+            } else {
+                const n = parseInt(raw, 10);
+                if (!Number.isFinite(n)) {
+                    showToast('sidebar.userNav.setSortInvalid', {}, 'error');
+                    return;
+                }
+                nextMeta.sortRank[childId] = n;
+            }
+            this._saveUserNavMeta(nextMeta);
+            this._pendingUserNavScrollCreator = creator;
+            finish();
+            this.renderUserNavTree();
+        };
+
+        backdrop.addEventListener('click', (e) => {
+            if (e.target === backdrop) {
+                finish();
+            }
+        });
+        backdrop.querySelector('[data-act="cancel"]')?.addEventListener('click', finish);
+        backdrop.querySelector('[data-act="ok"]')?.addEventListener('click', apply);
+        backdrop.querySelector('.sidebar-user-nav-sort-modal-input')?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                apply();
+            }
+        });
+
+        this._userNavSortModalKeyHandler = (e) => {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                finish();
+            }
+        };
+        document.addEventListener('keydown', this._userNavSortModalKeyHandler);
+
+        document.body.appendChild(backdrop);
+        this._userNavSortModalBackdrop = backdrop;
+        requestAnimationFrame(() => {
+            const inp = backdrop.querySelector('.sidebar-user-nav-sort-modal-input');
+            if (inp) {
+                inp.focus();
+                inp.select();
+            }
+        });
+    }
+
+    _removeUserNavContextMenu() {
+        document.querySelectorAll('.sidebar-user-nav-context-menu').forEach((el) => {
+            el.remove();
+        });
     }
 
     async refresh() {

@@ -251,6 +251,34 @@
             "support": "Support"
         }
     },
+    "sidebar": {
+        "pinSidebar": "Pin sidebar",
+        "unpinSidebar": "Unpin sidebar",
+        "switchToListView": "Switch to list view",
+        "switchToTreeView": "Switch to tree view",
+        "switchToUserView": "Switch to user view",
+        "collapseAll": "Collapse all",
+        "collapseAllDisabled": "Not available in list view",
+        "recursiveOn": "Recursive search: on",
+        "recursiveOff": "Recursive search: off",
+        "recursiveUnavailable": "Only available in tree view",
+        "empty": {
+            "noFolders": "No folders found",
+            "dragHint": "Drag items here to create folders"
+        },
+        "userNav": {
+            "unknownCreator": "Unknown creator",
+            "noBaseModel": "No base model",
+            "noTags": "No tags",
+            "sortUnset": "—",
+            "toggleFavorite": "Favorite / unfavorite (user list ordering)",
+            "setSortTitle": "Set sort order",
+            "sortDblClickHint": "Double-click to set sort number",
+            "setSortInputPlaceholder": "Integer; smaller sorts first",
+            "setSortPrompt": "Enter a sort number (smaller sorts first). Leave empty to clear custom order.",
+            "setSortInvalid": "Please enter a valid integer."
+        }
+    },
     "settings": {
         "civitaiApiKey": "Civitai API Key",
         "civitaiApiKeyPlaceholder": "Enter your Civitai API key",
@@ -893,6 +921,16 @@
         "collapseAll": "Collapse All Folders",
         "pinSidebar": "Pin Sidebar",
         "unpinSidebar": "Unpin Sidebar",
+        "switchToUserView": "Switch to User View",
+        "userNav": {
+            "breadcrumbRoot": "User view",
+            "unknownCreator": "Unknown creator",
+            "noBaseModel": "No base model",
+            "noTags": "No tags",
+            "contextFavorite": "Favorite / Unfavorite (pinned sort)",
+            "contextMoveUp": "Move up",
+            "contextMoveDown": "Move down"
+        },
         "switchToListView": "Switch to List View",
         "switchToTreeView": "Switch to Tree View",
         "recursiveOn": "Include subfolders",

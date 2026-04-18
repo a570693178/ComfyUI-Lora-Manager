@@ -72,6 +72,12 @@ class LoraRoutes(BaseModelRoutes):
         registrar.add_prefixed_route(
             "POST", "/api/lm/{prefix}/get_trigger_words", prefix, self.get_trigger_words
         )
+        registrar.add_prefixed_route(
+            "GET",
+            "/api/lm/{prefix}/creator-nav-tree",
+            prefix,
+            self.get_creator_navigation_tree,
+        )
 
     def _parse_specific_params(self, request: web.Request) -> Dict:
         """Parse LoRA-specific parameters"""
@@ -118,6 +124,18 @@ class LoraRoutes(BaseModelRoutes):
         except Exception as e:
             logger.error(f"Error getting letter counts: {e}")
             return web.json_response({"success": False, "error": str(e)}, status=500)
+
+    async def get_creator_navigation_tree(self, request: web.Request) -> web.Response:
+        """用户视图：返回 创作者 → 基底模型 → 标签 层级数据（基于本地缓存）。"""
+        try:
+            payload = await self.service.get_creator_navigation_tree()
+            return web.json_response({"success": True, **payload})
+        except Exception as exc:
+            logger.error("Error building creator navigation tree: %s", exc, exc_info=True)
+            return web.json_response(
+                {"success": False, "error": str(exc), "users": []},
+                status=500,
+            )
 
     async def get_lora_notes(self, request: web.Request) -> web.Response:
         """Get notes for a specific LoRA file"""

@@ -22,6 +22,21 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def extract_creator_username(item: Mapping[str, Any]) -> Optional[str]:
+    """从缓存条目中读取 Civitai 创作者用户名（无则返回 None）。"""
+    civitai = item.get("civitai")
+    if not isinstance(civitai, Mapping):
+        return None
+    creator = civitai.get("creator")
+    if not isinstance(creator, Mapping):
+        return None
+    username = creator.get("username")
+    if username is None:
+        return None
+    text = str(username).strip()
+    return text or None
+
+
 DEFAULT_CIVITAI_MODEL_TYPE = "LORA"
 
 
@@ -100,6 +115,8 @@ class FilterCriteria:
     search_options: Optional[Dict[str, Any]] = None
     model_types: Optional[Sequence[str]] = None
     tag_logic: str = "any"  # "any" (OR) or "all" (AND)
+    # 精确匹配 Civitai 用户名；特殊值 __unknown__ 表示无创作者元数据的模型
+    creator_username: Optional[str] = None
 
 
 class ModelCacheRepository:
@@ -279,9 +296,41 @@ class ModelFilterSet:
         base_models = criteria.base_models or []
         if base_models:
             t0 = time.perf_counter()
-            base_model_set = set(base_models)
-            items = [item for item in items if item.get("base_model") in base_model_set]
+            base_model_set = {b for b in base_models if b != "__no_base__"}
+            allow_no_base = "__no_base__" in base_models
+
+            def matches_base_model(item: Dict[str, Any]) -> bool:
+                raw = item.get("base_model")
+                bm = str(raw).strip() if raw is not None else ""
+                if not bm:
+                    return allow_no_base
+                if not base_model_set:
+                    return False
+                return bm in base_model_set
+
+            items = [item for item in items if matches_base_model(item)]
             base_models_duration = time.perf_counter() - t0
+
+        creator_duration = 0
+        creator_filter = (criteria.creator_username or "").strip()
+        if creator_filter:
+            t0 = time.perf_counter()
+            target = creator_filter
+            target_lower = target.lower()
+            if target == "__unknown__":
+
+                def matches_creator_unknown(item: Dict[str, Any]) -> bool:
+                    return extract_creator_username(item) is None
+
+                items = [item for item in items if matches_creator_unknown(item)]
+            else:
+
+                def matches_creator(item: Dict[str, Any]) -> bool:
+                    name = extract_creator_username(item)
+                    return bool(name) and name.lower() == target_lower
+
+                items = [item for item in items if matches_creator(item)]
+            creator_duration = time.perf_counter() - t0
 
         tags_duration = 0
         tag_filters = criteria.tags or {}
@@ -362,13 +411,14 @@ class ModelFilterSet:
         duration = time.perf_counter() - overall_start
         if duration > 0.1:  # Only log if it's potentially slow
             logger.debug(
-                "ModelFilterSet.apply took %.3fs (sfw: %.3fs, fav: %.3fs, folder: %.3fs, base: %.3fs, tags: %.3fs, types: %.3fs). "
+                "ModelFilterSet.apply took %.3fs (sfw: %.3fs, fav: %.3fs, folder: %.3fs, base: %.3fs, creator: %.3fs, tags: %.3fs, types: %.3fs). "
                 "Count: %d -> %d",
                 duration,
                 sfw_duration,
                 favorites_duration,
                 folder_duration,
                 base_models_duration,
+                creator_duration,
                 tags_duration,
                 model_types_duration,
                 initial_count,

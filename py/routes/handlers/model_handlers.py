@@ -352,6 +352,13 @@ class ModelListingHandler:
             request.query.get("name_pattern_use_regex", "false").lower() == "true"
         )
 
+        creator_username_raw = request.query.get("creator_username")
+        creator_username = (
+            creator_username_raw.strip()
+            if isinstance(creator_username_raw, str) and creator_username_raw.strip()
+            else None
+        )
+
         return {
             "page": page,
             "page_size": page_size,
@@ -374,6 +381,7 @@ class ModelListingHandler:
             "name_pattern_include": name_pattern_include,
             "name_pattern_exclude": name_pattern_exclude,
             "name_pattern_use_regex": name_pattern_use_regex,
+            "creator_username": creator_username,
             **self._parse_specific_params(request),
         }
 

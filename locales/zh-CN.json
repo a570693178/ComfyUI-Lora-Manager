@@ -251,6 +251,34 @@
             "support": "支持"
         }
     },
+    "sidebar": {
+        "pinSidebar": "固定侧边栏",
+        "unpinSidebar": "取消固定侧边栏",
+        "switchToListView": "切换到列表视图",
+        "switchToTreeView": "切换到树形视图",
+        "switchToUserView": "切换到用户视图",
+        "collapseAll": "全部折叠",
+        "collapseAllDisabled": "列表视图下不可用",
+        "recursiveOn": "递归搜索：开",
+        "recursiveOff": "递归搜索：关",
+        "recursiveUnavailable": "仅在树形视图下可用",
+        "empty": {
+            "noFolders": "未找到文件夹",
+            "dragHint": "将项目拖放到此处以创建文件夹"
+        },
+        "userNav": {
+            "unknownCreator": "未知作者",
+            "noBaseModel": "无基模型",
+            "noTags": "无标签",
+            "sortUnset": "—",
+            "toggleFavorite": "收藏/取消收藏（用户排序）",
+            "setSortTitle": "设置排序",
+            "sortDblClickHint": "双击设置排序数字",
+            "setSortInputPlaceholder": "整数，越小越靠前",
+            "setSortPrompt": "输入排序数字（越小越靠前）。留空则恢复默认。",
+            "setSortInvalid": "请输入有效整数。"
+        }
+    },
     "settings": {
         "civitaiApiKey": "Civitai API 密钥",
         "civitaiApiKeyPlaceholder": "请输入你的 Civitai API 密钥",
@@ -893,6 +921,16 @@
         "collapseAll": "折叠所有文件夹",
         "pinSidebar": "固定侧边栏",
         "unpinSidebar": "取消固定侧边栏",
+        "switchToUserView": "切换到用户视图",
+        "userNav": {
+            "breadcrumbRoot": "用户视图",
+            "unknownCreator": "未知作者",
+            "noBaseModel": "未标注基底模型",
+            "noTags": "无标签",
+            "contextFavorite": "收藏 / 取消收藏（置顶排序）",
+            "contextMoveUp": "上移排序",
+            "contextMoveDown": "下移排序"
+        },
         "switchToListView": "切换到列表视图",
         "switchToTreeView": "切换到树状视图",
         "recursiveOn": "包含子文件夹",

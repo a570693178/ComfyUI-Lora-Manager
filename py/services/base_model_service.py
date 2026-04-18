@@ -1,12 +1,22 @@
 from abc import ABC, abstractmethod
 import asyncio
 import re
-from typing import Any, Dict, List, Optional, Type, TYPE_CHECKING
+from collections import Counter, defaultdict
+from typing import Any, Dict, List, Optional, Set, Type, TYPE_CHECKING
 import logging
 import os
 import time
 
-from ..utils.constants import VALID_LORA_SUB_TYPES, VALID_CHECKPOINT_SUB_TYPES
+from ..utils.constants import (
+    DEFAULT_PRIORITY_TAG_CONFIG,
+    VALID_LORA_SUB_TYPES,
+    VALID_CHECKPOINT_SUB_TYPES,
+)
+from ..utils.tag_priorities import (
+    PriorityTagEntry,
+    collect_canonical_tags,
+    parse_priority_tag_string,
+)
 from ..utils.models import BaseModelMetadata
 from ..utils.metadata_manager import MetadataManager
 from ..utils.usage_stats import UsageStats
@@ -16,6 +26,7 @@ from .model_query import (
     ModelFilterSet,
     SearchStrategy,
     SettingsProvider,
+    extract_creator_username,
     normalize_sub_type,
     resolve_sub_type,
 )
@@ -84,6 +95,7 @@ class BaseModelService(ABC):
         credit_required: Optional[bool] = None,
         allow_selling_generated_content: Optional[bool] = None,
         tag_logic: str = "any",
+        creator_username: Optional[str] = None,
         **kwargs,
     ) -> Dict:
         """Get paginated and filtered model data"""
@@ -113,6 +125,7 @@ class BaseModelService(ABC):
                 favorites_only=favorites_only,
                 search_options=search_options,
                 tag_logic=tag_logic,
+                creator_username=creator_username,
             )
 
             if search:
@@ -357,6 +370,7 @@ class BaseModelService(ABC):
         favorites_only: bool = False,
         search_options: dict = None,
         tag_logic: str = "any",
+        creator_username: Optional[str] = None,
     ) -> List[Dict]:
         """Apply common filters that work across all model types"""
         normalized_options = self.search_strategy.normalize_options(search_options)
@@ -370,6 +384,7 @@ class BaseModelService(ABC):
             favorites_only=favorites_only,
             search_options=normalized_options,
             tag_logic=tag_logic,
+            creator_username=creator_username,
         )
         return self.filter_set.apply(data, criteria)
 
@@ -734,6 +749,122 @@ class BaseModelService(ABC):
         )
 
         return sorted_types[:limit]
+
+    def _creator_nav_priority_entries(self) -> List[PriorityTagEntry]:
+        """解析当前模型类型对应的优先标签配置（与设置里 priority_tags 一致）。"""
+        cfg = self.settings.get("priority_tags")
+        raw: Optional[str] = None
+        if isinstance(cfg, dict):
+            raw = cfg.get(self.model_type) or cfg.get("lora")
+        if not isinstance(raw, str) or not raw.strip():
+            raw = DEFAULT_PRIORITY_TAG_CONFIG.get(
+                self.model_type, DEFAULT_PRIORITY_TAG_CONFIG.get("lora", "")
+            )
+        return parse_priority_tag_string(raw)
+
+    @staticmethod
+    def _priority_alias_map(entries: List[PriorityTagEntry]) -> Dict[str, str]:
+        """别名（小写）→ 规范标签名，用于把模型上的任意标签归并到系统类。"""
+        out: Dict[str, str] = {}
+        for entry in entries:
+            for alias in entry.normalized_aliases:
+                out.setdefault(alias, entry.canonical)
+        return out
+
+    async def get_creator_navigation_tree(self, *, max_tags_per_leaf: int = 80) -> Dict[str, Any]:
+        """构建 用户 → 基底模型 → 标签 三层导航树（基于本地缓存）。
+
+        三级标签仅统计「设置 → 优先标签」中配置的规范类（默认即 Civitai 系统类），
+        不再罗列全部原始标签。max_tags_per_leaf 保留以兼容调用方，实际桶数由配置决定。
+        """
+        _ = max_tags_per_leaf  # 兼容旧参数；规范标签数量有限，不再按条数截断
+        entries = self._creator_nav_priority_entries()
+        alias_map = self._priority_alias_map(entries)
+        canonical_order = collect_canonical_tags(entries)
+
+        cache = await self.scanner.get_cached_data()
+        raw = getattr(cache, "raw_data", None) or []
+
+        tag_counts: Dict[str, Dict[str, Counter[str]]] = defaultdict(
+            lambda: defaultdict(Counter)
+        )
+        model_counts: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
+        avatar_by_user: Dict[str, str] = {}
+
+        for entry in raw:
+            if entry.get("exclude"):
+                continue
+            creator_name = extract_creator_username(entry)
+            user_key = creator_name if creator_name else "__unknown__"
+            base_raw = entry.get("base_model")
+            base_key = (
+                str(base_raw).strip() if base_raw is not None else ""
+            ) or "__no_base__"
+            model_counts[user_key][base_key] += 1
+
+            if user_key not in avatar_by_user:
+                civ = entry.get("civitai") if isinstance(entry.get("civitai"), dict) else {}
+                creator_obj = civ.get("creator") if isinstance(civ.get("creator"), dict) else {}
+                image_url = creator_obj.get("image")
+                if isinstance(image_url, str) and image_url.strip():
+                    avatar_by_user[user_key] = image_url.strip()
+
+            tags = entry.get("tags") or []
+            if not tags:
+                tag_counts[user_key][base_key]["__no_tags__"] += 1
+            else:
+                matched: Set[str] = set()
+                for raw_tag in tags:
+                    if not isinstance(raw_tag, str):
+                        continue
+                    key = raw_tag.strip().lower()
+                    if not key:
+                        continue
+                    canonical = alias_map.get(key)
+                    if canonical:
+                        matched.add(canonical)
+                if not matched:
+                    # 有标签但未命中任何系统类：不计入三级桶（筛选仍可按用户/基模工作）
+                    continue
+                for c in matched:
+                    tag_counts[user_key][base_key][c] += 1
+
+        users_out: List[Dict[str, Any]] = []
+        for user_key in sorted(model_counts.keys(), key=lambda value: value.lower()):
+            bases_out: List[Dict[str, Any]] = []
+            for base_key in sorted(
+                model_counts[user_key].keys(), key=lambda value: value.lower()
+            ):
+                counter = tag_counts[user_key][base_key]
+                tag_entries: List[Dict[str, Any]] = [
+                    {"name": name, "count": int(counter[name])}
+                    for name in canonical_order
+                    if counter.get(name, 0) > 0
+                ]
+                if counter.get("__no_tags__", 0) > 0:
+                    tag_entries.append(
+                        {
+                            "name": "__no_tags__",
+                            "count": int(counter["__no_tags__"]),
+                        }
+                    )
+                bases_out.append(
+                    {
+                        "name": base_key,
+                        "model_count": model_counts[user_key][base_key],
+                        "tags": tag_entries,
+                    }
+                )
+            users_out.append(
+                {
+                    "username": user_key,
+                    "model_count": sum(model_counts[user_key].values()),
+                    "avatar_url": avatar_by_user.get(user_key, ""),
+                    "base_models": bases_out,
+                }
+            )
+
+        return {"users": users_out}
 
     def has_hash(self, sha256: str) -> bool:
         """Check if a model with given hash exists"""

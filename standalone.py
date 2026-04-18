@@ -358,6 +358,62 @@ class StandaloneLoraManager(LoraManager):
         app.on_shutdown.append(cls._cleanup)
 
 
+def _read_standalone_port_from_settings():
+    """从 settings.json 读取 standalone 监听端口（与 bat 无关，IDE 直接运行也生效）。"""
+    try:
+        from py.utils.settings_paths import get_legacy_settings_path, get_settings_file_path
+
+        candidates = []
+        try:
+            candidates.append(get_legacy_settings_path())
+        except Exception:
+            pass
+        try:
+            candidates.append(get_settings_file_path(create_dir=False))
+        except Exception:
+            pass
+        seen = set()
+        for path in candidates:
+            if not path or path in seen:
+                continue
+            seen.add(path)
+            if not os.path.isfile(path):
+                continue
+            with open(path, "r", encoding="utf-8") as handle:
+                data = json.load(handle)
+            if not isinstance(data, dict):
+                continue
+            for key in (
+                "standalone_port",
+                "standalone_listen_port",
+                "lora_manager_standalone_port",
+            ):
+                raw = data.get(key)
+                if raw is None or raw == "":
+                    continue
+                return int(str(raw).strip())
+    except (ValueError, TypeError, OSError, json.JSONDecodeError):
+        pass
+    return None
+
+
+def resolve_standalone_listen_port(cli_port):
+    """返回 (端口, 来源说明)。cli_port 为 argparse 得到的值，未传 --port 时为 None。"""
+    if cli_port is not None:
+        return int(cli_port), "命令行 --port"
+    for env_key in ("LORA_MANAGER_PORT", "LORA_MANAGER_STANDALONE_PORT"):
+        raw = os.environ.get(env_key)
+        if raw:
+            try:
+                return int(str(raw).strip()), f"环境变量 {env_key}"
+            except ValueError:
+                pass
+    from_settings = _read_standalone_port_from_settings()
+    if from_settings is not None:
+        return from_settings, "settings.json（standalone_port 等）"
+    return 8188, "内置默认（未配置 --port / 环境变量 / settings）"
+
+
 def parse_args():
     """Parse command line arguments"""
     parser = argparse.ArgumentParser(description="LoRA Manager Standalone Server")
@@ -370,8 +426,11 @@ def parse_args():
     parser.add_argument(
         "--port",
         type=int,
-        default=8188,
-        help="Port to bind the server to (default: 8188, access via http://localhost:8188/loras)",
+        default=None,
+        help=(
+            "监听端口；省略本参数时依次使用环境变量 LORA_MANAGER_PORT、"
+            "LORA_MANAGER_STANDALONE_PORT、settings.json 的 standalone_port，最后为 8188。"
+        ),
     )
     # parser.add_argument("--loras", type=str, nargs="+",
     #                     help="Additional paths to LoRA model directories (optional if settings.json has paths)")
@@ -395,10 +454,17 @@ def parse_args():
 async def main():
     """Main entry point for standalone mode"""
     args = parse_args()
+    listen_port, port_source = resolve_standalone_listen_port(args.port)
 
     # Set log level (verbose flag overrides to DEBUG)
     log_level = "DEBUG" if args.verbose else args.log_level
     logging.getLogger().setLevel(getattr(logging, log_level))
+    logger.info(
+        "Standalone listen port: %s（来源: %s）。若需固定端口：用 run_lora_manager.bat、"
+        "或命令行加 --port、或在 settings.json 设置 standalone_port、或设置环境变量 LORA_MANAGER_PORT。",
+        listen_port,
+        port_source,
+    )
 
     # Validate settings before proceeding
     if not validate_settings():
@@ -414,7 +480,7 @@ async def main():
 
     # Set up and start the server
     await server.setup()
-    await server.start(host=args.host, port=args.port)
+    await server.start(host=args.host, port=listen_port)
 
 
 if __name__ == "__main__":

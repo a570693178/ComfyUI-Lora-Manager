@@ -933,7 +933,10 @@ export class BaseModelApiClient {
         const params = new URLSearchParams(baseParams);
         const isExcludedView = pageState.viewMode === 'excluded';
 
-        if (!isExcludedView && pageState.activeFolder !== null) {
+        const userNavActive = this.modelType === 'loras'
+            && sidebarManager.displayMode === 'user';
+
+        if (!isExcludedView && !userNavActive && pageState.activeFolder !== null) {
             params.append('folder', pageState.activeFolder);
         }
 
@@ -967,7 +970,7 @@ export class BaseModelApiClient {
 
         params.append('recursive', pageState.searchOptions.recursive ? 'true' : 'false');
 
-        if (!isExcludedView && pageState.filters) {
+        if (!isExcludedView && pageState.filters && !userNavActive) {
             if (pageState.filters.tags && Object.keys(pageState.filters.tags).length > 0) {
                 Object.entries(pageState.filters.tags).forEach(([tag, state]) => {
                     if (state === 'include') {
@@ -1027,6 +1030,19 @@ export class BaseModelApiClient {
             // Add tag logic parameter (any = OR, all = AND)
             if (pageState.filters.tagLogic) {
                 params.append('tag_logic', pageState.filters.tagLogic);
+            }
+        }
+
+        if (!isExcludedView && userNavActive) {
+            const nav = pageState.userSidebarNav || {};
+            if (nav.creator) {
+                params.append('creator_username', nav.creator);
+            }
+            if (nav.baseModel) {
+                params.append('base_model', nav.baseModel);
+            }
+            if (nav.tag) {
+                params.append('tag_include', nav.tag);
             }
         }
 

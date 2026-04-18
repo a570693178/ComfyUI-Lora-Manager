@@ -106,6 +106,12 @@ export const state = {
                 search: '',
             },
             activeViewSnapshot: null,
+            /** 用户视图侧边栏：创作者 / 基底模型 / 标签（与文件夹导航互斥） */
+            userSidebarNav: {
+                creator: null,
+                baseModel: null,
+                tag: null,
+            },
         },
 
         recipes: {
