@@ -36,6 +36,12 @@ class LoraRoutes(BaseModelRoutes):
         # Schedule service initialization on app startup
         app.on_startup.append(lambda _: self.initialize_services())
 
+        # 浏览器若访问 /loras/（带尾斜杠）会匹配不到 GET /loras，落到前端静态目录后 404；显式重定向到规范路径
+        async def _redirect_loras_trailing_slash(_request: web.Request):
+            raise web.HTTPFound("/loras")
+
+        app.router.add_get("/loras/", _redirect_loras_trailing_slash)
+
         # Setup common routes with 'loras' prefix (includes page route)
         super().setup_routes(app, "loras")
 

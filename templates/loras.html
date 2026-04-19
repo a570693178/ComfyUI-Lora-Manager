@@ -5,7 +5,7 @@
 
 {% block init_title %}{{ t('initialization.loras.title') }}{% endblock %}
 {% block init_message %}{{ t('initialization.loras.message') }}{% endblock %}
-{% block init_check_url %}/api/loras/list?page=1&page_size=1{% endblock %}
+{% block init_check_url %}/api/lm/loras/list?page=1&page_size=1{% endblock %}
 
 {% block content %}
     {% include 'components/controls.html' %}
