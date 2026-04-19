@@ -32,7 +32,10 @@ from .model_query import (
 )
 from .settings_manager import get_settings_manager
 from ..utils.civitai_utils import build_civitai_model_page_url
-from .user_avatar_cache import hydrate_sidebar_creator_avatars
+from .user_avatar_cache import (
+    apply_local_cached_avatar_urls_sync,
+    schedule_creator_avatar_backfill,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -865,11 +868,12 @@ class BaseModelService(ABC):
                 }
             )
 
-        # 用户视图：本地 user_avatars 初始化（无文件则按元数据 URL 或 Civitai API 拉取并落盘）
+        # 用户视图：同步只映射已缓存头像（避免 await 全网拉取导致切换卡顿）；缺失的由后台任务落盘
         try:
-            await hydrate_sidebar_creator_avatars(users_out)
+            apply_local_cached_avatar_urls_sync(users_out)
+            schedule_creator_avatar_backfill(users_out)
         except Exception as exc:
-            logger.debug("Creator avatar hydrate skipped: %s", exc)
+            logger.debug("Creator avatar local/backfill skipped: %s", exc)
 
         return {"users": users_out}
 

@@ -1517,6 +1517,11 @@ export class SidebarManager {
         this.pageControls.pageState.activeFolder = normalizedPath;
         setStorageItem(`${this.pageType}_activeFolder`, normalizedPath);
 
+        // 让浏览器先完成侧栏选中态绘制，再拉取右侧数据，减轻与整树重绘叠在一起时的主线程饥饿（预览偶发不加载）
+        await new Promise((resolve) => {
+            requestAnimationFrame(() => resolve());
+        });
+
         // Reload models with new filter
         await this.pageControls.resetAndReload();
 
@@ -1678,33 +1683,68 @@ export class SidebarManager {
                 }
             }
         } else {
-            folderTree.querySelectorAll('.sidebar-tree-node-content').forEach(node => {
+            // 仅清除已有 .selected，避免对全树 querySelectorAll（大目录时极慢）
+            folderTree.querySelectorAll('.sidebar-tree-node-content.selected').forEach((node) => {
                 node.classList.remove('selected');
             });
 
-            if (this.selectedPath !== null && this.selectedPath !== undefined) {
-                const escapedPathSelector = CSS.escape(this.selectedPath);
-                const selectedNode = folderTree.querySelector(`[data-path="${escapedPathSelector}"] .sidebar-tree-node-content`);
-                if (selectedNode) {
-                    selectedNode.classList.add('selected');
-                    this.expandPathParents(this.selectedPath);
-                }
+            if (this.selectedPath === null || this.selectedPath === undefined) {
+                return;
+            }
+            // 根：无单一路径节点，保持全部未选中即可
+            if (this.selectedPath === '') {
+                return;
+            }
+
+            const escapedPathSelector = CSS.escape(this.selectedPath);
+            let treeNode = folderTree.querySelector(`[data-path="${escapedPathSelector}"]`);
+            let selectedNode = treeNode?.querySelector(':scope > .sidebar-tree-node-content');
+
+            if (!selectedNode) {
+                // 目标行未渲染（祖先折叠）：同步展开状态后整树重绘一次
+                this._ensureAncestorsExpanded(this.selectedPath);
+                this.renderTree();
+                treeNode = folderTree.querySelector(`[data-path="${escapedPathSelector}"]`);
+                selectedNode = treeNode?.querySelector(':scope > .sidebar-tree-node-content');
+            } else {
+                // 常见路径：选中行已在 DOM，只同步 expandedNodes，禁止无意义的 innerHTML 全量重绘
+                this._ensureAncestorsExpanded(this.selectedPath);
+            }
+
+            if (selectedNode) {
+                selectedNode.classList.add('selected');
             }
         }
     }
 
-    expandPathParents(path) {
-        if (!path) return;
-
+    /**
+     * 把路径上所有祖先加入 expandedNodes；若有新增则返回 true（调用方据此决定是否 renderTree）。
+     */
+    _ensureAncestorsExpanded(path) {
+        if (!path) {
+            return false;
+        }
         const parts = path.split('/');
         let currentPath = '';
-
+        let added = false;
         for (let i = 0; i < parts.length - 1; i++) {
             currentPath = currentPath ? `${currentPath}/${parts[i]}` : parts[i];
-            this.expandedNodes.add(currentPath);
+            if (!this.expandedNodes.has(currentPath)) {
+                this.expandedNodes.add(currentPath);
+                added = true;
+            }
         }
+        return added;
+    }
 
-        this.renderTree();
+    expandPathParents(path) {
+        if (!path) {
+            return;
+        }
+        const added = this._ensureAncestorsExpanded(path);
+        if (added) {
+            this.renderTree();
+        }
     }
 
     // Get sibling folders for a given path level
@@ -2419,6 +2459,9 @@ export class SidebarManager {
         // 仅内存清空文件夹过滤；不写 localStorage，避免从用户视图返回树视图时丢失原文件夹
         this.pageControls.pageState.activeFolder = '';
 
+        await new Promise((resolve) => {
+            requestAnimationFrame(() => resolve());
+        });
         await this.pageControls.resetAndReload();
 
         if (window.innerWidth <= 1024) {

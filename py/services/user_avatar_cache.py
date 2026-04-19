@@ -190,21 +190,99 @@ async def ensure_local_avatar_url(username: str, remote_hint: Optional[str]) -> 
         return (remote_hint or url_to_fetch).strip()
 
 
-async def hydrate_sidebar_creator_avatars(users: List[Dict[str, Any]]) -> None:
-    """并发为用户行写入 avatar_url（本地命中则换成本站 URL）。"""
+def apply_local_cached_avatar_urls_sync(users: List[Dict[str, Any]]) -> None:
+    """仅同步磁盘：已缓存的头像换成本站 URL，不阻塞网络（用户视图首屏）。"""
     if not users:
         return
-    sem = asyncio.Semaphore(6)
+    root = os.path.join(get_project_root(), USER_AVATARS_DIRNAME)
+    if not os.path.isdir(root):
+        return
+    stem_to_path: Dict[str, str] = {}
+    try:
+        for fn in os.listdir(root):
+            if fn.startswith(".") or fn == ".gitkeep":
+                continue
+            path = os.path.join(root, fn)
+            if not os.path.isfile(path):
+                continue
+            _stem, ext = os.path.splitext(fn)
+            if ext.lower() not in _AVATAR_EXTENSIONS:
+                continue
+            try:
+                if os.path.getsize(path) < _MIN_BYTES:
+                    continue
+            except OSError:
+                continue
+            if _stem not in stem_to_path:
+                stem_to_path[_stem] = path
+    except OSError:
+        return
 
-    async def _one(row: Dict[str, Any]) -> None:
+    for row in users:
+        if not isinstance(row, dict):
+            continue
         username = row.get("username") or ""
-        remote = (row.get("avatar_url") or "").strip()
+        if not _should_fetch_avatar(username):
+            continue
+        stem = sanitize_username_for_filename(username)
+        local = stem_to_path.get(stem)
+        if local:
+            row["avatar_url"] = public_url_for_local_avatar(local)
+
+
+async def _backfill_avatars_from_snapshot(snapshot: List[Dict[str, Any]]) -> None:
+    """后台：缺本地文件时按元数据 URL / Civitai API 下载落盘（不修改当前 HTTP 响应体）。"""
+    if not snapshot:
+        return
+    sem = asyncio.Semaphore(4)
+
+    async def _one(item: Dict[str, Any]) -> None:
+        username = item.get("username") or ""
+        remote = (item.get("avatar_url") or "").strip()
         async with sem:
             try:
-                row["avatar_url"] = await ensure_local_avatar_url(username, remote or None)
+                await ensure_local_avatar_url(username, remote or None)
             except asyncio.CancelledError:
                 raise
             except Exception as exc:
-                logger.debug("hydrate avatar %s: %s", username, exc)
+                logger.debug("avatar backfill %s: %s", username, exc)
 
-    await asyncio.gather(*(_one(u) for u in users))
+    await asyncio.gather(*(_one(x) for x in snapshot))
+
+
+def schedule_creator_avatar_backfill(users: List[Dict[str, Any]]) -> None:
+    """非阻塞调度后台下载；再次打开用户视图时 apply_local_cached_avatar_urls_sync 会命中本地文件。"""
+    if not users:
+        return
+    snapshot: List[Dict[str, str]] = []
+    for u in users:
+        if not isinstance(u, dict):
+            continue
+        username = u.get("username") or ""
+        if not _should_fetch_avatar(username):
+            continue
+        if find_local_avatar_file(username):
+            continue
+        snapshot.append(
+            {
+                "username": username,
+                "avatar_url": (u.get("avatar_url") or "").strip(),
+            }
+        )
+    if not snapshot:
+        return
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        return
+
+    def _task_done(t: asyncio.Task) -> None:
+        try:
+            t.result()
+        except asyncio.CancelledError:
+            pass
+        except Exception as exc:
+            logger.debug("avatar backfill task failed: %s", exc)
+
+    task = loop.create_task(_backfill_avatars_from_snapshot(snapshot))
+    task.add_done_callback(_task_done)
