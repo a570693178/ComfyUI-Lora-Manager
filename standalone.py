@@ -315,6 +315,10 @@ class StandaloneLoraManager(LoraManager):
         # Add static route for plugin assets
         app.router.add_static("/loras_static", config.static_path)
 
+        from py.services.user_avatar_cache import register_user_avatars_static_route
+
+        register_user_avatars_static_route(app)
+
         # Setup feature routes
         from py.services.model_service_factory import (
             ModelServiceFactory,

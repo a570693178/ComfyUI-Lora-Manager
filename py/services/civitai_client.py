@@ -586,3 +586,55 @@ class CivitaiClient:
         except Exception as exc:  # pragma: no cover - defensive logging
             logger.error("Error fetching models for %s: %s", username, exc)
             return None
+
+    async def fetch_creator_image_url(self, username: str) -> Optional[str]:
+        """按用户名解析 Civitai 创作者头像 URL（先 /users，再 models?limit=1）。"""
+        if not username or not isinstance(username, str):
+            return None
+        name = username.strip()
+        if not name or name.startswith("__"):
+            return None
+
+        try:
+            success, result = await self._make_request(
+                "GET",
+                f"{self.base_url}/users",
+                use_auth=True,
+                params={"username": name},
+            )
+            if success and isinstance(result, dict):
+                items = result.get("items")
+                if isinstance(items, list) and items:
+                    u0 = items[0]
+                    if isinstance(u0, dict):
+                        img = u0.get("image")
+                        if isinstance(img, str) and img.strip():
+                            return img.strip()
+        except RateLimitError:
+            raise
+        except Exception as exc:
+            logger.debug("fetch_creator_image_url /users %s: %s", name, exc)
+
+        try:
+            success, result = await self._make_request(
+                "GET",
+                f"{self.base_url}/models",
+                use_auth=True,
+                params={"username": name, "limit": 1},
+            )
+            if not success or not isinstance(result, dict):
+                return None
+            items = result.get("items")
+            if not isinstance(items, list) or not items:
+                return None
+            creator = items[0].get("creator")
+            if isinstance(creator, dict):
+                img = creator.get("image")
+                if isinstance(img, str) and img.strip():
+                    return img.strip()
+        except RateLimitError:
+            raise
+        except Exception as exc:
+            logger.debug("fetch_creator_image_url /models %s: %s", name, exc)
+
+        return None
