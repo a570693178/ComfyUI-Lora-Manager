@@ -786,12 +786,12 @@
 
 /*
  * 一级用户：「展开 | 头像 | 用户名 | 数量 | 收藏 | 排序」网格对齐
- * 侧栏约 230px；node-content 默认左右 padding 较大，一级行单独收紧避免星标被裁切
+ * 用户名用 1fr 吃剩余宽度，避免固定列总和超过侧栏时把末列压成几像素（排序出现「1…」）。
  */
 .sidebar-user-nav-user.sidebar-tree-node-content {
-    --sidebar-user-nav-name-w: 56px;
     display: grid;
-    grid-template-columns: 14px 28px var(--sidebar-user-nav-name-w) 30px 26px 22px;
+    /* 末列 46px：tabular-nums 下稳定容纳至少 3 位十进制数字 */
+    grid-template-columns: 12px 28px minmax(0, 1fr) 30px 22px 46px;
     column-gap: 4px;
     align-items: center;
     min-height: 34px;
@@ -807,7 +807,6 @@
 
 .sidebar-user-nav-username {
     width: 100%;
-    max-width: var(--sidebar-user-nav-name-w);
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -818,11 +817,15 @@
 
 @media (max-width: 260px) {
     .sidebar-user-nav-user.sidebar-tree-node-content {
-        --sidebar-user-nav-name-w: 48px;
-        grid-template-columns: 12px 26px var(--sidebar-user-nav-name-w) 26px 24px 20px;
+        grid-template-columns: 10px 24px minmax(0, 1fr) 28px 20px 44px;
         column-gap: 3px;
         padding-left: 4px;
         padding-right: 4px;
+    }
+
+    .sidebar-user-nav-user .sidebar-user-nav-avatar-wrap {
+        width: 24px;
+        height: 24px;
     }
 }
 
@@ -896,17 +899,27 @@
 }
 
 .sidebar-user-nav-sortnum {
-    min-width: 1ch;
-    max-width: 6ch;
     font-size: 0.72rem;
     font-variant-numeric: tabular-nums;
     opacity: 0.82;
     flex-shrink: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
     text-align: center;
-    justify-self: center;
+    justify-self: stretch;
+    align-self: center;
+    box-sizing: border-box;
+    padding: 0 2px;
+    /* 禁止父级挤压后出现省略号；列宽由 grid 末列保证 */
+    min-width: 0;
+    max-width: none;
+    width: 100%;
+    overflow: visible;
+    text-overflow: clip;
+}
+
+/* 一级行末列：网格已留宽，单元格内数字不被当成「可压缩省略」 */
+.sidebar-user-nav-user .sidebar-user-nav-sortnum {
+    min-width: 3ch;
 }
 
 .sidebar-user-nav-user .sidebar-user-nav-modelcount {

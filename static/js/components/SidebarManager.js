@@ -2089,7 +2089,9 @@ export class SidebarManager {
     }
 
     /**
-     * 一级用户排序：模型数量降序 → 数字 sortRank 升序 → 收藏优先 → id
+     * 一级用户排序（与界面一致）：
+     * - 已设自定义数字 sortRank：数字越小越靠前；未设置视为「无自定义」，排在所有已设数字之后
+     * - 同档内：收藏优先，再按模型数量降序，最后 id 稳定排序
      * @param {string[]} childIds
      * @param {Record<string, any>} meta
      * @param {(id: string) => number} getCount
@@ -2097,19 +2099,15 @@ export class SidebarManager {
     _sortUserNavLevel1Users(childIds, meta, getCount) {
         const fav = meta.fav || {};
         const sortRank = meta.sortRank || {};
-        const rankOf = (id) => {
+        /** 无自定义排序：用 Infinity 保证排在任意有限 rank 之后 */
+        const rankKey = (id) => {
             const v = sortRank[id];
-            return Number.isFinite(v) ? v : 1_000_000;
+            return Number.isFinite(v) ? v : Number.POSITIVE_INFINITY;
         };
         const countOf = (id) => (typeof getCount === 'function' ? (getCount(id) || 0) : 0);
         return [...childIds].sort((a, b) => {
-            const ca = countOf(a);
-            const cb = countOf(b);
-            if (ca !== cb) {
-                return cb - ca;
-            }
-            const ra = rankOf(a);
-            const rb = rankOf(b);
+            const ra = rankKey(a);
+            const rb = rankKey(b);
             if (ra !== rb) {
                 return ra - rb;
             }
@@ -2117,6 +2115,11 @@ export class SidebarManager {
             const fb = fav[b] ? 0 : 1;
             if (fa !== fb) {
                 return fa - fb;
+            }
+            const ca = countOf(a);
+            const cb = countOf(b);
+            if (ca !== cb) {
+                return cb - ca;
             }
             return a.localeCompare(b);
         });
