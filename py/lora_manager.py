@@ -152,7 +152,9 @@ class LoraManager:
         # Add static route for plugin assets
         app.router.add_static("/loras_static", config.static_path)
 
-        from py.services.user_avatar_cache import register_user_avatars_static_route
+        # 使用包内相对导入：ComfyUI 以 spec 加载扩展时，顶层 `py` 不一定在 sys.path 上，
+        # 绝对导入 `from py.services...` 会触发 ModuleNotFoundError。
+        from .services.user_avatar_cache import register_user_avatars_static_route
 
         register_user_avatars_static_route(app)
 

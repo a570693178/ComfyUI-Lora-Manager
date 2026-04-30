@@ -1,11 +1,14 @@
 import importlib
 import logging
+import os
 import re
+import threading
+from collections import OrderedDict
 
 import comfy.sd  # type: ignore
 import comfy.utils  # type: ignore
 
-from ..utils.utils import get_lora_info_absolute
+from ..utils.utils import get_lora_info_absolute, get_lora_info_absolute_bulk
 from .utils import (
     FlexibleOptionalInputType,
     any_type,
@@ -16,6 +19,9 @@ from .utils import (
 )
 
 logger = logging.getLogger(__name__)
+_LORA_WEIGHT_CACHE_LOCK = threading.Lock()
+_LORA_WEIGHT_CACHE: "OrderedDict[tuple[str, int], object]" = OrderedDict()
+_LORA_WEIGHT_CACHE_MAX_SIZE = max(1, int(os.environ.get("LORA_MANAGER_LORA_CACHE_SIZE", "16")))
 
 
 def _get_nunchaku_load_qwen_loras():
@@ -28,14 +34,39 @@ def _get_nunchaku_load_qwen_loras():
     return module.nunchaku_load_qwen_loras
 
 
-def _collect_stack_entries(lora_stack):
+def _load_lora_weights_cached(absolute_path):
+    """Load LoRA weights with a small in-process LRU cache."""
+    try:
+        mtime_ns = os.stat(absolute_path).st_mtime_ns
+    except OSError:
+        # Fallback: load directly if file stat is unavailable.
+        return comfy.utils.load_torch_file(absolute_path, safe_load=True)
+
+    cache_key = (absolute_path, mtime_ns)
+    with _LORA_WEIGHT_CACHE_LOCK:
+        cached = _LORA_WEIGHT_CACHE.pop(cache_key, None)
+        if cached is not None:
+            _LORA_WEIGHT_CACHE[cache_key] = cached
+            return cached
+
+    weights = comfy.utils.load_torch_file(absolute_path, safe_load=True)
+    with _LORA_WEIGHT_CACHE_LOCK:
+        _LORA_WEIGHT_CACHE[cache_key] = weights
+        while len(_LORA_WEIGHT_CACHE) > _LORA_WEIGHT_CACHE_MAX_SIZE:
+            _LORA_WEIGHT_CACHE.popitem(last=False)
+    return weights
+
+
+def _collect_stack_entries(lora_stack, lora_lookup):
     entries = []
     if not lora_stack:
         return entries
 
     for lora_path, model_strength, clip_strength in lora_stack:
         lora_name = extract_lora_name(lora_path)
-        absolute_lora_path, trigger_words = get_lora_info_absolute(lora_name)
+        absolute_lora_path, trigger_words = lora_lookup.get(
+            lora_name, get_lora_info_absolute(lora_name)
+        )
         entries.append({
             "name": lora_name,
             "absolute_path": absolute_lora_path,
@@ -47,7 +78,7 @@ def _collect_stack_entries(lora_stack):
     return entries
 
 
-def _collect_widget_entries(kwargs):
+def _collect_widget_entries(kwargs, lora_lookup):
     entries = []
     for lora in get_loras_list(kwargs):
         if not lora.get("active", False):
@@ -55,7 +86,9 @@ def _collect_widget_entries(kwargs):
         lora_name = lora["name"]
         model_strength = float(lora["strength"])
         clip_strength = float(lora.get("clipStrength", model_strength))
-        lora_path, trigger_words = get_lora_info_absolute(lora_name)
+        lora_path, trigger_words = lora_lookup.get(
+            lora_name, get_lora_info_absolute(lora_name)
+        )
         entries.append({
             "name": lora_name,
             "absolute_path": lora_path,
@@ -103,7 +136,7 @@ def _apply_entries(model, clip, lora_entries, nunchaku_model_kind):
         if nunchaku_model_kind == "flux":
             model = nunchaku_load_lora(model, entry["input_path"], entry["model_strength"])
         else:
-            lora = comfy.utils.load_torch_file(entry["absolute_path"], safe_load=True)
+            lora = _load_lora_weights_cached(entry["absolute_path"])
             model, clip = comfy.sd.load_lora_for_models(
                 model,
                 clip,
@@ -149,8 +182,16 @@ class LoraLoaderLM:
         """Loads multiple LoRAs based on the kwargs input and lora_stack."""
         del text
         clip = kwargs.get("clip", None)
-        lora_entries = _collect_stack_entries(kwargs.get("lora_stack", None))
-        lora_entries.extend(_collect_widget_entries(kwargs))
+        lora_names = set()
+        for lora_path, _, _ in kwargs.get("lora_stack", None) or []:
+            lora_names.add(extract_lora_name(lora_path))
+        for lora in get_loras_list(kwargs):
+            if lora.get("active", False):
+                lora_names.add(lora["name"])
+        lora_lookup = get_lora_info_absolute_bulk(lora_names)
+
+        lora_entries = _collect_stack_entries(kwargs.get("lora_stack", None), lora_lookup)
+        lora_entries.extend(_collect_widget_entries(kwargs, lora_lookup))
 
         nunchaku_model_kind = detect_nunchaku_model_kind(model)
         if nunchaku_model_kind == "flux":
@@ -205,9 +246,16 @@ class LoraTextLoaderLM:
 
     def load_loras_from_text(self, model, lora_syntax, clip=None, lora_stack=None):
         """Load LoRAs based on text syntax input."""
-        lora_entries = _collect_stack_entries(lora_stack)
-        for lora in self.parse_lora_syntax(lora_syntax):
-            lora_path, trigger_words = get_lora_info_absolute(lora["name"])
+        parsed_loras = self.parse_lora_syntax(lora_syntax)
+        lora_names = {extract_lora_name(lora_path) for lora_path, _, _ in (lora_stack or [])}
+        lora_names.update(lora["name"] for lora in parsed_loras)
+        lora_lookup = get_lora_info_absolute_bulk(lora_names)
+
+        lora_entries = _collect_stack_entries(lora_stack, lora_lookup)
+        for lora in parsed_loras:
+            lora_path, trigger_words = lora_lookup.get(
+                lora["name"], get_lora_info_absolute(lora["name"])
+            )
             lora_entries.append({
                 "name": lora["name"],
                 "absolute_path": lora_path,

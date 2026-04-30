@@ -1,68 +1,76 @@
 from difflib import SequenceMatcher
 import os
 import re
-from typing import Dict
+from typing import Dict, Iterable, List, Mapping, Tuple
 from ..services.service_registry import ServiceRegistry
 from ..config import config
 from ..services.settings_manager import get_settings_manager
 import asyncio
+import concurrent.futures
+
+
+_ASYNC_BRIDGE_EXECUTOR = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+
+
+def _run_async_compatible(coro_factory):
+    """Run an async coroutine from both sync and async contexts with minimal overhead."""
+    try:
+        asyncio.get_running_loop()
+
+        def run_in_thread():
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            try:
+                return new_loop.run_until_complete(coro_factory())
+            finally:
+                new_loop.close()
+
+        future = _ASYNC_BRIDGE_EXECUTOR.submit(run_in_thread)
+        return future.result()
+    except RuntimeError:
+        return asyncio.run(coro_factory())
+
+
+def _extract_trigger_words(item: Mapping) -> List[str]:
+    civitai = item.get("civitai", {}) if isinstance(item, Mapping) else {}
+    trigger_words = civitai.get("trainedWords", []) if isinstance(civitai, Mapping) else []
+    if isinstance(trigger_words, list):
+        return trigger_words
+    return []
+
+
+async def _build_lora_lookup_absolute() -> Dict[str, Tuple[str, List[str]]]:
+    """Build a filename -> (absolute path, trigger words) lookup in one cache scan."""
+    scanner = await ServiceRegistry.get_lora_scanner()
+    cache = await scanner.get_cached_data()
+    lookup: Dict[str, Tuple[str, List[str]]] = {}
+    for item in cache.raw_data:
+        file_name = item.get("file_name")
+        file_path = item.get("file_path")
+        if not file_name or not file_path:
+            continue
+        # Keep first match for deterministic behavior with duplicate names.
+        lookup.setdefault(file_name, (file_path, _extract_trigger_words(item)))
+    return lookup
 
 
 def get_lora_info(lora_name):
     """Get the lora path and trigger words from cache"""
 
     async def _get_lora_info_async():
-        scanner = await ServiceRegistry.get_lora_scanner()
-        cache = await scanner.get_cached_data()
-
-        for item in cache.raw_data:
-            if item.get("file_name") == lora_name:
-                file_path = item.get("file_path")
-                if file_path:
-                    # Check all lora roots including extra paths
-                    all_roots = list(config.loras_roots or []) + list(
-                        config.extra_loras_roots or []
-                    )
-                    for root in all_roots:
-                        root = root.replace(os.sep, "/")
-                        if file_path.startswith(root):
-                            relative_path = os.path.relpath(file_path, root).replace(
-                                os.sep, "/"
-                            )
-                            # Get trigger words from civitai metadata
-                            civitai = item.get("civitai", {})
-                            trigger_words = (
-                                civitai.get("trainedWords", []) if civitai else []
-                            )
-                            return relative_path, trigger_words
-                    # If not found in any root, return path with trigger words from cache
-                    civitai = item.get("civitai", {})
-                    trigger_words = civitai.get("trainedWords", []) if civitai else []
-                    return file_path, trigger_words
+        absolute_lookup = await _build_lora_lookup_absolute()
+        file_path, trigger_words = absolute_lookup.get(lora_name, (None, []))
+        if file_path:
+            all_roots = list(config.loras_roots or []) + list(config.extra_loras_roots or [])
+            for root in all_roots:
+                root = root.replace(os.sep, "/")
+                if file_path.startswith(root):
+                    relative_path = os.path.relpath(file_path, root).replace(os.sep, "/")
+                    return relative_path, trigger_words
+            return file_path, trigger_words
         return lora_name, []
 
-    try:
-        # Check if we're already in an event loop
-        loop = asyncio.get_running_loop()
-        # If we're in a running loop, we need to use a different approach
-        # Create a new thread to run the async code
-        import concurrent.futures
-
-        def run_in_thread():
-            new_loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(new_loop)
-            try:
-                return new_loop.run_until_complete(_get_lora_info_async())
-            finally:
-                new_loop.close()
-
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            future = executor.submit(run_in_thread)
-            return future.result()
-
-    except RuntimeError:
-        # No event loop is running, we can use asyncio.run()
-        return asyncio.run(_get_lora_info_async())
+    return _run_async_compatible(_get_lora_info_async)
 
 
 def get_lora_info_absolute(lora_name):
@@ -74,42 +82,29 @@ def get_lora_info_absolute(lora_name):
     """
 
     async def _get_lora_info_absolute_async():
-        scanner = await ServiceRegistry.get_lora_scanner()
-        cache = await scanner.get_cached_data()
-
-        for item in cache.raw_data:
-            if item.get("file_name") == lora_name:
-                file_path = item.get("file_path")
-                if file_path:
-                    # Return absolute path directly
-                    # Get trigger words from civitai metadata
-                    civitai = item.get("civitai", {})
-                    trigger_words = civitai.get("trainedWords", []) if civitai else []
-                    return file_path, trigger_words
+        absolute_lookup = await _build_lora_lookup_absolute()
+        file_path, trigger_words = absolute_lookup.get(lora_name, (None, []))
+        if file_path:
+            return file_path, trigger_words
         return lora_name, []
 
-    try:
-        # Check if we're already in an event loop
-        loop = asyncio.get_running_loop()
-        # If we're in a running loop, we need to use a different approach
-        # Create a new thread to run the async code
-        import concurrent.futures
+    return _run_async_compatible(_get_lora_info_absolute_async)
 
-        def run_in_thread():
-            new_loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(new_loop)
-            try:
-                return new_loop.run_until_complete(_get_lora_info_absolute_async())
-            finally:
-                new_loop.close()
 
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            future = executor.submit(run_in_thread)
-            return future.result()
+def get_lora_info_absolute_bulk(lora_names: Iterable[str]) -> Dict[str, Tuple[str, List[str]]]:
+    """Resolve multiple LoRA names in one cache pass for better large-library performance."""
+    requested = [name for name in lora_names if name]
+    if not requested:
+        return {}
 
-    except RuntimeError:
-        # No event loop is running, we can use asyncio.run()
-        return asyncio.run(_get_lora_info_absolute_async())
+    async def _resolve_bulk():
+        absolute_lookup = await _build_lora_lookup_absolute()
+        resolved: Dict[str, Tuple[str, List[str]]] = {}
+        for name in requested:
+            resolved[name] = absolute_lookup.get(name, (name, []))
+        return resolved
+
+    return _run_async_compatible(_resolve_bulk)
 
 
 def get_checkpoint_info_absolute(checkpoint_name):
