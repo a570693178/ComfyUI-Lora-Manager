@@ -87,6 +87,8 @@ class BaseModelService(ABC):
         credit_required: Optional[bool] = None,
         allow_selling_generated_content: Optional[bool] = None,
         tag_logic: str = "any",
+        creator: str | None = None,
+        creator_tag: str | None = None,
         **kwargs,
     ) -> Dict[str, Any]:
         """Get paginated and filtered model data"""
@@ -225,6 +227,8 @@ class BaseModelService(ABC):
                 favorites_only=favorites_only,
                 search_options=search_options,
                 tag_logic=tag_logic,
+                creator=creator,
+                creator_tag=creator_tag,
             )
 
             if search:
@@ -488,6 +492,8 @@ class BaseModelService(ABC):
         favorites_only: bool = False,
         search_options: dict[str, Any] | None = None,
         tag_logic: str = "any",
+        creator: str | None = None,
+        creator_tag: str | None = None,
     ) -> List[Dict[str, Any]]:
         """Apply common filters that work across all model types"""
         normalized_options = self.search_strategy.normalize_options(search_options)
@@ -502,6 +508,8 @@ class BaseModelService(ABC):
             favorites_only=favorites_only,
             search_options=normalized_options,
             tag_logic=tag_logic,
+            creator=creator,
+            creator_tag=creator_tag,
         )
         return self.filter_set.apply(data, criteria)
 
@@ -876,6 +884,53 @@ class BaseModelService(ABC):
     async def get_top_tags(self, limit: int = 20) -> List[Dict[str, Any]]:
         """Get top tags sorted by frequency"""
         return await self.scanner.get_top_tags(limit)
+
+    async def get_creators(self) -> List[Dict[str, Any]]:
+        """Aggregate creators from the cache for the user view.
+
+        Groups every cached model by its CivitAI creator username and, within
+        each creator, counts the distribution of tags. Models without creator
+        metadata are skipped (they cannot be attributed to a user). The result
+        is sorted by model count (descending) with a case-insensitive username
+        tiebreak; the frontend re-sorts according to its own preferences.
+        """
+        cache = await self.scanner.get_cached_data()
+
+        users: Dict[str, Dict[str, Any]] = {}
+        for item in cache.raw_data:
+            civitai = item.get("civitai") if isinstance(item, dict) else None
+            creator_info = (civitai or {}).get("creator") or {}
+            username = (creator_info.get("username") or "").strip()
+            if not username:
+                continue
+
+            info = users.get(username)
+            if info is None:
+                info = {"username": username, "count": 0, "tags": {}}
+                users[username] = info
+            info["count"] += 1
+
+            for tag in item.get("tags") or []:
+                if not isinstance(tag, str) or not tag:
+                    continue
+                info["tags"][tag] = info["tags"].get(tag, 0) + 1
+
+        result: List[Dict[str, Any]] = []
+        for info in users.values():
+            tags_sorted = sorted(
+                info["tags"].items(), key=lambda kv: (-kv[1], kv[0].lower())
+            )
+            result.append(
+                {
+                    "username": info["username"],
+                    "count": info["count"],
+                    "tags": [{"tag": tag, "count": count} for tag, count in tags_sorted],
+                }
+            )
+
+        result.sort(key=lambda u: (-u["count"], u["username"].lower()))
+        return result
+
 
     async def search_tags(
         self, query: str, limit: int = 50

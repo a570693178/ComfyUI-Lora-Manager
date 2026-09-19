@@ -1312,6 +1312,23 @@ export class BaseModelApiClient {
         }
     }
 
+    /**
+     * Fetch creators (CivitAI users) aggregated from the model cache.
+     * Returns { success, creators: [{ username, count, tags: [{ tag, count }] }] }
+     */
+    async fetchCreators() {
+        try {
+            const response = await fetch(this.apiConfig.endpoints.creators);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch creators: ${response.statusText}`);
+            }
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching creators:', error);
+            throw error;
+        }
+    }
+
     async createFolder(folderPath) {
         const response = await fetch(this.apiConfig.endpoints.createFolder, {
             method: 'POST',
@@ -1539,6 +1556,14 @@ export class BaseModelApiClient {
 
         if (!isExcludedView && pageState.activeFolder !== null) {
             params.append('folder', pageState.activeFolder);
+        }
+
+        // User-view selection: creator + optional tag scoped to that creator.
+        if (!isExcludedView && pageState.activeCreator) {
+            params.append('creator', pageState.activeCreator);
+            if (pageState.activeCreatorTag) {
+                params.append('creator_tag', pageState.activeCreatorTag);
+            }
         }
 
         if (!isExcludedView && pageState.showFavoritesOnly) {

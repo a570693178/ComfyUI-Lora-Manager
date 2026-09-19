@@ -30,7 +30,7 @@ export class SidebarManager {
         this.apiClient = null;
         this.openDropdown = null;
         this.isInitialized = false;
-        this.displayMode = 'tree'; // 'tree' or 'list'
+        this.displayMode = 'tree'; // 'tree', 'list' or 'user'
         this.foldersList = [];
         this.recursiveSearchEnabled = true;
         this.draggedFilePaths = null;
@@ -53,6 +53,18 @@ export class SidebarManager {
         this._pendingDeleteFolderPath = null;
         this._deleteFolderModalWired = false;
 
+        // User view state (displayMode === 'user')
+        this.creatorsData = [];          // [{ username, count, tags: [{ tag, count }] }]
+        this.userTreeLoaded = false;
+        this.selectedUser = null;        // currently selected creator username
+        this.selectedUserTag = null;     // optional tag scoped to selectedUser
+        this.favoriteUsers = new Set();  // favorited creator usernames
+        this.userCustomOrder = [];       // manually ordered usernames (priority sort)
+        this.userCountOrder = 'desc';    // 'desc' (most models first) or 'asc'
+        this.expandedUsers = new Set();  // expanded creator nodes
+        this._draggingUser = null;
+        this._userDropIndicator = null;  // 'above' | 'below'
+
         // Bind methods
         this.handleTreeClick = this.handleTreeClick.bind(this);
         this.handleTreeContextMenu = this.handleTreeContextMenu.bind(this);
@@ -73,6 +85,11 @@ export class SidebarManager {
         this.handleFolderDragOver = this.handleFolderDragOver.bind(this);
         this.handleFolderDragLeave = this.handleFolderDragLeave.bind(this);
         this.handleFolderDrop = this.handleFolderDrop.bind(this);
+        this.handleUserDragStart = this.handleUserDragStart.bind(this);
+        this.handleUserDragOver = this.handleUserDragOver.bind(this);
+        this.handleUserDragLeave = this.handleUserDragLeave.bind(this);
+        this.handleUserDrop = this.handleUserDrop.bind(this);
+        this.handleUserDragEnd = this.handleUserDragEnd.bind(this);
         this.handleCreateFolderSubmit = this.handleCreateFolderSubmit.bind(this);
         this.handleCreateFolderCancel = this.handleCreateFolderCancel.bind(this);
         this.handleHideToggle = this.handleHideToggle.bind(this);
@@ -98,8 +115,8 @@ export class SidebarManager {
 
         this.setupEventHandlers();
         this.initializeDragAndDrop();
-        this.updateSidebarTitle();
         this.restoreSidebarState();
+        this.updateSidebarTitle();
         // Apply DOM visibility based on per-page state
         this.updateDomVisibility();
         await this.loadFolderTree();
@@ -144,6 +161,18 @@ export class SidebarManager {
         this._renameFolderPath = null;
         this._renameFolderNode = null;
         this._pendingDeleteFolderPath = null;
+
+        // Reset user-view state
+        this.creatorsData = [];
+        this.userTreeLoaded = false;
+        this.selectedUser = null;
+        this.selectedUserTag = null;
+        this.favoriteUsers = new Set();
+        this.userCustomOrder = [];
+        this.userCountOrder = 'desc';
+        this.expandedUsers = new Set();
+        this._draggingUser = null;
+        this._userDropIndicator = null;
 
         // Reset container margin
         const container = document.querySelector('.container');
@@ -366,6 +395,7 @@ export class SidebarManager {
     }
 
     handleFolderDragEnter(event) {
+        if (this.displayMode === 'user') return; // no folder drop targets in user view
         if (!this.draggedFilePaths || this.draggedFilePaths.length === 0) return;
 
         const folderElement = this.getFolderElementFromEvent(event);
@@ -382,6 +412,7 @@ export class SidebarManager {
     }
 
     handleFolderDragOver(event) {
+        if (this.displayMode === 'user') return; // no folder drop targets in user view
         if (!this.draggedFilePaths || this.draggedFilePaths.length === 0) return;
 
         const folderElement = this.getFolderElementFromEvent(event);
@@ -410,6 +441,7 @@ export class SidebarManager {
     }
 
     async handleFolderDrop(event) {
+        if (this.displayMode === 'user') return; // no folder drop targets in user view
         if (!this.draggedFilePaths || this.draggedFilePaths.length === 0) return;
 
         const folderElement = this.getFolderElementFromEvent(event);
@@ -1174,7 +1206,9 @@ export class SidebarManager {
     updateSidebarTitle() {
         const sidebarTitle = document.getElementById('sidebarTitle');
         if (sidebarTitle) {
-            sidebarTitle.textContent = translate('sidebar.modelRoot');
+            sidebarTitle.textContent = this.displayMode === 'user'
+                ? translate('sidebar.usersTitle', {}, 'Users')
+                : translate('sidebar.modelRoot');
         }
     }
 
@@ -1221,6 +1255,12 @@ export class SidebarManager {
         if (folderTree) {
             folderTree.addEventListener('click', this.handleTreeClick);
             folderTree.addEventListener('contextmenu', this.handleTreeContextMenu);
+            // User-view reorder drag (delegated; handlers no-op outside user mode)
+            folderTree.addEventListener('dragstart', this.handleUserDragStart);
+            folderTree.addEventListener('dragover', this.handleUserDragOver);
+            folderTree.addEventListener('dragleave', this.handleUserDragLeave);
+            folderTree.addEventListener('drop', this.handleUserDrop);
+            folderTree.addEventListener('dragend', this.handleUserDragEnd);
         }
 
         // Breadcrumb click handler
@@ -1294,6 +1334,15 @@ export class SidebarManager {
 
     handleCollapseAll(event) {
         event?.stopPropagation();
+
+        if (this.displayMode === 'user') {
+            this.expandedUsers.clear();
+            this.saveExpandedUsers();
+            this.renderUserTree();
+            this.updateTreeSelection();
+            return;
+        }
+
         this.expandedNodes.clear();
         this.renderFolderDisplay();
         this.saveExpandedState();
@@ -1395,6 +1444,11 @@ export class SidebarManager {
 
     async loadFolderTree() {
         try {
+            if (this.displayMode === 'user') {
+                await this.loadUserTree();
+                return;
+            }
+
             const supportsEmptyFolders = this._supportsFolderManagement();
             // The full folder list (including empty directories) and the
             // models-only list are both always fetched: the first is the
@@ -1533,7 +1587,9 @@ export class SidebarManager {
     }
 
     renderFolderDisplay() {
-        if (this.displayMode === 'tree') {
+        if (this.displayMode === 'user') {
+            this.renderUserTree();
+        } else if (this.displayMode === 'tree') {
             this.renderTree();
         } else {
             this.renderFolderList();
@@ -1648,6 +1704,11 @@ export class SidebarManager {
         // Clicks on the inline create-folder row must not select/toggle nodes
         if (event.target.closest('.sidebar-create-folder-node')) return;
 
+        if (this.displayMode === 'user') {
+            this.handleUserTreeClick(event);
+            return;
+        }
+
         if (this.displayMode === 'list') {
             this.handleFolderListClick(event);
             return;
@@ -1682,6 +1743,9 @@ export class SidebarManager {
     }
 
     handleTreeContextMenu(event) {
+        // No folder context menu in user view
+        if (this.displayMode === 'user') return;
+
         // No context menu on the inline create-folder row
         if (event.target.closest('.sidebar-create-folder-node')) return;
 
@@ -1818,6 +1882,11 @@ export class SidebarManager {
     }
 
     handleBreadcrumbClick(event) {
+        if (this.displayMode === 'user') {
+            this.handleUserBreadcrumbClick(event);
+            return;
+        }
+
         const breadcrumbItem = event.target.closest('.sidebar-breadcrumb-item');
         const dropdownItem = event.target.closest('.breadcrumb-dropdown-item');
 
@@ -1860,6 +1929,15 @@ export class SidebarManager {
     }
 
     async selectFolder(path) {
+        // In user view there are no folder targets; selecting the root
+        // (header click) clears the user/tag filter instead.
+        if (this.displayMode === 'user') {
+            if (!path) {
+                await this.selectUser(null, null);
+            }
+            return;
+        }
+
         // Normalize path: null or undefined means root
         const normalizedPath = (path === null || path === undefined) ? '' : path;
 
@@ -1890,12 +1968,498 @@ export class SidebarManager {
 
     handleDisplayModeToggle(event) {
         event?.stopPropagation();
-        this.displayMode = this.displayMode === 'tree' ? 'list' : 'tree';
+        // Legacy tree/list flip; the view-options menu uses setDisplayMode()
+        this.setDisplayMode(this.displayMode === 'tree' ? 'list' : 'tree');
+    }
+
+    /**
+     * Switch the sidebar display mode ('tree' | 'list' | 'user').
+     *
+     * Folder and user selections are mutually exclusive: entering the user
+     * view drops any active folder filter, leaving it drops the creator
+     * filter. The grid is reloaded once when the effective filters changed.
+     */
+    async setDisplayMode(mode) {
+        if (!['tree', 'list', 'user'].includes(mode)) return;
+        if (this.displayMode === mode) return;
+
+        const previousMode = this.displayMode;
+        const pageState = this.pageControls?.pageState;
+        const hadFolderFilter = Boolean(pageState?.activeFolder);
+        const hadCreatorFilter = Boolean(pageState?.activeCreator);
+
+        this.displayMode = mode;
+        this.saveDisplayMode();
+
+        if (mode === 'user' && previousMode !== 'user') {
+            // Entering user view: clear folder filter state
+            this.selectedPath = '';
+            if (pageState) {
+                pageState.activeFolder = '';
+            }
+            setStorageItem(`${this.pageType}_activeFolder`, '');
+        }
+        if (previousMode === 'user' && mode !== 'user') {
+            // Leaving user view: clear creator filter state
+            this._clearUserSelection({ reload: false });
+        }
+
         this.updateViewOptionsMenu();
         this.updateCollapseAllButton();
         this.updateSearchRecursiveOption();
-        this.saveDisplayMode();
-        this.loadFolderTree(); // Reload with new display mode
+        this.updateFolderManagementButtons();
+        this.updateSidebarTitle();
+
+        await this.loadFolderTree();
+        const creatorRestored = this.restoreSelectedFolder();
+
+        const needsReload = this.isInitialized && (
+            (mode === 'user' && (hadFolderFilter || creatorRestored)) ||
+            (previousMode === 'user' && hadCreatorFilter)
+        );
+        if (needsReload && typeof this.pageControls?.resetAndReload === 'function') {
+            try {
+                await this.pageControls.resetAndReload();
+            } catch (error) {
+                console.error('Failed to reload models after display mode change:', error);
+            }
+        }
+    }
+
+    // ===== User view (creators → tags) =====
+
+    /**
+     * Restore user-view preferences from storage. Called by
+     * restoreSidebarState() so the mode-specific state is ready before the
+     * first render.
+     */
+    restoreUserViewState() {
+        this.favoriteUsers = new Set(
+            Object.keys(getStorageItem(`${this.pageType}_favoriteUsers`, {}) || {})
+        );
+        const customOrder = getStorageItem(`${this.pageType}_userCustomOrder`, []);
+        this.userCustomOrder = Array.isArray(customOrder) ? customOrder.filter(u => typeof u === 'string') : [];
+        const countOrder = getStorageItem(`${this.pageType}_userCountOrder`, 'desc');
+        this.userCountOrder = countOrder === 'asc' ? 'asc' : 'desc';
+        const expandedUsers = getStorageItem(`${this.pageType}_expandedUsers`, []);
+        this.expandedUsers = new Set(Array.isArray(expandedUsers) ? expandedUsers : []);
+    }
+
+    saveFavoriteUsers() {
+        setStorageItem(`${this.pageType}_favoriteUsers`, Object.fromEntries(this.favoriteUsers));
+    }
+
+    saveUserCustomOrder() {
+        setStorageItem(`${this.pageType}_userCustomOrder`, this.userCustomOrder);
+    }
+
+    saveExpandedUsers() {
+        setStorageItem(`${this.pageType}_expandedUsers`, Array.from(this.expandedUsers));
+    }
+
+    async loadUserTree() {
+        try {
+            const response = await this.apiClient.fetchCreators();
+            this.creatorsData = Array.isArray(response?.creators) ? response.creators : [];
+            this.userTreeLoaded = true;
+            this.renderUserTree();
+        } catch (error) {
+            this.userTreeLoaded = false;
+            this.creatorsData = [];
+            console.error('Failed to load creators:', error);
+            this.renderUserEmptyState(true);
+        }
+    }
+
+    /**
+     * Sort creators for the user view: custom order first, then favorites,
+     * then model count (direction from userCountOrder), name as tiebreak.
+     */
+    _sortCreators(creators) {
+        const order = this.userCustomOrder;
+        const favorites = this.favoriteUsers;
+        const direction = this.userCountOrder === 'asc' ? 1 : -1;
+
+        return [...creators].sort((a, b) => {
+            const indexA = order.indexOf(a.username);
+            const indexB = order.indexOf(b.username);
+            if (indexA !== -1 || indexB !== -1) {
+                if (indexA === -1) return 1;
+                if (indexB === -1) return -1;
+                return indexA - indexB;
+            }
+            const favA = favorites.has(a.username);
+            const favB = favorites.has(b.username);
+            if (favA !== favB) return favA ? -1 : 1;
+            if (a.count !== b.count) return (a.count - b.count) * direction;
+            return a.username.localeCompare(b.username);
+        });
+    }
+
+    renderUserTree() {
+        const folderTree = document.getElementById('sidebarFolderTree');
+        if (!folderTree) return;
+
+        if (!this.creatorsData || this.creatorsData.length === 0) {
+            this.renderUserEmptyState(false);
+            return;
+        }
+
+        const sortedUsers = this._sortCreators(this.creatorsData);
+        folderTree.innerHTML = sortedUsers.map(user => this._renderUserNode(user)).join('');
+    }
+
+    _renderUserNode(user) {
+        const username = user.username;
+        const isExpanded = this.expandedUsers.has(username);
+        const isFav = this.favoriteUsers.has(username);
+        const isSelected = this.selectedUser === username && !this.selectedUserTag;
+        const escapedUsernameAttr = escapeAttribute(username);
+        const escapedUsername = escapeHtml(username);
+        const favTitle = escapeAttribute(translate(
+            'sidebar.favoriteUser', {}, 'Favorite user (favorites sort first)'
+        ));
+
+        const tagsHtml = (user.tags || []).map(tagInfo => this._renderUserTagNode(username, tagInfo)).join('');
+
+        return `
+            <div class="sidebar-tree-node sidebar-user-node" draggable="true" data-user-node="${escapedUsernameAttr}">
+                <div class="sidebar-tree-node-content ${isSelected ? 'selected' : ''}" data-user-node="${escapedUsernameAttr}">
+                    <div class="sidebar-tree-expand-icon ${isExpanded ? 'expanded' : ''}">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                    <i class="fas fa-user sidebar-tree-folder-icon"></i>
+                    <div class="sidebar-tree-folder-name" title="${escapedUsernameAttr}">${escapedUsername}</div>
+                    <span class="sidebar-user-model-count">${user.count}</span>
+                    <button class="sidebar-user-fav-btn ${isFav ? 'active' : ''}"
+                            data-user-fav="${escapedUsernameAttr}"
+                            title="${favTitle}">
+                        <i class="${isFav ? 'fas' : 'far'} fa-star"></i>
+                    </button>
+                </div>
+                <div class="sidebar-tree-children ${isExpanded ? 'expanded' : ''}">
+                    ${tagsHtml}
+                </div>
+            </div>
+        `;
+    }
+
+    _renderUserTagNode(username, tagInfo) {
+        const isSelected = this.selectedUser === username && this.selectedUserTag === tagInfo.tag;
+        const escapedTagAttr = escapeAttribute(tagInfo.tag);
+        const escapedTag = escapeHtml(tagInfo.tag);
+
+        return `
+            <div class="sidebar-tree-node sidebar-user-tag-node">
+                <div class="sidebar-tree-node-content ${isSelected ? 'selected' : ''}"
+                     data-user-node="${escapeAttribute(username)}"
+                     data-tag-node="${escapedTagAttr}">
+                    <div class="sidebar-tree-expand-icon" style="opacity: 0; pointer-events: none;">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                    <i class="fas fa-tag sidebar-tree-folder-icon"></i>
+                    <div class="sidebar-tree-folder-name" title="${escapedTagAttr}">${escapedTag}</div>
+                    <span class="sidebar-user-model-count">${tagInfo.count}</span>
+                </div>
+            </div>
+        `;
+    }
+
+    renderUserEmptyState(isError) {
+        const folderTree = document.getElementById('sidebarFolderTree');
+        if (!folderTree) return;
+
+        folderTree.innerHTML = `
+            <div class="sidebar-tree-placeholder">
+                <i class="fas fa-${isError ? 'triangle-exclamation' : 'users'}"></i>
+                <div>${translate(
+                    isError ? 'sidebar.usersLoadFailed' : 'sidebar.noUsers',
+                    {},
+                    isError ? 'Failed to load creator data' : 'No creator data found'
+                )}</div>
+            </div>
+        `;
+    }
+
+    handleUserTreeClick(event) {
+        // Favorite star: toggle without changing the selection
+        const favBtn = event.target.closest('[data-user-fav]');
+        if (favBtn) {
+            event.stopPropagation();
+            this.toggleUserFavorite(favBtn.dataset.userFav);
+            return;
+        }
+
+        // Expand/collapse a user node (tag rows have a non-interactive chevron)
+        const expandIcon = event.target.closest('.sidebar-tree-expand-icon');
+        if (expandIcon && expandIcon.style.pointerEvents !== 'none') {
+            const userNode = expandIcon.closest('.sidebar-user-node');
+            const username = userNode?.dataset.userNode;
+            if (!username) return;
+            if (this.expandedUsers.has(username)) {
+                this.expandedUsers.delete(username);
+            } else {
+                this.expandedUsers.add(username);
+            }
+            this.saveExpandedUsers();
+            this.renderUserTree();
+            this.updateTreeSelection();
+            return;
+        }
+
+        // Tag row: filter by creator + tag
+        const tagContent = event.target.closest('[data-tag-node]');
+        if (tagContent) {
+            this.selectUser(tagContent.dataset.userNode, tagContent.dataset.tagNode);
+            return;
+        }
+
+        // User row: filter by creator
+        const userContent = event.target.closest('.sidebar-tree-node-content[data-user-node]');
+        if (userContent) {
+            this.selectUser(userContent.dataset.userNode, null);
+        }
+    }
+
+    handleUserBreadcrumbClick(event) {
+        const item = event.target.closest('.sidebar-breadcrumb-item');
+        if (!item) return;
+        if (item.dataset.user) {
+            // Clicking the user crumb clears the tag level
+            this.selectUser(item.dataset.user, null);
+        } else {
+            this.selectUser(null, null);
+        }
+    }
+
+    /**
+     * Select a creator (and optionally one of their tags) and reload the
+     * model grid. Pass null/undefined to clear the user-view selection.
+     */
+    async selectUser(username, tag = null) {
+        const normalizedUser = username || null;
+        const normalizedTag = normalizedUser ? (tag || null) : null;
+
+        this.selectedUser = normalizedUser;
+        this.selectedUserTag = normalizedTag;
+
+        const pageState = this.pageControls?.pageState;
+        if (pageState) {
+            pageState.activeCreator = this.selectedUser;
+            pageState.activeCreatorTag = this.selectedUserTag;
+        }
+        setStorageItem(`${this.pageType}_activeUser`, this.selectedUser || '');
+        setStorageItem(`${this.pageType}_activeUserTag`, this.selectedUserTag || '');
+
+        this.updateTreeSelection();
+        this.updateBreadcrumbs();
+        this.updateSidebarHeader();
+
+        if (typeof this.pageControls?.resetAndReload === 'function') {
+            await this.pageControls.resetAndReload();
+        }
+    }
+
+    _clearUserSelection({ reload = false } = {}) {
+        this.selectedUser = null;
+        this.selectedUserTag = null;
+
+        const pageState = this.pageControls?.pageState;
+        if (pageState) {
+            pageState.activeCreator = null;
+            pageState.activeCreatorTag = null;
+        }
+        setStorageItem(`${this.pageType}_activeUser`, '');
+        setStorageItem(`${this.pageType}_activeUserTag`, '');
+
+        if (reload && typeof this.pageControls?.resetAndReload === 'function') {
+            return this.pageControls.resetAndReload();
+        }
+        return Promise.resolve();
+    }
+
+    toggleUserFavorite(username) {
+        if (!username) return;
+
+        if (this.favoriteUsers.has(username)) {
+            this.favoriteUsers.delete(username);
+        } else {
+            this.favoriteUsers.add(username);
+        }
+        this.saveFavoriteUsers();
+
+        // Re-render to apply the new sort order and star state
+        this.renderUserTree();
+        this.updateTreeSelection();
+    }
+
+    toggleUserCountOrder() {
+        this.userCountOrder = this.userCountOrder === 'desc' ? 'asc' : 'desc';
+        setStorageItem(`${this.pageType}_userCountOrder`, this.userCountOrder);
+        this.updateViewOptionsMenu();
+        this.renderUserTree();
+        this.updateTreeSelection();
+    }
+
+    clearUserCustomOrder() {
+        if (this.userCustomOrder.length === 0) return;
+        this.userCustomOrder = [];
+        this.saveUserCustomOrder();
+        this.updateViewOptionsMenu();
+        this.renderUserTree();
+        this.updateTreeSelection();
+    }
+
+    /**
+     * Restore the persisted user/tag selection against freshly loaded
+     * creator data. Returns true when a selection is active afterwards.
+     */
+    restoreSelectedUser() {
+        const activeUser = getStorageItem(`${this.pageType}_activeUser`, '');
+        const activeTag = getStorageItem(`${this.pageType}_activeUserTag`, '');
+
+        let user = null;
+        if (activeUser && typeof activeUser === 'string') {
+            user = this.creatorsData.find(u => u.username === activeUser) || null;
+        }
+
+        if (user) {
+            this.selectedUser = user.username;
+            this.selectedUserTag = null;
+            if (activeTag && typeof activeTag === 'string') {
+                const tagExists = (user.tags || []).some(t => t.tag === activeTag);
+                if (tagExists) {
+                    this.selectedUserTag = activeTag;
+                }
+            }
+        } else {
+            this.selectedUser = null;
+            this.selectedUserTag = null;
+        }
+
+        // The folder selection is not honored in user view
+        this.selectedPath = '';
+        const pageState = this.pageControls?.pageState;
+        if (pageState) {
+            pageState.activeCreator = this.selectedUser;
+            pageState.activeCreatorTag = this.selectedUserTag;
+            if (pageState.activeFolder) {
+                pageState.activeFolder = '';
+                setStorageItem(`${this.pageType}_activeFolder`, '');
+            }
+        }
+        setStorageItem(`${this.pageType}_activeUser`, this.selectedUser || '');
+        setStorageItem(`${this.pageType}_activeUserTag`, this.selectedUserTag || '');
+
+        this.updateTreeSelection();
+        this.updateBreadcrumbs();
+        this.updateSidebarHeader();
+
+        return Boolean(this.selectedUser);
+    }
+
+    // ===== User view: drag & drop custom ordering =====
+
+    handleUserDragStart(event) {
+        if (this.displayMode !== 'user') return;
+        const userNode = event.target.closest?.('.sidebar-user-node');
+        if (!userNode) return;
+
+        this._draggingUser = userNode.dataset.userNode;
+        if (event.dataTransfer) {
+            event.dataTransfer.effectAllowed = 'move';
+            try {
+                event.dataTransfer.setData('text/plain', this._draggingUser);
+            } catch (error) {
+                // Ignore serialization errors
+            }
+        }
+        userNode.classList.add('dragging');
+    }
+
+    handleUserDragOver(event) {
+        if (this.displayMode !== 'user' || !this._draggingUser) return;
+        const userNode = event.target.closest?.('.sidebar-user-node');
+        if (!userNode || userNode.dataset.userNode === this._draggingUser) return;
+
+        event.preventDefault();
+        if (event.dataTransfer) {
+            event.dataTransfer.dropEffect = 'move';
+        }
+
+        this._clearUserDropIndicators();
+        const rect = userNode.getBoundingClientRect();
+        const placeAbove = event.clientY < rect.top + rect.height / 2;
+        userNode.classList.add(placeAbove ? 'user-drop-above' : 'user-drop-below');
+    }
+
+    handleUserDragLeave(event) {
+        if (this.displayMode !== 'user') return;
+        const userNode = event.target.closest?.('.sidebar-user-node');
+        if (userNode && !userNode.contains(event.relatedTarget)) {
+            userNode.classList.remove('user-drop-above', 'user-drop-below');
+        }
+    }
+
+    handleUserDrop(event) {
+        if (this.displayMode !== 'user' || !this._draggingUser) return;
+        const userNode = event.target.closest?.('.sidebar-user-node');
+        if (!userNode) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const targetUser = userNode.dataset.userNode;
+        const placeAbove = userNode.classList.contains('user-drop-above');
+        this._clearUserDropIndicators();
+
+        if (targetUser && targetUser !== this._draggingUser) {
+            this._moveUserInCustomOrder(this._draggingUser, targetUser, placeAbove);
+        }
+    }
+
+    handleUserDragEnd() {
+        if (this.displayMode !== 'user') return;
+        this._clearUserDropIndicators();
+        this._draggingUser = null;
+    }
+
+    _clearUserDropIndicators() {
+        document.querySelectorAll('.sidebar-user-node.user-drop-above, .sidebar-user-node.user-drop-below')
+            .forEach(node => node.classList.remove('user-drop-above', 'user-drop-below'));
+    }
+
+    /**
+     * Place *draggedUser* relative to *targetUser* in the custom order.
+     *
+     * The first drag materializes the full ordering (current visual order),
+     * so subsequent drags behave like direct manipulation of that list.
+     */
+    _moveUserInCustomOrder(draggedUser, targetUser, placeAbove) {
+        const currentOrder = this._sortCreators(this.creatorsData).map(u => u.username);
+
+        // Preserve existing custom entries first, then append never-ordered users
+        const ordered = this.userCustomOrder.filter(u =>
+            currentOrder.includes(u) && u !== draggedUser
+        );
+        const orderedSet = new Set(ordered);
+        for (const username of currentOrder) {
+            if (!orderedSet.has(username) && username !== draggedUser) {
+                ordered.push(username);
+            }
+        }
+
+        const targetIndex = ordered.indexOf(targetUser);
+        if (targetIndex === -1) return;
+
+        const insertAt = placeAbove ? targetIndex : targetIndex + 1;
+        ordered.splice(insertAt, 0, draggedUser);
+
+        this.userCustomOrder = ordered;
+        this.saveUserCustomOrder();
+        this.updateViewOptionsMenu();
+        this.renderUserTree();
+        this.updateTreeSelection();
     }
 
     async handleRecursiveToggle(event) {
@@ -1990,15 +2554,27 @@ export class SidebarManager {
         switch (action) {
             case 'view-mode-tree':
                 if (this.displayMode !== 'tree') {
-                    this.handleDisplayModeToggle();
+                    this.setDisplayMode('tree');
                 }
                 this._closeViewOptionsMenu();
                 break;
             case 'view-mode-list':
                 if (this.displayMode !== 'list') {
-                    this.handleDisplayModeToggle();
+                    this.setDisplayMode('list');
                 }
                 this._closeViewOptionsMenu();
+                break;
+            case 'view-mode-user':
+                if (this.displayMode !== 'user') {
+                    this.setDisplayMode('user');
+                }
+                this._closeViewOptionsMenu();
+                break;
+            case 'user-count-order':
+                this.toggleUserCountOrder();
+                break;
+            case 'clear-user-order':
+                this.clearUserCustomOrder();
                 break;
             case 'toggle-recursive':
                 // Keep the menu open so view preferences can be combined
@@ -2013,7 +2589,7 @@ export class SidebarManager {
     }
 
     updateFolderManagementButtons() {
-        const supported = this._supportsFolderManagement();
+        const supported = this._supportsFolderManagement() && this.displayMode !== 'user';
 
         const createFolderBtn = document.getElementById('sidebarCreateFolder');
         if (createFolderBtn) {
@@ -2041,10 +2617,43 @@ export class SidebarManager {
         };
 
         const isTreeMode = this.displayMode === 'tree';
+        const isUserMode = this.displayMode === 'user';
         setCheck('view-mode-tree', isTreeMode);
-        setCheck('view-mode-list', !isTreeMode);
+        setCheck('view-mode-list', this.displayMode === 'list');
+        setCheck('view-mode-user', isUserMode);
         setCheck('toggle-recursive', isTreeMode && this.recursiveSearchEnabled);
         setDisabled('toggle-recursive', !isTreeMode);
+
+        // Recursive search is meaningless without folder nodes
+        const recursiveItem = menu.querySelector('[data-action="toggle-recursive"]');
+        if (recursiveItem) {
+            recursiveItem.style.display = isUserMode ? 'none' : '';
+        }
+
+        // User-view-only entries: count-order toggle and custom-order reset.
+        // The creators endpoint needs a model API client (not available on the
+        // recipes page), so the mode entry itself is hidden there too.
+        const supportsUserView = typeof this.apiClient?.fetchCreators === 'function';
+        const userCountItem = menu.querySelector('[data-action="user-count-order"]');
+        if (userCountItem) {
+            userCountItem.style.display = supportsUserView && isUserMode ? '' : 'none';
+            const label = userCountItem.querySelector('span');
+            if (label) {
+                label.textContent = this.userCountOrder === 'asc'
+                    ? translate('sidebar.userCountOrderAsc', {}, 'By model count: low → high')
+                    : translate('sidebar.userCountOrderDesc', {}, 'By model count: high → low');
+            }
+        }
+        const clearOrderItem = menu.querySelector('[data-action="clear-user-order"]');
+        if (clearOrderItem) {
+            clearOrderItem.style.display = supportsUserView && isUserMode && this.userCustomOrder.length > 0
+                ? ''
+                : 'none';
+        }
+        const userModeItem = menu.querySelector('[data-action="view-mode-user"]');
+        if (userModeItem) {
+            userModeItem.style.display = supportsUserView ? '' : 'none';
+        }
 
         // Empty-folder display requires a model library backend, and the
         // toggle is only worth showing when there actually are empty folders
@@ -2058,7 +2667,7 @@ export class SidebarManager {
 
         const emptyFoldersItem = menu.querySelector('[data-action="toggle-empty-folders"]');
         if (emptyFoldersItem) {
-            emptyFoldersItem.style.display = supportsFolderManagement && hasEmptyFolders ? '' : 'none';
+            emptyFoldersItem.style.display = !isUserMode && supportsFolderManagement && hasEmptyFolders ? '' : 'none';
         }
 
         // Surface the count so the preference's effect is visible without
@@ -2075,22 +2684,45 @@ export class SidebarManager {
         const collapseAllBtn = document.getElementById('sidebarCollapseAll');
         if (!collapseAllBtn) return;
 
-        const isTreeMode = this.displayMode === 'tree';
-        collapseAllBtn.disabled = !isTreeMode;
-        collapseAllBtn.classList.toggle('disabled', !isTreeMode);
-        collapseAllBtn.title = isTreeMode
-            ? translate('sidebar.collapseAll')
-            : translate('sidebar.collapseAllDisabled', {}, 'Not available in list view');
+        const isDisabled = this.displayMode === 'list';
+        collapseAllBtn.disabled = isDisabled;
+        collapseAllBtn.classList.toggle('disabled', isDisabled);
+        collapseAllBtn.title = isDisabled
+            ? translate('sidebar.collapseAllDisabled', {}, 'Not available in list view')
+            : translate('sidebar.collapseAll');
     }
 
     updateSearchRecursiveOption() {
-        const isRecursive = this.displayMode === 'tree' && this.recursiveSearchEnabled;
+        // Recursive search is a folder-tree concept; user view has no folders,
+        // so keep the option at its default (true) to avoid stale filters.
+        const isRecursive = this.displayMode === 'user'
+            || (this.displayMode === 'tree' && this.recursiveSearchEnabled);
         this.pageControls.pageState.searchOptions.recursive = isRecursive;
     }
 
     updateTreeSelection() {
         const folderTree = document.getElementById('sidebarFolderTree');
         if (!folderTree) return;
+
+        if (this.displayMode === 'user') {
+            folderTree.querySelectorAll('.sidebar-tree-node-content.selected').forEach(node => {
+                node.classList.remove('selected');
+            });
+
+            if (this.selectedUser) {
+                let selector;
+                if (this.selectedUserTag) {
+                    selector = `[data-user-node="${CSS.escape(this.selectedUser)}"][data-tag-node="${CSS.escape(this.selectedUserTag)}"]`;
+                } else {
+                    selector = `.sidebar-tree-node-content[data-user-node="${CSS.escape(this.selectedUser)}"]:not([data-tag-node])`;
+                }
+                const selectedNode = folderTree.querySelector(selector);
+                if (selectedNode) {
+                    selectedNode.classList.add('selected');
+                }
+            }
+            return;
+        }
 
         if (this.displayMode === 'list') {
             // Remove all selections in list mode
@@ -2175,6 +2807,11 @@ export class SidebarManager {
     }
 
     updateBreadcrumbs() {
+        if (this.displayMode === 'user') {
+            this.updateUserBreadcrumbs();
+            return;
+        }
+
         const sidebarBreadcrumbNav = document.getElementById('sidebarBreadcrumbNav');
         if (!sidebarBreadcrumbNav) return;
 
@@ -2283,11 +2920,57 @@ export class SidebarManager {
         sidebarBreadcrumbNav.innerHTML = breadcrumbs.join('');
     }
 
+    /**
+     * Breadcrumbs for the user view: root (clears the selection), the
+     * selected creator, and — when a tag is active — that tag.
+     */
+    updateUserBreadcrumbs() {
+        const sidebarBreadcrumbNav = document.getElementById('sidebarBreadcrumbNav');
+        if (!sidebarBreadcrumbNav) return;
+
+        const crumbs = [`
+            <div class="breadcrumb-dropdown">
+                <span class="sidebar-breadcrumb-item ${!this.selectedUser ? 'active' : ''}" data-path="">
+                    <i class="fas fa-home"></i> ${escapeHtml(translate('sidebar.usersTitle', {}, 'Users'))}
+                </span>
+            </div>
+        `];
+
+        if (this.selectedUser) {
+            const escapedUser = escapeAttribute(this.selectedUser);
+            crumbs.push(`<span class="sidebar-breadcrumb-separator">/</span>`);
+            crumbs.push(`
+                <div class="breadcrumb-dropdown">
+                    <span class="sidebar-breadcrumb-item ${!this.selectedUserTag ? 'active' : ''}" data-user="${escapedUser}">
+                        ${escapeHtml(this.selectedUser)}
+                    </span>
+                </div>
+            `);
+
+            if (this.selectedUserTag) {
+                crumbs.push(`<span class="sidebar-breadcrumb-separator">/</span>`);
+                crumbs.push(`
+                    <div class="breadcrumb-dropdown">
+                        <span class="sidebar-breadcrumb-item active">
+                            ${escapeHtml(this.selectedUserTag)}
+                        </span>
+                    </div>
+                `);
+            }
+        }
+
+        sidebarBreadcrumbNav.innerHTML = crumbs.join('');
+    }
+
     updateSidebarHeader() {
         const sidebarHeader = document.getElementById('sidebarHeader');
         if (!sidebarHeader) return;
 
-        if (!this.selectedPath) {
+        const isRoot = this.displayMode === 'user'
+            ? !this.selectedUser
+            : !this.selectedPath;
+
+        if (isRoot) {
             sidebarHeader.classList.add('root-selected');
         } else {
             sidebarHeader.classList.remove('root-selected');
@@ -2299,7 +2982,7 @@ export class SidebarManager {
         this._migrateOldSettings();
 
         const expandedPaths = getStorageItem(`${this.pageType}_expandedNodes`, []);
-        const displayMode = getStorageItem(`${this.pageType}_displayMode`, 'tree'); // 'tree' or 'list', default to 'tree'
+        const displayMode = getStorageItem(`${this.pageType}_displayMode`, 'tree'); // 'tree', 'list' or 'user'
         const recursiveSearchEnabled = getStorageItem(`${this.pageType}_recursiveSearch`, true);
         this.isDisabledByPage = getStorageItem(
             `${this.pageType}_sidebarDisabled`,
@@ -2307,13 +2990,16 @@ export class SidebarManager {
         );
 
         this.expandedNodes = new Set(expandedPaths);
-        this.displayMode = displayMode;
+        this.displayMode = ['tree', 'list', 'user'].includes(displayMode) ? displayMode : 'tree';
         this.recursiveSearchEnabled = recursiveSearchEnabled;
         // Empty folders are shown by default so the sidebar matches the
         // destination picker (which lists them too) instead of silently hiding
         // a folder that a download just landed in. New folders created from the
         // header stay visible for the same reason.
         this.showEmptyFolders = getStorageItem(`${this.pageType}_showEmptyFolders`, true);
+
+        // User-view preferences (favorites, custom order, count order, expansions)
+        this.restoreUserViewState();
 
         this.updateSearchRecursiveOption();
         this.updateFolderManagementButtons();
@@ -2351,6 +3037,11 @@ export class SidebarManager {
     }
 
     restoreSelectedFolder() {
+        // User view persists a creator/tag selection instead of a folder
+        if (this.displayMode === 'user') {
+            return this.restoreSelectedUser();
+        }
+
         const activeFolder = getStorageItem(`${this.pageType}_activeFolder`);
         if (activeFolder && typeof activeFolder === 'string') {
             // Fall back to the root when the persisted folder no longer

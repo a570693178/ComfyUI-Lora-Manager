@@ -103,6 +103,11 @@ class FilterCriteria:
     search_options: Optional[Dict[str, Any]] = None
     model_types: Optional[Sequence[str]] = None
     tag_logic: str = "any"  # "any" (OR) or "all" (AND)
+    # User-view filters: exact (case-insensitive) creator username match and
+    # an optional tag narrowed to that creator. Kept separate from the general
+    # tag filters so the user view cannot interfere with FilterManager state.
+    creator: Optional[str] = None
+    creator_tag: Optional[str] = None
 
 
 class ModelCacheRepository:
@@ -293,6 +298,35 @@ class ModelFilterSet:
             items = [item for item in items if item.get("base_model") in base_model_set]
             base_models_duration = time.perf_counter() - t0
 
+        creator_duration = 0
+        creator = (criteria.creator or "").strip()
+        if creator:
+            t0 = time.perf_counter()
+            creator_norm = creator.lower()
+
+            def matches_creator(item: Dict[str, Any]) -> bool:
+                civitai = item.get("civitai") or {}
+                creator_info = civitai.get("creator") or {}
+                username = (creator_info.get("username") or "").strip().lower()
+                return username == creator_norm
+
+            items = [item for item in items if matches_creator(item)]
+
+            creator_tag = (criteria.creator_tag or "").strip()
+            if creator_tag:
+                creator_tag_norm = creator_tag.lower()
+                items = [
+                    item
+                    for item in items
+                    if creator_tag_norm
+                    in {
+                        tag.strip().lower()
+                        for tag in (item.get("tags") or [])
+                        if isinstance(tag, str)
+                    }
+                ]
+            creator_duration = time.perf_counter() - t0
+
         tags_duration = 0
         tag_filters = criteria.tags or {}
         if tag_filters:
@@ -407,13 +441,14 @@ class ModelFilterSet:
         duration = time.perf_counter() - overall_start
         if duration > 0.1:  # Only log if it's potentially slow
             logger.debug(
-                "ModelFilterSet.apply took %.3fs (sfw: %.3fs, fav: %.3fs, folder: %.3fs, base: %.3fs, tags: %.3fs, types: %.3fs, auto_tags: %.3fs). "
+                "ModelFilterSet.apply took %.3fs (sfw: %.3fs, fav: %.3fs, folder: %.3fs, base: %.3fs, creator: %.3fs, tags: %.3fs, types: %.3fs, auto_tags: %.3fs). "
                 "Count: %d -> %d",
                 duration,
                 sfw_duration,
                 favorites_duration,
                 folder_duration,
                 base_models_duration,
+                creator_duration,
                 tags_duration,
                 model_types_duration,
                 auto_tags_duration,

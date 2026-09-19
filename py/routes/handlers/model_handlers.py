@@ -432,6 +432,11 @@ class ModelListingHandler:
             request.query.get("name_pattern_use_regex", "false").lower() == "true"
         )
 
+        # User-view filters: exact creator username and an optional tag scoped
+        # to that creator. Empty strings normalize to None (no filtering).
+        creator = request.query.get("creator") or None
+        creator_tag = request.query.get("creator_tag") or None
+
         # Group-by-model flag: deduplicate versions sharing the same civitai modelId
         group_by_model = (
             request.query.get("group_by_model", "false").lower() == "true"
@@ -472,6 +477,8 @@ class ModelListingHandler:
             "name_pattern_use_regex": name_pattern_use_regex,
             "group_by_model": group_by_model,
             "civitai_model_id": civitai_model_id,
+            "creator": creator,
+            "creator_tag": creator_tag,
             **self._parse_specific_params(request),
         }
 
@@ -1091,6 +1098,17 @@ class ModelQueryHandler:
             return web.json_response({"success": True, "tags": top_tags})
         except Exception as exc:
             self._logger.error("Error getting top tags: %s", exc, exc_info=True)
+            return web.json_response(
+                {"success": False, "error": "Internal server error"}, status=500
+            )
+
+    async def get_creators(self, request: web.Request) -> web.Response:
+        """Aggregate creators (CivitAI users) with model counts and tag stats."""
+        try:
+            creators = await self._service.get_creators()
+            return web.json_response({"success": True, "creators": creators})
+        except Exception as exc:
+            self._logger.error("Error getting creators: %s", exc, exc_info=True)
             return web.json_response(
                 {"success": False, "error": "Internal server error"}, status=500
             )
@@ -3552,6 +3570,7 @@ class ModelHandlerSet:
             "bulk_delete_models": self.management.bulk_delete_models,
             "verify_duplicates": self.management.verify_duplicates,
             "get_top_tags": self.query.get_top_tags,
+            "get_creators": self.query.get_creators,
             "search_tags": self.query.search_tags,
             "get_base_models": self.query.get_base_models,
             "get_model_types": self.query.get_model_types,

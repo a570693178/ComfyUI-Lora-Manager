@@ -697,3 +697,77 @@
 #sidebarFolderContextMenu {
     z-index: var(--z-modal, 1002);
 }
+
+/* ===== User View ===== */
+
+/* User rows are draggable for custom ordering */
+.sidebar-user-node {
+    cursor: grab;
+}
+
+.sidebar-user-node.dragging {
+    opacity: 0.45;
+}
+
+/* Drop position indicators (insert above / below target user) */
+.sidebar-user-node.user-drop-above > .sidebar-tree-node-content {
+    box-shadow: inset 0 3px 0 -1px var(--lora-accent);
+}
+
+.sidebar-user-node.user-drop-below > .sidebar-tree-node-content {
+    box-shadow: inset 0 -3px 0 -1px var(--lora-accent);
+}
+
+/* Model count badge (user rows and tag rows) */
+.sidebar-user-model-count {
+    flex-shrink: 0;
+    margin-left: 6px;
+    padding: 1px 6px;
+    font-size: 0.75em;
+    line-height: 1.5;
+    color: var(--text-muted);
+    background: var(--lora-surface);
+    border-radius: 8px;
+}
+
+.sidebar-tree-node-content.selected .sidebar-user-model-count {
+    color: var(--lora-accent);
+    background: oklch(var(--lora-accent-l) var(--lora-accent-c) var(--lora-accent-h) / 0.15);
+}
+
+/* Favorite star button */
+.sidebar-user-fav-btn {
+    flex-shrink: 0;
+    margin-left: 6px;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--text-muted);
+    opacity: 0.35;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: var(--transition-base);
+    font-size: 0.85em;
+}
+
+.sidebar-user-fav-btn:hover {
+    opacity: 1;
+    color: var(--favorite-color);
+    background: var(--lora-surface);
+}
+
+.sidebar-user-fav-btn.active {
+    opacity: 1;
+    color: var(--favorite-color);
+}
+
+/* Tag rows under a user are slightly muted */
+.sidebar-user-tag-node > .sidebar-tree-node-content {
+    font-size: 0.95em;
+    opacity: 0.92;
+}

@@ -55,6 +55,7 @@ COMMON_ROUTE_DEFINITIONS: tuple[RouteDefinition, ...] = (
         "POST", "/api/lm/{prefix}/apply-filename-template", "apply_filename_template"
     ),
     RouteDefinition("GET", "/api/lm/{prefix}/top-tags", "get_top_tags"),
+    RouteDefinition("GET", "/api/lm/{prefix}/creators", "get_creators"),
     RouteDefinition("GET", "/api/lm/{prefix}/search-tags", "search_tags"),
     RouteDefinition("GET", "/api/lm/{prefix}/base-models", "get_base_models"),
     RouteDefinition("GET", "/api/lm/{prefix}/model-types", "get_model_types"),

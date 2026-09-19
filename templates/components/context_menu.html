@@ -236,6 +236,18 @@
         <i class="fas fa-list"></i> <span>{{ t('sidebar.listView') }}</span>
         <i class="fas fa-check check-indicator" style="margin-left:auto;display:none"></i>
     </div>
+    <div class="context-menu-item" data-action="view-mode-user">
+        <i class="fas fa-users"></i> <span>{{ t('sidebar.userView') }}</span>
+        <i class="fas fa-check check-indicator" style="margin-left:auto;display:none"></i>
+    </div>
+    <div class="context-menu-item" data-action="user-count-order" style="display:none">
+        <i class="fas fa-sort-amount-down"></i> <span>{{ t('sidebar.userCountOrderDesc') }}</span>
+        <i class="fas fa-check check-indicator" style="margin-left:auto;display:none"></i>
+    </div>
+    <div class="context-menu-item" data-action="clear-user-order" style="display:none">
+        <i class="fas fa-arrow-rotate-left"></i> <span>{{ t('sidebar.clearUserOrder') }}</span>
+        <i class="fas fa-check check-indicator" style="margin-left:auto;display:none"></i>
+    </div>
     <div class="context-menu-separator"></div>
     <div class="context-menu-item" data-action="toggle-recursive">
         <i class="fas fa-code-branch"></i> <span>{{ t('sidebar.recursiveOn') }}</span>
