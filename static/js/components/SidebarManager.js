@@ -54,14 +54,16 @@ export class SidebarManager {
         this._deleteFolderModalWired = false;
 
         // User view state (displayMode === 'user')
-        this.creatorsData = [];          // [{ username, count, tags: [{ tag, count }] }]
+        this.creatorsData = [];          // [{ username, count, base_models: [{ base_model, count, tags: [{ tag, count }] }] }]
         this.userTreeLoaded = false;
         this.selectedUser = null;        // currently selected creator username
-        this.selectedUserTag = null;     // optional tag scoped to selectedUser
+        this.selectedUserBaseModel = null; // optional base_model scoped to selectedUser
+        this.selectedUserTag = null;     // optional default tag scoped to selectedUser + base_model
         this.favoriteUsers = new Set();  // favorited creator usernames
         this.userCustomOrder = [];       // manually ordered usernames (priority sort)
         this.userCountOrder = 'desc';    // 'desc' (most models first) or 'asc'
         this.expandedUsers = new Set();  // expanded creator nodes
+        this.expandedUserBaseModels = new Set(); // expanded user+base_model nodes ("user::base_model")
         this._draggingUser = null;
         this._userDropIndicator = null;  // 'above' | 'below'
 
@@ -166,11 +168,13 @@ export class SidebarManager {
         this.creatorsData = [];
         this.userTreeLoaded = false;
         this.selectedUser = null;
+        this.selectedUserBaseModel = null;
         this.selectedUserTag = null;
         this.favoriteUsers = new Set();
         this.userCustomOrder = [];
         this.userCountOrder = 'desc';
         this.expandedUsers = new Set();
+        this.expandedUserBaseModels = new Set();
         this._draggingUser = null;
         this._userDropIndicator = null;
 
@@ -1338,6 +1342,8 @@ export class SidebarManager {
         if (this.displayMode === 'user') {
             this.expandedUsers.clear();
             this.saveExpandedUsers();
+            this.expandedUserBaseModels.clear();
+            this.saveExpandedUserBaseModels();
             this.renderUserTree();
             this.updateTreeSelection();
             return;
@@ -1933,7 +1939,7 @@ export class SidebarManager {
         // (header click) clears the user/tag filter instead.
         if (this.displayMode === 'user') {
             if (!path) {
-                await this.selectUser(null, null);
+                await this.selectUser(null, null, null);
             }
             return;
         }
@@ -2043,6 +2049,10 @@ export class SidebarManager {
         this.userCountOrder = countOrder === 'asc' ? 'asc' : 'desc';
         const expandedUsers = getStorageItem(`${this.pageType}_expandedUsers`, []);
         this.expandedUsers = new Set(Array.isArray(expandedUsers) ? expandedUsers : []);
+        const expandedBaseModels = getStorageItem(`${this.pageType}_expandedUserBaseModels`, []);
+        this.expandedUserBaseModels = new Set(
+            Array.isArray(expandedBaseModels) ? expandedBaseModels.filter(k => typeof k === 'string') : []
+        );
     }
 
     saveFavoriteUsers() {
@@ -2055,6 +2065,10 @@ export class SidebarManager {
 
     saveExpandedUsers() {
         setStorageItem(`${this.pageType}_expandedUsers`, Array.from(this.expandedUsers));
+    }
+
+    saveExpandedUserBaseModels() {
+        setStorageItem(`${this.pageType}_expandedUserBaseModels`, Array.from(this.expandedUserBaseModels));
     }
 
     async loadUserTree() {
@@ -2113,19 +2127,26 @@ export class SidebarManager {
         const username = user.username;
         const isExpanded = this.expandedUsers.has(username);
         const isFav = this.favoriteUsers.has(username);
-        const isSelected = this.selectedUser === username && !this.selectedUserTag;
+        const isSelected = this.selectedUser === username
+            && !this.selectedUserBaseModel
+            && !this.selectedUserTag;
         const escapedUsernameAttr = escapeAttribute(username);
         const escapedUsername = escapeHtml(username);
         const favTitle = escapeAttribute(translate(
             'sidebar.favoriteUser', {}, 'Favorite user (favorites sort first)'
         ));
 
-        const tagsHtml = (user.tags || []).map(tagInfo => this._renderUserTagNode(username, tagInfo)).join('');
+        // Children are rendered lazily: base-model rows only exist while the
+        // user node is expanded, keeping the DOM small for large libraries.
+        const hasChildren = (user.base_models || []).length > 0;
+        const baseModelsHtml = isExpanded
+            ? (user.base_models || []).map(bm => this._renderUserBaseModelNode(username, bm)).join('')
+            : '';
 
         return `
             <div class="sidebar-tree-node sidebar-user-node" draggable="true" data-user-node="${escapedUsernameAttr}">
                 <div class="sidebar-tree-node-content ${isSelected ? 'selected' : ''}" data-user-node="${escapedUsernameAttr}">
-                    <div class="sidebar-tree-expand-icon ${isExpanded ? 'expanded' : ''}">
+                    <div class="sidebar-tree-expand-icon ${isExpanded ? 'expanded' : ''}" ${hasChildren ? '' : 'style="opacity: 0; pointer-events: none;"'}>
                         <i class="fas fa-chevron-right"></i>
                     </div>
                     <i class="fas fa-user sidebar-tree-folder-icon"></i>
@@ -2137,15 +2158,51 @@ export class SidebarManager {
                         <i class="${isFav ? 'fas' : 'far'} fa-star"></i>
                     </button>
                 </div>
-                <div class="sidebar-tree-children ${isExpanded ? 'expanded' : ''}">
+                <div class="sidebar-user-children ${isExpanded ? 'expanded' : ''}">
+                    ${baseModelsHtml}
+                </div>
+            </div>
+        `;
+    }
+
+    _renderUserBaseModelNode(username, baseModelInfo) {
+        const baseModel = baseModelInfo.base_model;
+        const expandKey = `${username}::${baseModel}`;
+        const isExpanded = this.expandedUserBaseModels.has(expandKey);
+        const isSelected = this.selectedUser === username
+            && this.selectedUserBaseModel === baseModel
+            && !this.selectedUserTag;
+        const escapedBaseModelAttr = escapeAttribute(baseModel);
+        const escapedBaseModel = escapeHtml(baseModel);
+
+        const hasChildren = (baseModelInfo.tags || []).length > 0;
+        const tagsHtml = isExpanded
+            ? (baseModelInfo.tags || []).map(tagInfo => this._renderUserTagNode(username, baseModel, tagInfo)).join('')
+            : '';
+
+        return `
+            <div class="sidebar-tree-node sidebar-user-base-model-node" data-user-base-model-node="${expandKey}">
+                <div class="sidebar-tree-node-content ${isSelected ? 'selected' : ''}"
+                     data-user-node="${escapeAttribute(username)}"
+                     data-base-model-node="${escapedBaseModelAttr}">
+                    <div class="sidebar-tree-expand-icon ${isExpanded ? 'expanded' : ''}" ${hasChildren ? '' : 'style="opacity: 0; pointer-events: none;"'}>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                    <i class="fas fa-layer-group sidebar-tree-folder-icon"></i>
+                    <div class="sidebar-tree-folder-name" title="${escapedBaseModelAttr}">${escapedBaseModel}</div>
+                    <span class="sidebar-user-model-count">${baseModelInfo.count}</span>
+                </div>
+                <div class="sidebar-user-children ${isExpanded ? 'expanded' : ''}">
                     ${tagsHtml}
                 </div>
             </div>
         `;
     }
 
-    _renderUserTagNode(username, tagInfo) {
-        const isSelected = this.selectedUser === username && this.selectedUserTag === tagInfo.tag;
+    _renderUserTagNode(username, baseModel, tagInfo) {
+        const isSelected = this.selectedUser === username
+            && this.selectedUserBaseModel === baseModel
+            && this.selectedUserTag === tagInfo.tag;
         const escapedTagAttr = escapeAttribute(tagInfo.tag);
         const escapedTag = escapeHtml(tagInfo.tag);
 
@@ -2153,6 +2210,7 @@ export class SidebarManager {
             <div class="sidebar-tree-node sidebar-user-tag-node">
                 <div class="sidebar-tree-node-content ${isSelected ? 'selected' : ''}"
                      data-user-node="${escapeAttribute(username)}"
+                     data-base-model-node="${escapeAttribute(baseModel)}"
                      data-tag-node="${escapedTagAttr}">
                     <div class="sidebar-tree-expand-icon" style="opacity: 0; pointer-events: none;">
                         <i class="fas fa-chevron-right"></i>
@@ -2190,34 +2248,58 @@ export class SidebarManager {
             return;
         }
 
-        // Expand/collapse a user node (tag rows have a non-interactive chevron)
+        // Expand/collapse a node (leaf rows have a non-interactive chevron).
+        // The chevron may belong to a user node or to a base-model node.
         const expandIcon = event.target.closest('.sidebar-tree-expand-icon');
         if (expandIcon && expandIcon.style.pointerEvents !== 'none') {
-            const userNode = expandIcon.closest('.sidebar-user-node');
-            const username = userNode?.dataset.userNode;
-            if (!username) return;
-            if (this.expandedUsers.has(username)) {
-                this.expandedUsers.delete(username);
+            const baseModelNode = expandIcon.closest('.sidebar-user-base-model-node');
+            if (baseModelNode) {
+                const key = baseModelNode.dataset.userBaseModelNode;
+                if (!key) return;
+                if (this.expandedUserBaseModels.has(key)) {
+                    this.expandedUserBaseModels.delete(key);
+                } else {
+                    this.expandedUserBaseModels.add(key);
+                }
+                this.saveExpandedUserBaseModels();
             } else {
-                this.expandedUsers.add(username);
+                const userNode = expandIcon.closest('.sidebar-user-node');
+                const username = userNode?.dataset.userNode;
+                if (!username) return;
+                if (this.expandedUsers.has(username)) {
+                    this.expandedUsers.delete(username);
+                } else {
+                    this.expandedUsers.add(username);
+                }
+                this.saveExpandedUsers();
             }
-            this.saveExpandedUsers();
             this.renderUserTree();
             this.updateTreeSelection();
             return;
         }
 
-        // Tag row: filter by creator + tag
+        // Tag row: filter by creator + base_model + default tag
         const tagContent = event.target.closest('[data-tag-node]');
         if (tagContent) {
-            this.selectUser(tagContent.dataset.userNode, tagContent.dataset.tagNode);
+            this.selectUser(
+                tagContent.dataset.userNode,
+                tagContent.dataset.baseModelNode,
+                tagContent.dataset.tagNode
+            );
+            return;
+        }
+
+        // Base-model row: filter by creator + base_model
+        const baseModelContent = event.target.closest('[data-base-model-node]');
+        if (baseModelContent) {
+            this.selectUser(baseModelContent.dataset.userNode, baseModelContent.dataset.baseModelNode, null);
             return;
         }
 
         // User row: filter by creator
         const userContent = event.target.closest('.sidebar-tree-node-content[data-user-node]');
         if (userContent) {
-            this.selectUser(userContent.dataset.userNode, null);
+            this.selectUser(userContent.dataset.userNode, null, null);
         }
     }
 
@@ -2225,30 +2307,40 @@ export class SidebarManager {
         const item = event.target.closest('.sidebar-breadcrumb-item');
         if (!item) return;
         if (item.dataset.user) {
-            // Clicking the user crumb clears the tag level
-            this.selectUser(item.dataset.user, null);
+            if (item.dataset.baseModel) {
+                // Clicking the base-model crumb clears the tag level
+                this.selectUser(item.dataset.user, item.dataset.baseModel, null);
+            } else {
+                // Clicking the user crumb clears the lower levels
+                this.selectUser(item.dataset.user, null, null);
+            }
         } else {
-            this.selectUser(null, null);
+            this.selectUser(null, null, null);
         }
     }
 
     /**
-     * Select a creator (and optionally one of their tags) and reload the
-     * model grid. Pass null/undefined to clear the user-view selection.
+     * Select a creator (and optionally one of their base models and default
+     * tags) and reload the model grid. Pass null/undefined to clear the
+     * user-view selection.
      */
-    async selectUser(username, tag = null) {
+    async selectUser(username, baseModel = null, tag = null) {
         const normalizedUser = username || null;
-        const normalizedTag = normalizedUser ? (tag || null) : null;
+        const normalizedBaseModel = normalizedUser ? (baseModel || null) : null;
+        const normalizedTag = normalizedBaseModel ? (tag || null) : null;
 
         this.selectedUser = normalizedUser;
+        this.selectedUserBaseModel = normalizedBaseModel;
         this.selectedUserTag = normalizedTag;
 
         const pageState = this.pageControls?.pageState;
         if (pageState) {
             pageState.activeCreator = this.selectedUser;
+            pageState.activeCreatorBaseModel = this.selectedUserBaseModel;
             pageState.activeCreatorTag = this.selectedUserTag;
         }
         setStorageItem(`${this.pageType}_activeUser`, this.selectedUser || '');
+        setStorageItem(`${this.pageType}_activeUserBaseModel`, this.selectedUserBaseModel || '');
         setStorageItem(`${this.pageType}_activeUserTag`, this.selectedUserTag || '');
 
         this.updateTreeSelection();
@@ -2262,14 +2354,17 @@ export class SidebarManager {
 
     _clearUserSelection({ reload = false } = {}) {
         this.selectedUser = null;
+        this.selectedUserBaseModel = null;
         this.selectedUserTag = null;
 
         const pageState = this.pageControls?.pageState;
         if (pageState) {
             pageState.activeCreator = null;
+            pageState.activeCreatorBaseModel = null;
             pageState.activeCreatorTag = null;
         }
         setStorageItem(`${this.pageType}_activeUser`, '');
+        setStorageItem(`${this.pageType}_activeUserBaseModel`, '');
         setStorageItem(`${this.pageType}_activeUserTag`, '');
 
         if (reload && typeof this.pageControls?.resetAndReload === 'function') {
@@ -2311,11 +2406,12 @@ export class SidebarManager {
     }
 
     /**
-     * Restore the persisted user/tag selection against freshly loaded
-     * creator data. Returns true when a selection is active afterwards.
+     * Restore the persisted user/base-model/tag selection against freshly
+     * loaded creator data. Returns true when a selection is active after.
      */
     restoreSelectedUser() {
         const activeUser = getStorageItem(`${this.pageType}_activeUser`, '');
+        const activeBaseModel = getStorageItem(`${this.pageType}_activeUserBaseModel`, '');
         const activeTag = getStorageItem(`${this.pageType}_activeUserTag`, '');
 
         let user = null;
@@ -2325,15 +2421,35 @@ export class SidebarManager {
 
         if (user) {
             this.selectedUser = user.username;
+            this.selectedUserBaseModel = null;
             this.selectedUserTag = null;
-            if (activeTag && typeof activeTag === 'string') {
-                const tagExists = (user.tags || []).some(t => t.tag === activeTag);
+
+            let baseModelInfo = null;
+            if (activeBaseModel && typeof activeBaseModel === 'string') {
+                baseModelInfo = (user.base_models || []).find(bm => bm.base_model === activeBaseModel) || null;
+                if (baseModelInfo) {
+                    this.selectedUserBaseModel = activeBaseModel;
+                }
+            }
+            if (baseModelInfo && activeTag && typeof activeTag === 'string') {
+                const tagExists = (baseModelInfo.tags || []).some(t => t.tag === activeTag);
                 if (tagExists) {
                     this.selectedUserTag = activeTag;
                 }
             }
+
+            // The tree renders children lazily, so expand the ancestors of
+            // the restored selection — otherwise the highlighted row would
+            // not exist in the DOM (same idea as expandPathParents in tree view).
+            this.expandedUsers.add(user.username);
+            if (this.selectedUserBaseModel) {
+                this.expandedUserBaseModels.add(
+                    `${user.username}::${this.selectedUserBaseModel}`
+                );
+            }
         } else {
             this.selectedUser = null;
+            this.selectedUserBaseModel = null;
             this.selectedUserTag = null;
         }
 
@@ -2342,6 +2458,7 @@ export class SidebarManager {
         const pageState = this.pageControls?.pageState;
         if (pageState) {
             pageState.activeCreator = this.selectedUser;
+            pageState.activeCreatorBaseModel = this.selectedUserBaseModel;
             pageState.activeCreatorTag = this.selectedUserTag;
             if (pageState.activeFolder) {
                 pageState.activeFolder = '';
@@ -2349,6 +2466,7 @@ export class SidebarManager {
             }
         }
         setStorageItem(`${this.pageType}_activeUser`, this.selectedUser || '');
+        setStorageItem(`${this.pageType}_activeUserBaseModel`, this.selectedUserBaseModel || '');
         setStorageItem(`${this.pageType}_activeUserTag`, this.selectedUserTag || '');
 
         this.updateTreeSelection();
@@ -2710,11 +2828,23 @@ export class SidebarManager {
             });
 
             if (this.selectedUser) {
+                // Three-level tree: user → base model → tag. Each level is
+                // matched exactly so selecting a user does not highlight its
+                // base-model rows and selecting a base model does not
+                // highlight its tag rows (base-model rows carry
+                // data-base-model-node but no data-tag-node).
+                const user = CSS.escape(this.selectedUser);
                 let selector;
-                if (this.selectedUserTag) {
-                    selector = `[data-user-node="${CSS.escape(this.selectedUser)}"][data-tag-node="${CSS.escape(this.selectedUserTag)}"]`;
+                if (this.selectedUserBaseModel) {
+                    const baseModel = CSS.escape(this.selectedUserBaseModel);
+                    if (this.selectedUserTag) {
+                        const tag = CSS.escape(this.selectedUserTag);
+                        selector = `[data-user-node="${user}"][data-base-model-node="${baseModel}"][data-tag-node="${tag}"]`;
+                    } else {
+                        selector = `[data-user-node="${user}"][data-base-model-node="${baseModel}"]:not([data-tag-node])`;
+                    }
                 } else {
-                    selector = `.sidebar-tree-node-content[data-user-node="${CSS.escape(this.selectedUser)}"]:not([data-tag-node])`;
+                    selector = `[data-user-node="${user}"]:not([data-base-model-node]):not([data-tag-node])`;
                 }
                 const selectedNode = folderTree.querySelector(selector);
                 if (selectedNode) {
@@ -2922,7 +3052,8 @@ export class SidebarManager {
 
     /**
      * Breadcrumbs for the user view: root (clears the selection), the
-     * selected creator, and — when a tag is active — that tag.
+     * selected creator, the selected base model, and — when a tag is
+     * active — that tag.
      */
     updateUserBreadcrumbs() {
         const sidebarBreadcrumbNav = document.getElementById('sidebarBreadcrumbNav');
@@ -2941,21 +3072,34 @@ export class SidebarManager {
             crumbs.push(`<span class="sidebar-breadcrumb-separator">/</span>`);
             crumbs.push(`
                 <div class="breadcrumb-dropdown">
-                    <span class="sidebar-breadcrumb-item ${!this.selectedUserTag ? 'active' : ''}" data-user="${escapedUser}">
+                    <span class="sidebar-breadcrumb-item ${!this.selectedUserBaseModel ? 'active' : ''}" data-user="${escapedUser}">
                         ${escapeHtml(this.selectedUser)}
                     </span>
                 </div>
             `);
 
-            if (this.selectedUserTag) {
+            if (this.selectedUserBaseModel) {
+                const escapedBaseModel = escapeAttribute(this.selectedUserBaseModel);
                 crumbs.push(`<span class="sidebar-breadcrumb-separator">/</span>`);
                 crumbs.push(`
                     <div class="breadcrumb-dropdown">
-                        <span class="sidebar-breadcrumb-item active">
-                            ${escapeHtml(this.selectedUserTag)}
+                        <span class="sidebar-breadcrumb-item ${!this.selectedUserTag ? 'active' : ''}"
+                              data-user="${escapedUser}" data-base-model="${escapedBaseModel}">
+                            ${escapeHtml(this.selectedUserBaseModel)}
                         </span>
                     </div>
                 `);
+
+                if (this.selectedUserTag) {
+                    crumbs.push(`<span class="sidebar-breadcrumb-separator">/</span>`);
+                    crumbs.push(`
+                        <div class="breadcrumb-dropdown">
+                            <span class="sidebar-breadcrumb-item active">
+                                ${escapeHtml(this.selectedUserTag)}
+                            </span>
+                        </div>
+                    `);
+                }
             }
         }
 

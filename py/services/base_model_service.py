@@ -886,13 +886,17 @@ class BaseModelService(ABC):
         return await self.scanner.get_top_tags(limit)
 
     async def get_creators(self) -> List[Dict[str, Any]]:
-        """Aggregate creators from the cache for the user view.
+        """Aggregate creators as user -> base_model -> default tag.
 
-        Groups every cached model by its CivitAI creator username and, within
-        each creator, counts the distribution of tags. Models without creator
-        metadata are skipped (they cannot be attributed to a user). The result
-        is sorted by model count (descending) with a case-insensitive username
-        tiebreak; the frontend re-sorts according to its own preferences.
+        Groups every cached model by its CivitAI creator username, then by
+        the model's ``base_model`` field, and within each group counts the
+        model's *default* tag (the first entry of its tag list — the primary
+        CivitAI classification such as "character" or "style"). Using only
+        the default tag keeps the tree small and fast; models without tags
+        are counted on the base-model level only. Models without creator
+        metadata are skipped. Results at every level are sorted by count
+        (descending) with a case-insensitive name tiebreak; the frontend
+        re-sorts the top level according to its own preferences.
         """
         cache = await self.scanner.get_cached_data()
 
@@ -904,27 +908,51 @@ class BaseModelService(ABC):
             if not username:
                 continue
 
-            info = users.get(username)
-            if info is None:
-                info = {"username": username, "count": 0, "tags": {}}
-                users[username] = info
-            info["count"] += 1
+            base_model = (item.get("base_model") or "").strip() or "Unknown"
+            default_tag = next(
+                (
+                    tag.strip()
+                    for tag in item.get("tags") or []
+                    if isinstance(tag, str) and tag.strip()
+                ),
+                "",
+            )
 
-            for tag in item.get("tags") or []:
-                if not isinstance(tag, str) or not tag:
-                    continue
-                info["tags"][tag] = info["tags"].get(tag, 0) + 1
+            info = users.setdefault(
+                username, {"username": username, "count": 0, "base_models": {}}
+            )
+            info["count"] += 1
+            bm = info["base_models"].setdefault(
+                base_model, {"count": 0, "tags": {}}
+            )
+            bm["count"] += 1
+            if default_tag:
+                bm["tags"][default_tag] = bm["tags"].get(default_tag, 0) + 1
 
         result: List[Dict[str, Any]] = []
         for info in users.values():
-            tags_sorted = sorted(
-                info["tags"].items(), key=lambda kv: (-kv[1], kv[0].lower())
+            base_models_sorted = sorted(
+                info["base_models"].items(),
+                key=lambda kv: (-kv[1]["count"], kv[0].lower()),
             )
             result.append(
                 {
                     "username": info["username"],
                     "count": info["count"],
-                    "tags": [{"tag": tag, "count": count} for tag, count in tags_sorted],
+                    "base_models": [
+                        {
+                            "base_model": name,
+                            "count": data["count"],
+                            "tags": [
+                                {"tag": tag, "count": count}
+                                for tag, count in sorted(
+                                    data["tags"].items(),
+                                    key=lambda kv: (-kv[1], kv[0].lower()),
+                                )
+                            ],
+                        }
+                        for name, data in base_models_sorted
+                    ],
                 }
             )
 

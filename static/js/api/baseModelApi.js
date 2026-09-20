@@ -1558,9 +1558,13 @@ export class BaseModelApiClient {
             params.append('folder', pageState.activeFolder);
         }
 
-        // User-view selection: creator + optional tag scoped to that creator.
+        // User-view selection: creator + optional base_model and default tag,
+        // both scoped to that creator.
         if (!isExcludedView && pageState.activeCreator) {
             params.append('creator', pageState.activeCreator);
+            if (pageState.activeCreatorBaseModel) {
+                params.append('base_model', pageState.activeCreatorBaseModel);
+            }
             if (pageState.activeCreatorTag) {
                 params.append('creator_tag', pageState.activeCreatorTag);
             }

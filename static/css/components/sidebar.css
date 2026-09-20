@@ -766,8 +766,29 @@
     color: var(--favorite-color);
 }
 
-/* Tag rows under a user are slightly muted */
+/* Tag rows under a user: indented to the third level and slightly muted */
 .sidebar-user-tag-node > .sidebar-tree-node-content {
+    padding-left: 48px;
     font-size: 0.95em;
     opacity: 0.92;
 }
+
+/* User-tree children expand/collapse via display toggling. Unlike the
+   folder tree's max-height transition, this avoids animating layout for
+   potentially huge child lists (one of the causes of expand jank). */
+.sidebar-user-children {
+    display: none;
+}
+
+.sidebar-user-children.expanded {
+    display: block;
+}
+
+/* Base-model rows sit at the second level of the user tree. The
+   folder-tree indent rules are scoped to .sidebar-tree-children, which
+   the user tree does not use. */
+.sidebar-user-base-model-node > .sidebar-tree-node-content {
+    padding-left: 32px;
+}
+
+

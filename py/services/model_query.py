@@ -314,16 +314,22 @@ class ModelFilterSet:
 
             creator_tag = (criteria.creator_tag or "").strip()
             if creator_tag:
+                # User-view tags are the model's default (first) tag, so the
+                # filter matches that same value to keep counts consistent
+                # with what the sidebar tree displays.
                 creator_tag_norm = creator_tag.lower()
                 items = [
                     item
                     for item in items
-                    if creator_tag_norm
-                    in {
-                        tag.strip().lower()
-                        for tag in (item.get("tags") or [])
-                        if isinstance(tag, str)
-                    }
+                    if next(
+                        (
+                            tag.strip().lower()
+                            for tag in (item.get("tags") or [])
+                            if isinstance(tag, str) and tag.strip()
+                        ),
+                        "",
+                    )
+                    == creator_tag_norm
                 ]
             creator_duration = time.perf_counter() - t0
 
