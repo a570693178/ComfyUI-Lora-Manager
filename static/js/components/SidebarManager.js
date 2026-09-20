@@ -2832,19 +2832,23 @@ export class SidebarManager {
                 // matched exactly so selecting a user does not highlight its
                 // base-model rows and selecting a base model does not
                 // highlight its tag rows (base-model rows carry
-                // data-base-model-node but no data-tag-node).
+                // data-base-model-node but no data-tag-node). Every selector
+                // is anchored to the content row (.sidebar-tree-node-content)
+                // because the user-level wrapper div also carries
+                // data-user-node and would otherwise be matched first,
+                // leaving the visible row un-highlighted.
                 const user = CSS.escape(this.selectedUser);
                 let selector;
                 if (this.selectedUserBaseModel) {
                     const baseModel = CSS.escape(this.selectedUserBaseModel);
                     if (this.selectedUserTag) {
                         const tag = CSS.escape(this.selectedUserTag);
-                        selector = `[data-user-node="${user}"][data-base-model-node="${baseModel}"][data-tag-node="${tag}"]`;
+                        selector = `.sidebar-tree-node-content[data-user-node="${user}"][data-base-model-node="${baseModel}"][data-tag-node="${tag}"]`;
                     } else {
-                        selector = `[data-user-node="${user}"][data-base-model-node="${baseModel}"]:not([data-tag-node])`;
+                        selector = `.sidebar-tree-node-content[data-user-node="${user}"][data-base-model-node="${baseModel}"]:not([data-tag-node])`;
                     }
                 } else {
-                    selector = `[data-user-node="${user}"]:not([data-base-model-node]):not([data-tag-node])`;
+                    selector = `.sidebar-tree-node-content[data-user-node="${user}"]:not([data-base-model-node]):not([data-tag-node])`;
                 }
                 const selectedNode = folderTree.querySelector(selector);
                 if (selectedNode) {
