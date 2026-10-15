@@ -326,6 +326,23 @@ MAX_FOLDER_NAME_LENGTH = 100
 MAX_PATH_TAG_LENGTH = 50
 MAX_FILENAME_STEM_LENGTH = 150
 
+# Full-path budget for every file LoRA Manager creates or moves. Windows
+# enforces MAX_PATH (260 characters) on the whole path, and the per-component
+# caps above do not add up to a guarantee: a deep model root plus template
+# folders plus a 150-char stem can still overflow (see issue #1142). Enforced
+# on every platform so libraries stay portable across OSes.
+MAX_FULL_PATH_LENGTH = 260
+
+# Characters reserved past the filename stem when budgeting a path. The stem
+# is shared by the model file, the ".metadata.json" sidecar (and its ".bak"),
+# preview files (".preview.webp" and friends) and aria2 control files; the
+# longest of those suffixes is ".metadata.json.bak" at 18 chars.
+PATH_BUDGET_SUFFIX_ALLOWANCE = 20
+
+# Below this stem length a name is no longer meaningful; callers should skip
+# the operation with an actionable message instead of writing a stub name.
+MIN_VIABLE_STEM_LENGTH = 8
+
 # baseModel values from CivitAI that should be treated as diffusion models (unet)
 # These model types are incorrectly labeled as "checkpoint" by CivitAI but are actually diffusion models
 DIFFUSION_MODEL_BASE_MODELS = frozenset(
@@ -516,3 +533,8 @@ SUPPORTED_DOWNLOAD_SKIP_BASE_MODELS = frozenset(
         "Wan Video 2.7",
     ]
 )
+
+# Model-type keys that download_root_rules understands. These mirror the
+# folder_paths keys ("loras"/"checkpoints"/"unet"/"embeddings") so a rule's
+# root can be validated against the roots configured for that type.
+DOWNLOAD_ROOT_RULE_FOLDER_KEYS = ("loras", "checkpoints", "unet", "embeddings")

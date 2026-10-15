@@ -42,12 +42,16 @@ from ..utils.paid_access import (
 )
 from ..utils.file_utils import calculate_sha256, calculate_autov3
 from ..utils.preview_selection import resolve_mature_threshold, select_preview_media
-from ..utils.utils import calculate_filename_for_model, sanitize_folder_name
+from ..utils.utils import calculate_filename_for_model, fit_stem_to_path_budget, sanitize_folder_name
 from ..utils.exif_utils import ExifUtils
 from ..utils.metadata_manager import MetadataManager
 from ..utils.sidecar_paths import get_metadata_path, get_preview_dir
 from .service_registry import ServiceRegistry
-from .download_routing import is_diffusion_model_download, resolve_other_download_sub_type
+from .download_routing import (
+    is_diffusion_model_download,
+    resolve_download_root,
+    resolve_other_download_sub_type,
+)
 from .settings_manager import get_settings_manager
 from .metadata_service import get_default_metadata_provider, get_metadata_provider
 from .downloader import get_downloader, DownloadProgress, DownloadStreamControl
@@ -1494,6 +1498,23 @@ class DownloadManager:
 
             self._restored_persisted_downloads = True
 
+    @staticmethod
+    def _resolve_rule_routed_root(
+        rule_key: str,
+        base_model: str,
+        default_root: str,
+        tags=None,
+    ) -> str:
+        """Apply download_root_rules for the final model type's folder key.
+
+        ``rule_key`` is a folder_paths key ("loras"/"checkpoints"/"unet"/
+        "embeddings") — a checkpoint download routed to the unet roots
+        consults the "unet" rules. ``tags`` are the model's CivitAI tags,
+        used by rules with ``match_type == "tag"``.
+        """
+        rules = get_settings_manager().get_download_root_rules().get(rule_key)
+        return resolve_download_root(rules, base_model, default_root, tags=tags)
+
     async def _resolve_download_target_path(
         self,
         save_dir: str,
@@ -1771,6 +1792,15 @@ class DownloadManager:
 
             excluded_base_models = get_settings_manager().get_download_skip_base_models()
             base_model_value = version_info.get("baseModel", "")
+            # Model-level CivitAI tags, used by download_root_rules with
+            # match_type "tag" (same source as _calculate_relative_path's
+            # {first_tag} placeholder).
+            model_info = version_info.get("model")
+            model_tags = (
+                model_info.get("tags") or []
+                if isinstance(model_info, dict)
+                else []
+            )
             if (
                 isinstance(base_model_value, str)
                 and base_model_value in SUPPORTED_DOWNLOAD_SKIP_BASE_MODELS
@@ -1904,15 +1934,19 @@ class DownloadManager:
                         if is_diffusion_model:
                             default_path = settings_manager.get("default_unet_root")
                             error_msg = "Default unet root path not set in settings"
+                            rule_key = "unet"
                         else:
                             default_path = settings_manager.get("default_checkpoint_root")
                             error_msg = "Default checkpoint root path not set in settings"
+                            rule_key = "checkpoints"
                         if not default_path:
                             return {
                                 "success": False,
                                 "error": error_msg,
                             }
-                        save_dir = default_path
+                        save_dir = self._resolve_rule_routed_root(
+                            rule_key, base_model_value, default_path, tags=model_tags
+                        )
                     elif model_type == "lora":
                         default_path = settings_manager.get("default_lora_root")
                         if not default_path:
@@ -1920,7 +1954,9 @@ class DownloadManager:
                                 "success": False,
                                 "error": "Default lora root path not set in settings",
                             }
-                        save_dir = default_path
+                        save_dir = self._resolve_rule_routed_root(
+                            "loras", base_model_value, default_path, tags=model_tags
+                        )
                     elif model_type == "embedding":
                         default_path = settings_manager.get("default_embedding_root")
                         if not default_path:
@@ -1928,7 +1964,9 @@ class DownloadManager:
                                 "success": False,
                                 "error": "Default embedding root path not set in settings",
                             }
-                        save_dir = default_path
+                        save_dir = self._resolve_rule_routed_root(
+                            "embeddings", base_model_value, default_path, tags=model_tags
+                        )
                     elif model_type == "other":
                         other_sub_type = resolve_other_download_sub_type(
                             model_type_from_info,
@@ -2153,6 +2191,30 @@ class DownloadManager:
             file_name = file_info.get("name", "")
             if not file_name:
                 return {"success": False, "error": "No filename found in file info"}
+            # Raw stored filenames carry no length cap, and the fixed stem
+            # cap only applies to template renames; trim to the real path
+            # budget (model path and sidecar mirror alike) so the target
+            # stays writable on Windows (#1142).
+            file_stem, file_ext = os.path.splitext(file_name)
+            fitted_stem = fit_stem_to_path_budget(save_dir, file_stem, file_ext)
+            if not fitted_stem:
+                return {
+                    "success": False,
+                    "error": (
+                        "Download target path would exceed the OS path length "
+                        "limit. Choose a shallower destination folder."
+                    ),
+                }
+            if fitted_stem != file_stem:
+                logger.info(
+                    "[download] Truncating filename '%s' to fit the path length limit",
+                    file_name,
+                )
+                # Rewrite file_info like the raw-name lookup above (#1100):
+                # from this point the name is the on-disk identity, which is
+                # what metadata, history and the scanner all agree on.
+                file_name = fitted_stem + file_ext
+                file_info = {**file_info, "name": file_name}
             save_path = os.path.join(save_dir, file_name)
 
             # 5. Prepare metadata based on model type
@@ -3050,8 +3112,12 @@ class DownloadManager:
                 if not isinstance(file_path, str) or not file_path:
                     continue
 
-                new_stem = calculate_filename_for_model(metadata_dict, model_type)
+                new_stem = calculate_filename_for_model(
+                    metadata_dict, model_type, target_dir=os.path.dirname(file_path)
+                )
                 if not new_stem:
+                    # An empty stem here also covers "no viable name fits the
+                    # path budget": keep the name already on disk.
                     continue
 
                 current_stem = os.path.splitext(os.path.basename(file_path))[0]
