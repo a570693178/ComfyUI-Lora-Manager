@@ -130,6 +130,7 @@ DEFAULT_SETTINGS: Dict[str, Any] = {
     "lora_syntax_format": "legacy",
     "model_card_footer_action": "replace_preview",
     "show_version_on_card": True,
+    "show_quantization_on_card": True,
     "version_grouping": "same_base",
     # Buzz price tracking for paid/early-access versions. Opt-in because reading a
     # price costs one extra (public) model-page request per gated model.
@@ -139,6 +140,10 @@ DEFAULT_SETTINGS: Dict[str, Any] = {
     "price_check_ttl_hours": 24,
     "auto_organize_exclusions": [],
     "metadata_refresh_skip_paths": [],
+    # Send-to-Workflow target filtering: candidate nodes whose comfy class or
+    # title matches these lists are hidden from the target selector. Nodes
+    # explicitly marked via right-click ("Mark as") are exempt.
+    "send_to_workflow_exclusions": {"node_classes": [], "title_patterns": []},
     "skip_previously_downloaded_model_versions": False,
     "download_skip_base_models": [],
     # Ordered per-type rules routing downloads to a non-default root by base

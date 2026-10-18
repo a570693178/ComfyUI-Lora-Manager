@@ -399,7 +399,8 @@
             "autoOrganize": "自動整理",
             "metadata": "メタデータ",
             "sidecarStorage": "サイドカーファイルの保存",
-            "proxySettings": "プロキシ設定"
+            "proxySettings": "プロキシ設定",
+            "sendToWorkflow": "[TODO: Translate] Send to Workflow"
         },
         "nav": {
             "general": "一般",
@@ -451,6 +452,18 @@
             "validation": {
                 "noPaths": "カンマで区切って少なくとも1つのパスを入力してください。",
                 "saveFailed": "スキップパスの保存に失敗しました：{message}"
+            }
+        },
+        "sendToWorkflowExclusions": {
+            "nodeClasses": {
+                "label": "[TODO: Translate] Excluded node types",
+                "placeholder": "[TODO: Translate] Example: CheckpointLoaderSimple, MyCustomNode",
+                "help": "[TODO: Translate] ComfyUI node class names that never appear as send-to-workflow targets. Separate multiple entries with commas or semicolons. Nodes explicitly marked in ComfyUI (right-click → Mark as) are exempt."
+            },
+            "titlePatterns": {
+                "label": "[TODO: Translate] Excluded node title patterns",
+                "placeholder": "[TODO: Translate] Example: negative, preview",
+                "help": "[TODO: Translate] Nodes whose title contains any of these text fragments (case-insensitive) are hidden from send-to-workflow targets. Separate multiple entries with commas or semicolons. Nodes explicitly marked in ComfyUI (right-click → Mark as) are exempt."
             }
         },
         "backup": {
@@ -577,6 +590,8 @@
             },
             "showVersionOnCard": "カードにバージョンを表示",
             "showVersionOnCardHelp": "モデルカード上のバージョン名の表示/非表示を切り替えます",
+            "showQuantizationOnCard": "カードに量子化を表示",
+            "showQuantizationOnCardHelp": "モデルカードのバージョン名の横に量子化レベル（例：Q4_K_M, FP8）を表示します",
             "modelCardFooterAction": "モデルカードボタンのアクション",
             "modelCardFooterActionOptions": {
                 "exampleImages": "例画像を開く",
@@ -2328,7 +2343,8 @@
             "embeddingAdded": "Embeddingをワークフローに追加しました",
             "embeddingFailed": "Embeddingの追加に失敗しました",
             "promptSent": "プロンプトをワークフローに送信しました",
-            "promptFailed": "プロンプトの送信に失敗しました"
+            "promptFailed": "プロンプトの送信に失敗しました",
+            "nodeTypeExcluded": "[TODO: Translate] Node type \"{type}\" excluded from send targets"
         },
         "nodeSelector": {
             "recipe": "レシピ",
@@ -2338,7 +2354,8 @@
             "replace": "置換",
             "append": "追加",
             "selectTargetNode": "ターゲットノードを選択",
-            "sendToAll": "すべてに送信"
+            "sendToAll": "すべてに送信",
+            "excludeNodeType": "[TODO: Translate] Never suggest this node type"
         },
         "exampleImages": {
             "opened": "例画像フォルダが開かれました",
