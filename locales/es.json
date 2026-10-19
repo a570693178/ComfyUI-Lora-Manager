@@ -264,6 +264,7 @@
         },
         "filter": {
             "title": "Filtrar modelos",
+            "countTitle": "{name} — {count} modelos",
             "presets": "Preajustes",
             "savePreset": "Guardar filtros activos como nuevo preajuste.",
             "savePresetDisabledActive": "No se puede guardar: Ya hay un preajuste activo. Modifique los filtros para guardar un nuevo preajuste",
@@ -400,7 +401,7 @@
             "metadata": "Metadatos",
             "sidecarStorage": "Almacenamiento de archivos sidecar",
             "proxySettings": "Configuración de proxy",
-            "sendToWorkflow": "[TODO: Translate] Send to Workflow"
+            "sendToWorkflow": "Enviar al workflow"
         },
         "nav": {
             "general": "General",
@@ -456,14 +457,14 @@
         },
         "sendToWorkflowExclusions": {
             "nodeClasses": {
-                "label": "[TODO: Translate] Excluded node types",
-                "placeholder": "[TODO: Translate] Example: CheckpointLoaderSimple, MyCustomNode",
-                "help": "[TODO: Translate] ComfyUI node class names that never appear as send-to-workflow targets. Separate multiple entries with commas or semicolons. Nodes explicitly marked in ComfyUI (right-click → Mark as) are exempt."
+                "label": "Tipos de nodos excluidos",
+                "placeholder": "Ejemplo: CheckpointLoaderSimple, MyCustomNode",
+                "help": "Nombres de clase de nodos de ComfyUI que nunca aparecen como destinos de envío al workflow. Separa varias entradas con comas o puntos y comas. Los nodos marcados explícitamente en ComfyUI (clic derecho → Mark as) quedan exentos."
             },
             "titlePatterns": {
-                "label": "[TODO: Translate] Excluded node title patterns",
-                "placeholder": "[TODO: Translate] Example: negative, preview",
-                "help": "[TODO: Translate] Nodes whose title contains any of these text fragments (case-insensitive) are hidden from send-to-workflow targets. Separate multiple entries with commas or semicolons. Nodes explicitly marked in ComfyUI (right-click → Mark as) are exempt."
+                "label": "Patrones de títulos de nodos excluidos",
+                "placeholder": "Ejemplo: negative, preview",
+                "help": "Los nodos cuyo título contenga alguno de estos fragmentos de texto (sin distinguir mayúsculas y minúsculas) se ocultan de los destinos de envío al workflow. Separa varias entradas con comas o puntos y comas. Los nodos marcados explícitamente en ComfyUI (clic derecho → Mark as) quedan exentos."
             }
         },
         "backup": {
@@ -970,6 +971,11 @@
                 "random": "Aleatorio",
                 "randomAction": "Aleatorizar (barajar)"
             },
+            "modelType": {
+                "title": "Filtrar por tipo de modelo",
+                "all": "Todos los tipos",
+                "multiple": "{count} tipos"
+            },
             "refresh": {
                 "title": "Actualizar lista de modelos",
                 "full": "Reconstruir caché",
@@ -1092,6 +1098,9 @@
     },
     "recipes": {
         "title": "Recetas de LoRA",
+        "filter": {
+            "countTitle": "{name} — {count} recetas"
+        },
         "actions": {
             "sendCheckpoint": "Enviar a ComfyUI",
             "sendRecipe": "Enviar a ComfyUI",
@@ -1477,8 +1486,8 @@
             "notEmptyMessageCount": "Esta carpeta aún contiene {count} archivo(s) de modelo. Elimínalos o muévelos primero — eliminar una carpeta nunca elimina los archivos de modelo en cascada.",
             "notEmptyMessageExcluded": "Esta carpeta aún contiene {count} archivo(s) de modelo, de los cuales {excluded} están excluidos de la biblioteca. Anula su exclusión en «Gestionar modelos excluidos» y elimínalos primero — eliminar una carpeta nunca elimina los archivos de modelo en cascada.",
             "missingTitle": "Carpeta no encontrada",
-            "missingMessage": "[TODO: Translate] This folder no longer exists on disk. You can remove it from the list.",
-            "removeFromList": "[TODO: Translate] Remove from list",
+            "missingMessage": "Esta carpeta ya no existe en el disco. Puedes quitarla de la lista.",
+            "removeFromList": "Quitar de la lista",
             "symlinkTitle": "La carpeta es un enlace simbólico",
             "symlinkMessage": "Todas las copias de esta carpeta son enlaces simbólicos; elimina el enlace o su destino fuera de LoRA Manager.",
             "protectedTitle": "Carpeta protegida",
@@ -1500,8 +1509,8 @@
             "busy": "Todavía hay una eliminación pendiente dentro de esta carpeta. Espera a que caduque la ventana de deshacer.",
             "unsupported": "La eliminación de carpetas no es compatible con esta página",
             "missing": "Esta carpeta ya no existe en el disco. Actualiza la barra lateral e inténtalo de nuevo.",
-            "forgotten": "[TODO: Translate] Folder \"{name}\" removed from the list",
-            "exists": "[TODO: Translate] The folder is back on disk. Delete it instead.",
+            "forgotten": "Carpeta \"{name}\" quitada de la lista",
+            "exists": "La carpeta ha vuelto al disco. Elimínala en su lugar.",
             "symlink": "Esta carpeta es un enlace simbólico; no se puede eliminar desde la barra lateral.",
             "successMulti": "Carpeta \"{name}\" eliminada de {count} raíces de modelo",
             "partial": "Se eliminaron {count} de {total} copias — {failed} no se pudieron eliminar. Actualiza la barra lateral e inténtalo de nuevo."
@@ -2344,7 +2353,7 @@
             "embeddingFailed": "Error al añadir el embedding",
             "promptSent": "Prompt enviado al workflow",
             "promptFailed": "Error al enviar el prompt",
-            "nodeTypeExcluded": "[TODO: Translate] Node type \"{type}\" excluded from send targets"
+            "nodeTypeExcluded": "Tipo de nodo \"{type}\" excluido de los destinos de envío"
         },
         "nodeSelector": {
             "recipe": "Receta",
@@ -2355,7 +2364,7 @@
             "append": "Añadir",
             "selectTargetNode": "Seleccionar nodo de destino",
             "sendToAll": "Enviar a todos",
-            "excludeNodeType": "[TODO: Translate] Never suggest this node type"
+            "excludeNodeType": "No volver a sugerir este tipo de nodo"
         },
         "exampleImages": {
             "opened": "Carpeta de imágenes de ejemplo abierta",
