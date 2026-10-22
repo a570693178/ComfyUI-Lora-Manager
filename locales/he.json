@@ -2578,7 +2578,9 @@
             "ignored": "{count} גרסאות התעלמו מהן",
             "ignorePartial": "{completed} מתוך {total} גרסאות התעלמו מהן",
             "downloadSuccess": "{count} גרסאות הורדו",
-            "downloadPartial": "{completed} מתוך {total} גרסאות הורדו"
+            "downloadPartial": "{completed} מתוך {total} גרסאות הורדו",
+            "downloadSkipped": "[TODO: Translate] Skipped {count} version(s) that were already downloaded before",
+            "downloadSkippedBaseModel": "[TODO: Translate] Skipped {count} version(s) because the base model is excluded in settings"
         },
         "loras": {
             "copyOnlyForLoras": "העתקת תחביר זמינה רק עבור LoRAs",

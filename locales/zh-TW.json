@@ -2578,7 +2578,9 @@
             "ignored": "已忽略 {count} 個版本",
             "ignorePartial": "已忽略 {total} 個版本中的 {completed} 個",
             "downloadSuccess": "已下載 {count} 個版本",
-            "downloadPartial": "已下載 {total} 個版本中的 {completed} 個"
+            "downloadPartial": "已下載 {total} 個版本中的 {completed} 個",
+            "downloadSkipped": "[TODO: Translate] Skipped {count} version(s) that were already downloaded before",
+            "downloadSkippedBaseModel": "[TODO: Translate] Skipped {count} version(s) because the base model is excluded in settings"
         },
         "loras": {
             "copyOnlyForLoras": "僅對 LoRA 可用的複製語法",

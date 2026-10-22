@@ -2578,7 +2578,9 @@
             "ignored": "{count} 件のバージョンを無視しました",
             "ignorePartial": "{total} 件中 {completed} 件のバージョンを無視しました",
             "downloadSuccess": "{count} 件のバージョンをダウンロードしました",
-            "downloadPartial": "{total} 件中 {completed} 件のバージョンをダウンロードしました"
+            "downloadPartial": "{total} 件中 {completed} 件のバージョンをダウンロードしました",
+            "downloadSkipped": "[TODO: Translate] Skipped {count} version(s) that were already downloaded before",
+            "downloadSkippedBaseModel": "[TODO: Translate] Skipped {count} version(s) because the base model is excluded in settings"
         },
         "loras": {
             "copyOnlyForLoras": "構文のコピーはLoRAのみ利用可能です",

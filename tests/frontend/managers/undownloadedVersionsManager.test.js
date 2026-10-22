@@ -1,4 +1,4 @@
-import { describe, it, beforeEach, expect, vi } from 'vitest';
+import { describe, it, beforeEach, afterEach, expect, vi } from 'vitest';
 
 const {
     MANAGER_MODULE,
@@ -34,6 +34,8 @@ vi.mock(CARD_MODULE, () => ({ createUndownloadedVersionCard: vi.fn() }));
 const { undownloadedVersionsManager } = await import(MANAGER_MODULE);
 const { MODEL_TYPES } = await import(API_CONFIG_MODULE);
 const { state } = await import(STATE_MODULE);
+const { getModelApiClient } = await import(MODEL_API_FACTORY_MODULE);
+const { showToast } = await import(UI_HELPERS_MODULE);
 
 /** A pending version with every field the manager reads. */
 function makeVersion(modelId, versionId, overrides = {}) {
@@ -63,6 +65,40 @@ function setToolbarDom() {
             <span id="undownloadedViewIgnoreBtnText"></span>
         </button>
     `;
+}
+
+/**
+ * A WebSocket stand-in that opens on the next microtask, so the manager's
+ * "wait for the socket" step resolves the way a real connection would.
+ */
+class FakeWebSocket {
+    static instances = [];
+
+    constructor(url) {
+        this.url = url;
+        this.onmessage = null;
+        this.onerror = null;
+        this.close = vi.fn();
+        this.listeners = {};
+        FakeWebSocket.instances.push(this);
+        queueMicrotask(() => this.emit('open'));
+    }
+
+    addEventListener(type, handler) {
+        this.listeners[type] = handler;
+    }
+
+    emit(type, payload) {
+        const handler = this.listeners?.[type];
+        if (handler) {
+            handler(payload);
+        }
+    }
+
+    /** Deliver a server progress event to the manager. */
+    send(data) {
+        this.onmessage?.({ data: JSON.stringify(data) });
+    }
 }
 
 describe('UndownloadedVersionsManager', () => {
@@ -204,6 +240,149 @@ describe('UndownloadedVersionsManager', () => {
             state.pages.loras.undownloadedView = false;
 
             expect(undownloadedVersionsManager.isActive(MODEL_TYPES.LORA)).toBe(false);
+        });
+    });
+
+    /**
+     * The download endpoint only answers once the whole file has been
+     * transferred, so the progress can only come from the
+     * download-progress WebSocket. Without that socket the bar stays at 0%
+     * for the whole transfer and the user sees no sign of progress.
+     */
+    describe('downloadSelected', () => {
+        let apiClient;
+        let loadingManager;
+        let updateProgress;
+
+        beforeEach(() => {
+            FakeWebSocket.instances = [];
+            vi.clearAllMocks();
+
+            updateProgress = vi.fn();
+            loadingManager = {
+                showDownloadProgress: vi.fn(() => updateProgress),
+                showCancelButton: vi.fn(),
+                hideCancelButton: vi.fn(),
+                hide: vi.fn(),
+                setStatus: vi.fn(),
+            };
+            state.loadingManager = loadingManager;
+
+            apiClient = {
+                downloadModel: vi.fn(async () => ({ success: true })),
+                cancelDownload: vi.fn(async () => ({ success: true })),
+                fetchModelRoots: vi.fn(async () => ({ roots: ['/models/loras'] })),
+                apiConfig: { config: { singularName: 'lora' } },
+            };
+            getModelApiClient.mockReturnValue(apiClient);
+            undownloadedVersionsManager.bind(MODEL_TYPES.LORA);
+
+            vi.stubGlobal('WebSocket', FakeWebSocket);
+        });
+
+        afterEach(() => {
+            vi.unstubAllGlobals();
+            state.loadingManager = null;
+        });
+
+        const selectOne = (version) => {
+            undownloadedVersionsManager.trackLoaded([version]);
+            undownloadedVersionsManager.toggleVersion(
+                `${version.modelId}:${version.versionId}`,
+                true
+            );
+        };
+
+        it('opens the download-progress socket so live progress can arrive', async () => {
+            selectOne(makeVersion(7, 2));
+
+            await undownloadedVersionsManager.downloadSelected();
+
+            expect(FakeWebSocket.instances).toHaveLength(1);
+            expect(FakeWebSocket.instances[0].url).toContain(
+                '/ws/download-progress?id=undl-'
+            );
+            // The socket has to be registered before the download starts,
+            // otherwise the opening progress events are dropped.
+            expect(apiClient.downloadModel).toHaveBeenCalledTimes(1);
+        });
+
+        it('drives the progress bar from the socket events', async () => {
+            selectOne(makeVersion(7, 2));
+
+            // The download endpoint only answers once the file has been
+            // transferred, so the request has to stay pending while the
+            // progress events arrive.
+            let releaseDownload;
+            apiClient.downloadModel.mockImplementation(
+                () => new Promise((resolve) => { releaseDownload = resolve; })
+            );
+
+            const pending = undownloadedVersionsManager.downloadSelected();
+            await vi.waitFor(() => expect(FakeWebSocket.instances).toHaveLength(1));
+
+            FakeWebSocket.instances[0].send({
+                status: 'progress',
+                progress: 42,
+                download_id: 'undl-1',
+                bytes_downloaded: 1024,
+                total_bytes: 2048,
+                bytes_per_second: 512,
+            });
+
+            // The first item is still in flight, so the batch position is 0.
+            expect(updateProgress).toHaveBeenCalledWith(
+                42,
+                0,
+                'Model 7 v2',
+                {
+                    bytesDownloaded: 1024,
+                    totalBytes: 2048,
+                    bytesPerSecond: 512,
+                }
+            );
+
+            releaseDownload({ success: true });
+            await pending;
+        });
+
+        it('counts a server-side skip as neither a success nor a failure', async () => {
+            selectOne(makeVersion(7, 2));
+            apiClient.downloadModel.mockResolvedValue({
+                success: true,
+                skipped: true,
+                reason: 'previously_downloaded_version',
+            });
+
+            await undownloadedVersionsManager.downloadSelected();
+
+            expect(showToast).toHaveBeenCalledWith(
+                'toast.undownloadedVersions.downloadSkipped',
+                { count: 1 },
+                'warning'
+            );
+            expect(showToast).not.toHaveBeenCalledWith(
+                'toast.undownloadedVersions.downloadSuccess',
+                expect.anything(),
+                expect.anything()
+            );
+        });
+
+        it('reports a base-model exclusion separately', async () => {
+            selectOne(makeVersion(7, 2));
+            apiClient.downloadModel.mockResolvedValue({
+                success: true,
+                skipped: true,
+                reason: 'base_model_excluded',
+            });
+
+            await undownloadedVersionsManager.downloadSelected();
+
+            expect(showToast).toHaveBeenCalledWith(
+                'toast.undownloadedVersions.downloadSkippedBaseModel',
+                { count: 1 },
+                'warning'
+            );
         });
     });
 });

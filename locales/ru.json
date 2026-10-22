@@ -2578,7 +2578,9 @@
             "ignored": "Игнорировано версий: {count}",
             "ignorePartial": "Игнорировано {completed} из {total} версий",
             "downloadSuccess": "Скачано версий: {count}",
-            "downloadPartial": "Скачано {completed} из {total} версий"
+            "downloadPartial": "Скачано {completed} из {total} версий",
+            "downloadSkipped": "[TODO: Translate] Skipped {count} version(s) that were already downloaded before",
+            "downloadSkippedBaseModel": "[TODO: Translate] Skipped {count} version(s) because the base model is excluded in settings"
         },
         "loras": {
             "copyOnlyForLoras": "Копирование синтаксиса доступно только для LoRAs",

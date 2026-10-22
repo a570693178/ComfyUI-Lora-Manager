@@ -2578,7 +2578,9 @@
             "ignored": "{count} versión(es) ignorada(s)",
             "ignorePartial": "{completed} de {total} versión(es) ignorada(s)",
             "downloadSuccess": "{count} versión(es) descargada(s)",
-            "downloadPartial": "{completed} de {total} versión(es) descargada(s)"
+            "downloadPartial": "{completed} de {total} versión(es) descargada(s)",
+            "downloadSkipped": "[TODO: Translate] Skipped {count} version(s) that were already downloaded before",
+            "downloadSkippedBaseModel": "[TODO: Translate] Skipped {count} version(s) because the base model is excluded in settings"
         },
         "loras": {
             "copyOnlyForLoras": "Copiar sintaxis solo está disponible para LoRAs",

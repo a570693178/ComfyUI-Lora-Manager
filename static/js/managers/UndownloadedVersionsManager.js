@@ -196,6 +196,12 @@ export class UndownloadedVersionsManager {
 
     /**
      * Download the selected versions sequentially.
+     *
+     * The download endpoint only answers once the whole file has been
+     * transferred, so the progress can only come from the download-progress
+     * WebSocket. The whole batch shares one download id, and because the
+     * files are downloaded one after another, the version that is currently
+     * in flight is the one the events belong to.
      */
     async downloadSelected() {
         const targets = this._selectedVersions().filter((version) =>
@@ -224,40 +230,128 @@ export class UndownloadedVersionsManager {
 
         let completed = 0;
         let failed = 0;
+        let skippedBefore = 0;
+        let skippedByBaseModel = 0;
+        let cancelled = false;
+        // The batch shares a single download id, so a progress event cannot
+        // name the version it belongs to. The downloads run one after
+        // another, so the in-flight one is the only candidate.
+        let currentName = '';
 
-        for (const version of targets) {
-            try {
-                const response = await this.apiClient.downloadModel(
-                    version.modelId,
-                    version.versionId,
-                    root,
-                    '',
-                    true,
-                    batchDownloadId
-                );
-                if (!response || response.success === false) {
-                    failed++;
-                } else {
-                    completed++;
-                }
-            } catch (error) {
-                console.error('Failed to download version:', error);
-                failed++;
-            }
-            updateProgress(
-                Math.round(((completed + failed) / targets.length) * 100),
-                completed + failed,
-                `${version.modelName || ''} ${version.versionName || version.versionId}`
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+        let ws = null;
+        try {
+            ws = new WebSocket(
+                `${wsProtocol}${window.location.host}/ws/download-progress?id=${batchDownloadId}`
             );
+        } catch (error) {
+            console.error('Failed to open download progress socket:', error);
+        }
+
+        if (ws) {
+            ws.onmessage = (event) => {
+                let data;
+                try {
+                    data = JSON.parse(event.data);
+                } catch (error) {
+                    return;
+                }
+                if (data.type === 'download_id') return;
+                if (data.status === 'cancelled') {
+                    cancelled = true;
+                    return;
+                }
+                if (data.status !== 'progress') return;
+
+                updateProgress(data.progress, completed, currentName, {
+                    bytesDownloaded: data.bytes_downloaded,
+                    totalBytes: data.total_bytes,
+                    bytesPerSecond: data.bytes_per_second,
+                });
+            };
+            ws.onerror = (error) => {
+                console.error('Download progress WebSocket error:', error);
+            };
+            // The socket has to be registered with the server before the
+            // first download starts, otherwise the opening progress events
+            // of that file are dropped. A socket that never opens must not
+            // block the download itself, so the error resolves it too.
+            await new Promise((resolve) => {
+                const ready = () => resolve();
+                ws.addEventListener('open', ready, { once: true });
+                ws.addEventListener('error', ready, { once: true });
+            });
         }
 
         if (loadingManager) {
-            loadingManager.hide();
+            loadingManager.showCancelButton(async () => {
+                if (cancelled) return;
+                cancelled = true;
+                try {
+                    await this.apiClient.cancelDownload(batchDownloadId);
+                } catch (error) {
+                    console.error('Cancel request failed:', error);
+                }
+            });
         }
+
+        try {
+            for (const version of targets) {
+                if (cancelled) break;
+                currentName = `${version.modelName || ''} ${version.versionName || version.versionId}`.trim();
+                if (loadingManager) {
+                    loadingManager.setStatus(
+                        translate(
+                            'modals.download.status.downloadingFile',
+                            { type: this.apiClient?.apiConfig?.config?.singularName || 'model' },
+                            'Downloading {type} file'
+                        )
+                    );
+                }
+                try {
+                    const response = await this.apiClient.downloadModel(
+                        version.modelId,
+                        version.versionId,
+                        root,
+                        '',
+                        true,
+                        batchDownloadId
+                    );
+                    if (cancelled) break;
+                    if (response?.skipped) {
+                        // The server refused the transfer (already downloaded
+                        // before, or the base model is excluded). Nothing was
+                        // written, so this is not a completed download.
+                        if (response.reason === 'base_model_excluded') {
+                            skippedByBaseModel++;
+                        } else {
+                            skippedBefore++;
+                        }
+                    } else if (!response || response.success === false) {
+                        failed++;
+                    } else {
+                        completed++;
+                    }
+                } catch (error) {
+                    console.error('Failed to download version:', error);
+                    failed++;
+                }
+            }
+        } finally {
+            if (ws) {
+                ws.close();
+            }
+            if (loadingManager) {
+                loadingManager.hide();
+            }
+        }
+
         this.busy = false;
         this._afterBulkAction();
 
-        if (failed === 0) {
+        if (cancelled) {
+            showToast('toast.downloads.downloadStopped', {}, 'info');
+        } else if (failed === 0 && skippedBefore === 0 && skippedByBaseModel === 0) {
             showToast(
                 'toast.undownloadedVersions.downloadSuccess',
                 { count: completed },
@@ -267,6 +361,20 @@ export class UndownloadedVersionsManager {
             showToast(
                 'toast.undownloadedVersions.downloadPartial',
                 { completed, total: targets.length },
+                'warning'
+            );
+        }
+        if (skippedBefore > 0) {
+            showToast(
+                'toast.undownloadedVersions.downloadSkipped',
+                { count: skippedBefore },
+                'warning'
+            );
+        }
+        if (skippedByBaseModel > 0) {
+            showToast(
+                'toast.undownloadedVersions.downloadSkippedBaseModel',
+                { count: skippedByBaseModel },
                 'warning'
             );
         }

@@ -2578,7 +2578,9 @@
             "ignored": "{count}개 버전을 무시했습니다",
             "ignorePartial": "{total}개 중 {completed}개 버전을 무시했습니다",
             "downloadSuccess": "{count}개 버전을 다운로드했습니다",
-            "downloadPartial": "{total}개 중 {completed}개 버전을 다운로드했습니다"
+            "downloadPartial": "{total}개 중 {completed}개 버전을 다운로드했습니다",
+            "downloadSkipped": "[TODO: Translate] Skipped {count} version(s) that were already downloaded before",
+            "downloadSkippedBaseModel": "[TODO: Translate] Skipped {count} version(s) because the base model is excluded in settings"
         },
         "loras": {
             "copyOnlyForLoras": "문법 복사는 LoRA에서만 사용할 수 있습니다",
