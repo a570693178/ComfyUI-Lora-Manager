@@ -1,6 +1,7 @@
 import asyncio
 import importlib.util
 import inspect
+import os
 import sys
 import types
 from contextlib import asynccontextmanager
@@ -123,6 +124,35 @@ def _isolate_settings_dir(tmp_path_factory, monkeypatch, request):
     monkeypatch.setattr(
         "py.utils.settings_paths.user_config_dir",
         lambda *_args, **_kwargs: str(settings_dir),
+    )
+
+    # The legacy settings file lives in the *project root*, which
+    # get_settings_dir() does not cover: ensure_settings_file() still looks
+    # there and, in portable mode, hands that very path to the manager. A
+    # test that builds a real SettingsManager would then read — and rewrite,
+    # or worse move away — the user's actual settings.json. Point the legacy
+    # path at the temp directory instead, while still honouring a test that
+    # patches get_project_root itself (those tests expect their own root to
+    # stay in charge).
+    from py.utils import settings_paths
+
+    real_project_root = os.path.abspath(settings_paths.get_project_root())
+
+    def isolated_legacy_settings_path() -> str:
+        current_root = os.path.abspath(settings_paths.get_project_root())
+        if current_root == real_project_root:
+            return str(settings_dir / "settings.json")
+        return os.path.join(current_root, "settings.json")
+
+    monkeypatch.setattr(
+        "py.utils.settings_paths.get_legacy_settings_path",
+        isolated_legacy_settings_path,
+    )
+    # settings_manager imports the function by value, so the module attribute
+    # alone would not reach it.
+    monkeypatch.setattr(
+        "py.services.settings_manager.get_legacy_settings_path",
+        isolated_legacy_settings_path,
     )
 
     from py.services import settings_manager as settings_manager_module
