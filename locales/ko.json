@@ -189,7 +189,7 @@
         "footer": {
             "versionCount": "{count}개 버전",
             "viewAllVersions": "모든 로컬 버전 보기",
-            "versionRatio": "[TODO: Translate] {total} versions on Civitai, {downloaded} downloaded"
+            "versionRatio": "Civitai 버전 {total}개 중 {downloaded}개 다운로드됨"
         }
     },
     "globalContextMenu": {
@@ -1458,14 +1458,14 @@
         "viewOptions": "보기 옵션",
         "treeView": "트리 보기",
         "listView": "목록 보기",
-        "userView": "[TODO: Translate] User view",
-        "usersTitle": "[TODO: Translate] Users",
-        "userCountOrderDesc": "[TODO: Translate] By model count: high → low",
-        "userCountOrderAsc": "[TODO: Translate] By model count: low → high",
-        "clearUserOrder": "[TODO: Translate] Reset custom order",
-        "favoriteUser": "[TODO: Translate] Favorite user (favorites sort first)",
-        "noUsers": "[TODO: Translate] No creator data found",
-        "usersLoadFailed": "[TODO: Translate] Failed to load creator data",
+        "userView": "사용자 보기",
+        "usersTitle": "사용자",
+        "userCountOrderDesc": "모델 수 기준: 많음 → 적음",
+        "userCountOrderAsc": "모델 수 기준: 적음 → 많음",
+        "clearUserOrder": "사용자 정렬 초기화",
+        "favoriteUser": "사용자 즐겨찾기 (즐겨찾기가 먼저 정렬됨)",
+        "noUsers": "작성자 데이터를 찾을 수 없습니다",
+        "usersLoadFailed": "작성자 데이터를 불러오지 못했습니다",
         "recursiveOn": "하위 폴더 포함",
         "createFolder": "새 폴더",
         "newSubfolder": "새 하위 폴더",
@@ -1731,8 +1731,8 @@
             "errors": {
                 "invalidUrl": "잘못된 모델 URL 형식",
                 "noVersions": "이 모델에 사용 가능한 버전이 없습니다",
-                "linkedFileNotFound": "[TODO: Translate] File {fileId} was not found in the requested model version.",
-                "linkedFileNotWeightFile": "[TODO: Translate] File {fileId} is not a downloadable model file.",
+                "linkedFileNotFound": "요청한 모델 버전에서 파일 {fileId}을(를) 찾을 수 없습니다.",
+                "linkedFileNotWeightFile": "파일 {fileId}은(는) 다운로드 가능한 모델 파일이 아닙니다.",
                 "mixedSources": "동일한 배치에서 CivitAI와 Hugging Face / ModelScope URL을 혼합할 수 없습니다.",
                 "noModelFiles": "이 저장소에서 모델 파일을 찾을 수 없습니다."
             },
@@ -1874,16 +1874,16 @@
             "downloadButton": "{count}개 LoRA 다운로드"
         },
         "undownloadedVersions": {
-            "title": "[TODO: Translate] Undownloaded Versions",
-            "shortAction": "[TODO: Translate] Undownloaded",
-            "selectAll": "[TODO: Translate] Select all",
-            "summary": "[TODO: Translate] {selected} / {total} selected",
-            "empty": "[TODO: Translate] All versions are already downloaded.",
-            "downloadSelected": "[TODO: Translate] Download selected ({count})",
-            "ignoreSelected": "[TODO: Translate] Ignore selected ({count})",
-            "badgeEarlyAccess": "[TODO: Translate] Early Access",
-            "badgePaid": "[TODO: Translate] Paid",
-            "badgeNotDownloadable": "[TODO: Translate] Not downloadable"
+            "title": "미다운로드 버전",
+            "shortAction": "미다운로드",
+            "selectAll": "전체 선택",
+            "summary": "{selected} / {total} 선택됨",
+            "empty": "모든 버전이 이미 다운로드되었습니다.",
+            "downloadSelected": "선택 항목 다운로드 ({count})",
+            "ignoreSelected": "선택 항목 무시 ({count})",
+            "badgeEarlyAccess": "얼리 액세스",
+            "badgePaid": "유료",
+            "badgeNotDownloadable": "다운로드 불가"
         },
         "rematchOptions": {
             "title": "레시피 재매칭",
@@ -2571,13 +2571,13 @@
             "statisticsLoadFailed": "통계 데이터 로딩에 실패했습니다"
         },
         "undownloadedVersions": {
-            "loadFailed": "[TODO: Translate] Failed to load undownloaded versions",
-            "nothingSelected": "[TODO: Translate] Select at least one version first",
-            "noRoot": "[TODO: Translate] No model root directory is configured",
-            "ignored": "[TODO: Translate] Ignored {count} version(s)",
-            "ignorePartial": "[TODO: Translate] Ignored {completed} of {total} version(s)",
-            "downloadSuccess": "[TODO: Translate] Downloaded {count} version(s)",
-            "downloadPartial": "[TODO: Translate] Downloaded {completed} of {total} version(s)"
+            "loadFailed": "미다운로드 버전을 불러오지 못했습니다",
+            "nothingSelected": "먼저 하나 이상의 버전을 선택하세요",
+            "noRoot": "모델 루트 디렉터리가 설정되지 않았습니다",
+            "ignored": "{count}개 버전을 무시했습니다",
+            "ignorePartial": "{total}개 중 {completed}개 버전을 무시했습니다",
+            "downloadSuccess": "{count}개 버전을 다운로드했습니다",
+            "downloadPartial": "{total}개 중 {completed}개 버전을 다운로드했습니다"
         },
         "loras": {
             "copyOnlyForLoras": "문법 복사는 LoRA에서만 사용할 수 있습니다",
@@ -2851,8 +2851,8 @@
             "deleteError": "오류: {message}",
             "deleteSuccess": "{count}개의 {type}이(가) 성공적으로 삭제되었습니다",
             "deleteFailed": "{type} 삭제 실패: {message}",
-            "deletePartialFailed": "[TODO: Translate] Failed to delete {failed} selected {type}: {message}",
-            "cacheUpdateFailed": "[TODO: Translate] The files were deleted but the library cache could not be updated. Run Rebuild Cache to refresh the list."
+            "deletePartialFailed": "선택한 {type} 삭제 중 {failed}개 실패했습니다: {message}",
+            "cacheUpdateFailed": "파일은 삭제되었지만 라이브러리 캐시를 업데이트하지 못했습니다. 목록을 새로 고치려면 캐시 재구성을 실행하세요."
         },
         "controls": {
             "reloadFailed": "{pageType} 다시 로딩 실패: {message}",

@@ -189,7 +189,7 @@
         "footer": {
             "versionCount": "{count} バージョン",
             "viewAllVersions": "ローカルの全バージョンを表示",
-            "versionRatio": "[TODO: Translate] {total} versions on Civitai, {downloaded} downloaded"
+            "versionRatio": "Civitai に {total} 件のバージョン、{downloaded} 件ダウンロード済み"
         }
     },
     "globalContextMenu": {
@@ -1458,14 +1458,14 @@
         "viewOptions": "表示オプション",
         "treeView": "ツリー表示",
         "listView": "リスト表示",
-        "userView": "[TODO: Translate] User view",
-        "usersTitle": "[TODO: Translate] Users",
-        "userCountOrderDesc": "[TODO: Translate] By model count: high → low",
-        "userCountOrderAsc": "[TODO: Translate] By model count: low → high",
-        "clearUserOrder": "[TODO: Translate] Reset custom order",
-        "favoriteUser": "[TODO: Translate] Favorite user (favorites sort first)",
-        "noUsers": "[TODO: Translate] No creator data found",
-        "usersLoadFailed": "[TODO: Translate] Failed to load creator data",
+        "userView": "ユーザービュー",
+        "usersTitle": "ユーザー",
+        "userCountOrderDesc": "モデル数の順：多い → 少ない",
+        "userCountOrderAsc": "モデル数の順：少ない → 多い",
+        "clearUserOrder": "カスタム順序をリセット",
+        "favoriteUser": "ユーザーをお気に入りにする（お気に入りは先頭に表示）",
+        "noUsers": "作者データが見つかりません",
+        "usersLoadFailed": "作者データの読み込みに失敗しました",
         "recursiveOn": "サブフォルダーを含める",
         "createFolder": "新規フォルダ",
         "newSubfolder": "新規サブフォルダ",
@@ -1731,8 +1731,8 @@
             "errors": {
                 "invalidUrl": "無効なモデル URL 形式",
                 "noVersions": "このモデルの利用可能なバージョンがありません",
-                "linkedFileNotFound": "[TODO: Translate] File {fileId} was not found in the requested model version.",
-                "linkedFileNotWeightFile": "[TODO: Translate] File {fileId} is not a downloadable model file.",
+                "linkedFileNotFound": "要求されたモデルバージョンにファイル {fileId} が見つかりません。",
+                "linkedFileNotWeightFile": "ファイル {fileId} はダウンロード可能なモデルファイルではありません。",
                 "mixedSources": "同じバッチ内でCivitAIとHugging Face / ModelScopeのURLを混在させることはできません。",
                 "noModelFiles": "このリポジトリにモデルファイルが見つかりませんでした。"
             },
@@ -1874,16 +1874,16 @@
             "downloadButton": "{count} 個の LoRA をダウンロード"
         },
         "undownloadedVersions": {
-            "title": "[TODO: Translate] Undownloaded Versions",
-            "shortAction": "[TODO: Translate] Undownloaded",
-            "selectAll": "[TODO: Translate] Select all",
-            "summary": "[TODO: Translate] {selected} / {total} selected",
-            "empty": "[TODO: Translate] All versions are already downloaded.",
-            "downloadSelected": "[TODO: Translate] Download selected ({count})",
-            "ignoreSelected": "[TODO: Translate] Ignore selected ({count})",
-            "badgeEarlyAccess": "[TODO: Translate] Early Access",
-            "badgePaid": "[TODO: Translate] Paid",
-            "badgeNotDownloadable": "[TODO: Translate] Not downloadable"
+            "title": "未ダウンロードのバージョン",
+            "shortAction": "未ダウンロード",
+            "selectAll": "すべて選択",
+            "summary": "{selected} / {total} 件選択中",
+            "empty": "すべてのバージョンはすでにダウンロード済みです。",
+            "downloadSelected": "選択したものをダウンロード ({count})",
+            "ignoreSelected": "選択したものを無視 ({count})",
+            "badgeEarlyAccess": "早期アクセス",
+            "badgePaid": "有料",
+            "badgeNotDownloadable": "ダウンロード不可"
         },
         "rematchOptions": {
             "title": "レシピの再マッチング",
@@ -2571,13 +2571,13 @@
             "statisticsLoadFailed": "統計データの読み込みに失敗しました"
         },
         "undownloadedVersions": {
-            "loadFailed": "[TODO: Translate] Failed to load undownloaded versions",
-            "nothingSelected": "[TODO: Translate] Select at least one version first",
-            "noRoot": "[TODO: Translate] No model root directory is configured",
-            "ignored": "[TODO: Translate] Ignored {count} version(s)",
-            "ignorePartial": "[TODO: Translate] Ignored {completed} of {total} version(s)",
-            "downloadSuccess": "[TODO: Translate] Downloaded {count} version(s)",
-            "downloadPartial": "[TODO: Translate] Downloaded {completed} of {total} version(s)"
+            "loadFailed": "未ダウンロードのバージョンの読み込みに失敗しました",
+            "nothingSelected": "まず 1 つ以上のバージョンを選択してください",
+            "noRoot": "モデルルートディレクトリが設定されていません",
+            "ignored": "{count} 件のバージョンを無視しました",
+            "ignorePartial": "{total} 件中 {completed} 件のバージョンを無視しました",
+            "downloadSuccess": "{count} 件のバージョンをダウンロードしました",
+            "downloadPartial": "{total} 件中 {completed} 件のバージョンをダウンロードしました"
         },
         "loras": {
             "copyOnlyForLoras": "構文のコピーはLoRAのみ利用可能です",
@@ -2851,8 +2851,8 @@
             "deleteError": "エラー：{message}",
             "deleteSuccess": "{count} {type} が正常に削除されました",
             "deleteFailed": "{type} の削除に失敗しました：{message}",
-            "deletePartialFailed": "[TODO: Translate] Failed to delete {failed} selected {type}: {message}",
-            "cacheUpdateFailed": "[TODO: Translate] The files were deleted but the library cache could not be updated. Run Rebuild Cache to refresh the list."
+            "deletePartialFailed": "選択した {type} の削除に {failed} 件失敗しました: {message}",
+            "cacheUpdateFailed": "ファイルは削除されましたが、ライブラリキャッシュを更新できませんでした。「キャッシュを再構築」を実行してリストを更新してください。"
         },
         "controls": {
             "reloadFailed": "{pageType}の再読み込みに失敗しました：{message}",

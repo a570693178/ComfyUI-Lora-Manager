@@ -189,7 +189,7 @@
         "footer": {
             "versionCount": "{count} 个版本",
             "viewAllVersions": "查看所有本地版本",
-            "versionRatio": "[TODO: Translate] {total} versions on Civitai, {downloaded} downloaded"
+            "versionRatio": "Civitai 共 {total} 个版本，已下载 {downloaded} 个"
         }
     },
     "globalContextMenu": {
@@ -1731,8 +1731,8 @@
             "errors": {
                 "invalidUrl": "无效的模型 URL 格式",
                 "noVersions": "此模型没有可用版本",
-                "linkedFileNotFound": "[TODO: Translate] File {fileId} was not found in the requested model version.",
-                "linkedFileNotWeightFile": "[TODO: Translate] File {fileId} is not a downloadable model file.",
+                "linkedFileNotFound": "在请求的模型版本中未找到文件 {fileId}。",
+                "linkedFileNotWeightFile": "文件 {fileId} 不是可下载的模型文件。",
                 "mixedSources": "无法在同一批次中混合使用 CivitAI 和 Hugging Face / ModelScope URL。",
                 "noModelFiles": "在此仓库中未找到模型文件。"
             },
@@ -1874,16 +1874,16 @@
             "downloadButton": "下载 {count} 个 LoRA(s)"
         },
         "undownloadedVersions": {
-            "title": "[TODO: Translate] Undownloaded Versions",
-            "shortAction": "[TODO: Translate] Undownloaded",
-            "selectAll": "[TODO: Translate] Select all",
-            "summary": "[TODO: Translate] {selected} / {total} selected",
-            "empty": "[TODO: Translate] All versions are already downloaded.",
-            "downloadSelected": "[TODO: Translate] Download selected ({count})",
-            "ignoreSelected": "[TODO: Translate] Ignore selected ({count})",
-            "badgeEarlyAccess": "[TODO: Translate] Early Access",
-            "badgePaid": "[TODO: Translate] Paid",
-            "badgeNotDownloadable": "[TODO: Translate] Not downloadable"
+            "title": "未下载版本",
+            "shortAction": "未下载",
+            "selectAll": "全选",
+            "summary": "已选 {selected} / {total}",
+            "empty": "所有版本均已下载。",
+            "downloadSelected": "下载所选 ({count})",
+            "ignoreSelected": "忽略所选 ({count})",
+            "badgeEarlyAccess": "抢先体验",
+            "badgePaid": "付费",
+            "badgeNotDownloadable": "不可下载"
         },
         "rematchOptions": {
             "title": "重新匹配配方",
@@ -2571,13 +2571,13 @@
             "statisticsLoadFailed": "统计数据加载失败"
         },
         "undownloadedVersions": {
-            "loadFailed": "[TODO: Translate] Failed to load undownloaded versions",
-            "nothingSelected": "[TODO: Translate] Select at least one version first",
-            "noRoot": "[TODO: Translate] No model root directory is configured",
-            "ignored": "[TODO: Translate] Ignored {count} version(s)",
-            "ignorePartial": "[TODO: Translate] Ignored {completed} of {total} version(s)",
-            "downloadSuccess": "[TODO: Translate] Downloaded {count} version(s)",
-            "downloadPartial": "[TODO: Translate] Downloaded {completed} of {total} version(s)"
+            "loadFailed": "加载未下载版本失败",
+            "nothingSelected": "请至少选择一个版本",
+            "noRoot": "未配置模型根目录",
+            "ignored": "已忽略 {count} 个版本",
+            "ignorePartial": "已忽略 {total} 个版本中的 {completed} 个",
+            "downloadSuccess": "已下载 {count} 个版本",
+            "downloadPartial": "已下载 {total} 个版本中的 {completed} 个"
         },
         "loras": {
             "copyOnlyForLoras": "仅 LoRA 支持复制语法",
@@ -2851,8 +2851,8 @@
             "deleteError": "错误：{message}",
             "deleteSuccess": "成功删除 {count} 个 {type}",
             "deleteFailed": "删除 {type} 失败：{message}",
-            "deletePartialFailed": "[TODO: Translate] Failed to delete {failed} selected {type}: {message}",
-            "cacheUpdateFailed": "[TODO: Translate] The files were deleted but the library cache could not be updated. Run Rebuild Cache to refresh the list."
+            "deletePartialFailed": "删除选中的 {type} 失败 {failed} 个：{message}",
+            "cacheUpdateFailed": "文件已删除，但模型库缓存未能更新。请运行「重建缓存」刷新列表。"
         },
         "controls": {
             "reloadFailed": "重新加载 {pageType} 失败：{message}",

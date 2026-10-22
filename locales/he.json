@@ -189,7 +189,7 @@
         "footer": {
             "versionCount": "{count} גרסאות",
             "viewAllVersions": "הצג את כל הגרסאות המקומיות",
-            "versionRatio": "[TODO: Translate] {total} versions on Civitai, {downloaded} downloaded"
+            "versionRatio": "{total} גרסאות ב-Civitai, {downloaded} הורדו"
         }
     },
     "globalContextMenu": {
@@ -1458,14 +1458,14 @@
         "viewOptions": "אפשרויות תצוגה",
         "treeView": "תצוגת עץ",
         "listView": "תצוגת רשימה",
-        "userView": "[TODO: Translate] User view",
-        "usersTitle": "[TODO: Translate] Users",
-        "userCountOrderDesc": "[TODO: Translate] By model count: high → low",
-        "userCountOrderAsc": "[TODO: Translate] By model count: low → high",
-        "clearUserOrder": "[TODO: Translate] Reset custom order",
-        "favoriteUser": "[TODO: Translate] Favorite user (favorites sort first)",
-        "noUsers": "[TODO: Translate] No creator data found",
-        "usersLoadFailed": "[TODO: Translate] Failed to load creator data",
+        "userView": "תצוגת משתמשים",
+        "usersTitle": "משתמשים",
+        "userCountOrderDesc": "לפי מספר מודלים: גבוה → נמוך",
+        "userCountOrderAsc": "לפי מספר מודלים: נמוך → גבוה",
+        "clearUserOrder": "איפוס הסדר המותאם אישית",
+        "favoriteUser": "הוספת משתמש למועדפים (מועדפים מוצגים ראשונים)",
+        "noUsers": "לא נמצאו נתוני יוצרים",
+        "usersLoadFailed": "טעינת נתוני היוצרים נכשלה",
         "recursiveOn": "כלול תיקיות משנה",
         "createFolder": "תיקייה חדשה",
         "newSubfolder": "תיקיית משנה חדשה",
@@ -1731,8 +1731,8 @@
             "errors": {
                 "invalidUrl": "פורמט URL של מודל לא חוקי",
                 "noVersions": "אין גרסאות זמינות למודל זה",
-                "linkedFileNotFound": "[TODO: Translate] File {fileId} was not found in the requested model version.",
-                "linkedFileNotWeightFile": "[TODO: Translate] File {fileId} is not a downloadable model file.",
+                "linkedFileNotFound": "הקובץ {fileId} לא נמצא בגרסת המודל המבוקשת.",
+                "linkedFileNotWeightFile": "הקובץ {fileId} אינו קובץ מודל שניתן להוריד.",
                 "mixedSources": "לא ניתן לערבב כתובות URL של CivitAI ו-Hugging Face / ModelScope באותה קבוצה.",
                 "noModelFiles": "לא נמצאו קבצי מודל במאגר זה."
             },
@@ -1874,16 +1874,16 @@
             "downloadButton": "הורד {count} LoRA(s)"
         },
         "undownloadedVersions": {
-            "title": "[TODO: Translate] Undownloaded Versions",
-            "shortAction": "[TODO: Translate] Undownloaded",
-            "selectAll": "[TODO: Translate] Select all",
-            "summary": "[TODO: Translate] {selected} / {total} selected",
-            "empty": "[TODO: Translate] All versions are already downloaded.",
-            "downloadSelected": "[TODO: Translate] Download selected ({count})",
-            "ignoreSelected": "[TODO: Translate] Ignore selected ({count})",
-            "badgeEarlyAccess": "[TODO: Translate] Early Access",
-            "badgePaid": "[TODO: Translate] Paid",
-            "badgeNotDownloadable": "[TODO: Translate] Not downloadable"
+            "title": "גרסאות שלא הורדו",
+            "shortAction": "לא הורדו",
+            "selectAll": "בחר הכל",
+            "summary": "{selected} / {total} נבחרו",
+            "empty": "כל הגרסאות כבר הורדו.",
+            "downloadSelected": "הורד נבחר ({count})",
+            "ignoreSelected": "התעלם מנבחר ({count})",
+            "badgeEarlyAccess": "גישה מוקדמת",
+            "badgePaid": "בתשלום",
+            "badgeNotDownloadable": "לא ניתן להוריד"
         },
         "rematchOptions": {
             "title": "התאמה מחדש של מתכונים",
@@ -2571,13 +2571,13 @@
             "statisticsLoadFailed": "טעינת נתוני הסטטיסטיקה נכשלה"
         },
         "undownloadedVersions": {
-            "loadFailed": "[TODO: Translate] Failed to load undownloaded versions",
-            "nothingSelected": "[TODO: Translate] Select at least one version first",
-            "noRoot": "[TODO: Translate] No model root directory is configured",
-            "ignored": "[TODO: Translate] Ignored {count} version(s)",
-            "ignorePartial": "[TODO: Translate] Ignored {completed} of {total} version(s)",
-            "downloadSuccess": "[TODO: Translate] Downloaded {count} version(s)",
-            "downloadPartial": "[TODO: Translate] Downloaded {completed} of {total} version(s)"
+            "loadFailed": "טעינת הגרסאות שלא הורדו נכשלה",
+            "nothingSelected": "יש לבחור לפחות גרסה אחת תחילה",
+            "noRoot": "לא הוגדר תיקיית שורש למודלים",
+            "ignored": "{count} גרסאות התעלמו מהן",
+            "ignorePartial": "{completed} מתוך {total} גרסאות התעלמו מהן",
+            "downloadSuccess": "{count} גרסאות הורדו",
+            "downloadPartial": "{completed} מתוך {total} גרסאות הורדו"
         },
         "loras": {
             "copyOnlyForLoras": "העתקת תחביר זמינה רק עבור LoRAs",
@@ -2851,8 +2851,8 @@
             "deleteError": "שגיאה: {message}",
             "deleteSuccess": "נמחקו בהצלחה {count} {type}",
             "deleteFailed": "מחיקת {type} נכשלה: {message}",
-            "deletePartialFailed": "[TODO: Translate] Failed to delete {failed} selected {type}: {message}",
-            "cacheUpdateFailed": "[TODO: Translate] The files were deleted but the library cache could not be updated. Run Rebuild Cache to refresh the list."
+            "deletePartialFailed": "מחיקת {failed} מתוך ה-{type} שנבחרו נכשלה: {message}",
+            "cacheUpdateFailed": "הקבצים נמחקו אך מטמון הספרייה לא עודכן. הריצו «בנייה מחדש של מטמון» כדי לרענן את הרשימה."
         },
         "controls": {
             "reloadFailed": "טעינה מחדש של {pageType} נכשלה: {message}",

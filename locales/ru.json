@@ -189,7 +189,7 @@
         "footer": {
             "versionCount": "{count} версий",
             "viewAllVersions": "Показать все локальные версии",
-            "versionRatio": "[TODO: Translate] {total} versions on Civitai, {downloaded} downloaded"
+            "versionRatio": "{total} версий на Civitai, {downloaded} скачано"
         }
     },
     "globalContextMenu": {
@@ -1458,14 +1458,14 @@
         "viewOptions": "Параметры отображения",
         "treeView": "Дерево",
         "listView": "Список",
-        "userView": "[TODO: Translate] User view",
-        "usersTitle": "[TODO: Translate] Users",
-        "userCountOrderDesc": "[TODO: Translate] By model count: high → low",
-        "userCountOrderAsc": "[TODO: Translate] By model count: low → high",
-        "clearUserOrder": "[TODO: Translate] Reset custom order",
-        "favoriteUser": "[TODO: Translate] Favorite user (favorites sort first)",
-        "noUsers": "[TODO: Translate] No creator data found",
-        "usersLoadFailed": "[TODO: Translate] Failed to load creator data",
+        "userView": "Представление пользователей",
+        "usersTitle": "Пользователи",
+        "userCountOrderDesc": "По количеству моделей: больше → меньше",
+        "userCountOrderAsc": "По количеству моделей: меньше → больше",
+        "clearUserOrder": "Сбросить пользовательский порядок",
+        "favoriteUser": "Добавить пользователя в избранное (избранные сверху)",
+        "noUsers": "Данные авторов не найдены",
+        "usersLoadFailed": "Не удалось загрузить данные авторов",
         "recursiveOn": "Включать вложенные папки",
         "createFolder": "Новая папка",
         "newSubfolder": "Новая вложенная папка",
@@ -1731,8 +1731,8 @@
             "errors": {
                 "invalidUrl": "Неверный формат URL модели",
                 "noVersions": "Нет доступных версий для этой модели",
-                "linkedFileNotFound": "[TODO: Translate] File {fileId} was not found in the requested model version.",
-                "linkedFileNotWeightFile": "[TODO: Translate] File {fileId} is not a downloadable model file.",
+                "linkedFileNotFound": "Файл {fileId} не найден в запрошенной версии модели.",
+                "linkedFileNotWeightFile": "Файл {fileId} не является загружаемым файлом модели.",
                 "mixedSources": "Нельзя смешивать URL-адреса CivitAI и Hugging Face / ModelScope в одном пакете.",
                 "noModelFiles": "В этом репозитории не найдено файлов моделей."
             },
@@ -1874,16 +1874,16 @@
             "downloadButton": "Скачать {count} LoRA(s)"
         },
         "undownloadedVersions": {
-            "title": "[TODO: Translate] Undownloaded Versions",
-            "shortAction": "[TODO: Translate] Undownloaded",
-            "selectAll": "[TODO: Translate] Select all",
-            "summary": "[TODO: Translate] {selected} / {total} selected",
-            "empty": "[TODO: Translate] All versions are already downloaded.",
-            "downloadSelected": "[TODO: Translate] Download selected ({count})",
-            "ignoreSelected": "[TODO: Translate] Ignore selected ({count})",
-            "badgeEarlyAccess": "[TODO: Translate] Early Access",
-            "badgePaid": "[TODO: Translate] Paid",
-            "badgeNotDownloadable": "[TODO: Translate] Not downloadable"
+            "title": "Незагруженные версии",
+            "shortAction": "Не загружены",
+            "selectAll": "Выбрать все",
+            "summary": "Выбрано {selected} / {total}",
+            "empty": "Все версии уже загружены.",
+            "downloadSelected": "Скачать выбранные ({count})",
+            "ignoreSelected": "Игнорировать выбранные ({count})",
+            "badgeEarlyAccess": "Ранний доступ",
+            "badgePaid": "Платная",
+            "badgeNotDownloadable": "Нельзя скачать"
         },
         "rematchOptions": {
             "title": "Повторное сопоставление рецептов",
@@ -2571,13 +2571,13 @@
             "statisticsLoadFailed": "Не удалось загрузить данные статистики"
         },
         "undownloadedVersions": {
-            "loadFailed": "[TODO: Translate] Failed to load undownloaded versions",
-            "nothingSelected": "[TODO: Translate] Select at least one version first",
-            "noRoot": "[TODO: Translate] No model root directory is configured",
-            "ignored": "[TODO: Translate] Ignored {count} version(s)",
-            "ignorePartial": "[TODO: Translate] Ignored {completed} of {total} version(s)",
-            "downloadSuccess": "[TODO: Translate] Downloaded {count} version(s)",
-            "downloadPartial": "[TODO: Translate] Downloaded {completed} of {total} version(s)"
+            "loadFailed": "Не удалось загрузить список незагруженных версий",
+            "nothingSelected": "Сначала выберите хотя бы одну версию",
+            "noRoot": "Корневой каталог моделей не настроен",
+            "ignored": "Игнорировано версий: {count}",
+            "ignorePartial": "Игнорировано {completed} из {total} версий",
+            "downloadSuccess": "Скачано версий: {count}",
+            "downloadPartial": "Скачано {completed} из {total} версий"
         },
         "loras": {
             "copyOnlyForLoras": "Копирование синтаксиса доступно только для LoRAs",
@@ -2851,8 +2851,8 @@
             "deleteError": "Ошибка: {message}",
             "deleteSuccess": "Успешно удалено {count} {type}",
             "deleteFailed": "Не удалось удалить {type}: {message}",
-            "deletePartialFailed": "[TODO: Translate] Failed to delete {failed} selected {type}: {message}",
-            "cacheUpdateFailed": "[TODO: Translate] The files were deleted but the library cache could not be updated. Run Rebuild Cache to refresh the list."
+            "deletePartialFailed": "Не удалось удалить выбранные {type}: ошибок — {failed}. {message}",
+            "cacheUpdateFailed": "Файлы удалены, но кэш библиотеки не удалось обновить. Запустите «Перестроить кэш», чтобы обновить список."
         },
         "controls": {
             "reloadFailed": "Не удалось перезагрузить {pageType}: {message}",

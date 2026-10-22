@@ -274,8 +274,11 @@ export class ModelDuplicatesManager {
         const duplicatesBtn = document.getElementById('findDuplicatesBtn');
         if (duplicatesBtn) {
             duplicatesBtn.classList.remove('active');
-            duplicatesBtn.title = 'Find duplicate models';
-            duplicatesBtn.innerHTML = 'Duplicates <span id="duplicatesBadge" class="badge"></span>';
+            // Rebuild from the locale instead of hardcoding English: the
+            // button markup is server-rendered, so a hardcoded string here
+            // silently reverts the label to English in every non-en locale.
+            duplicatesBtn.title = translate('loras.controls.duplicates.title', {}, 'Find duplicate models');
+            duplicatesBtn.innerHTML = `${translate('loras.controls.duplicates.action', {}, 'Duplicates')} <span id="duplicatesBadge" class="badge"></span>`;
             
             // Restore badge
             const newBadge = duplicatesBtn.querySelector('#duplicatesBadge');

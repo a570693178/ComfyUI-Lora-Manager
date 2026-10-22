@@ -189,7 +189,7 @@
         "footer": {
             "versionCount": "{count} Versionen",
             "viewAllVersions": "Alle lokalen Versionen anzeigen",
-            "versionRatio": "[TODO: Translate] {total} versions on Civitai, {downloaded} downloaded"
+            "versionRatio": "{total} Versionen auf Civitai, {downloaded} heruntergeladen"
         }
     },
     "globalContextMenu": {
@@ -1458,14 +1458,14 @@
         "viewOptions": "Ansichtsoptionen",
         "treeView": "Baumansicht",
         "listView": "Listenansicht",
-        "userView": "[TODO: Translate] User view",
-        "usersTitle": "[TODO: Translate] Users",
-        "userCountOrderDesc": "[TODO: Translate] By model count: high → low",
-        "userCountOrderAsc": "[TODO: Translate] By model count: low → high",
-        "clearUserOrder": "[TODO: Translate] Reset custom order",
-        "favoriteUser": "[TODO: Translate] Favorite user (favorites sort first)",
-        "noUsers": "[TODO: Translate] No creator data found",
-        "usersLoadFailed": "[TODO: Translate] Failed to load creator data",
+        "userView": "Benutzeransicht",
+        "usersTitle": "Benutzer",
+        "userCountOrderDesc": "Nach Modellanzahl: hoch → niedrig",
+        "userCountOrderAsc": "Nach Modellanzahl: niedrig → hoch",
+        "clearUserOrder": "Eigene Sortierung zurücksetzen",
+        "favoriteUser": "Benutzer favorisieren (Favoriten zuerst)",
+        "noUsers": "Keine Erstellerdaten gefunden",
+        "usersLoadFailed": "Erstellerdaten konnten nicht geladen werden",
         "recursiveOn": "Unterordner einbeziehen",
         "createFolder": "Neuer Ordner",
         "newSubfolder": "Neuer Unterordner",
@@ -1731,8 +1731,8 @@
             "errors": {
                 "invalidUrl": "Ungültiges Modell-URL-Format",
                 "noVersions": "Keine Versionen für dieses Modell verfügbar",
-                "linkedFileNotFound": "[TODO: Translate] File {fileId} was not found in the requested model version.",
-                "linkedFileNotWeightFile": "[TODO: Translate] File {fileId} is not a downloadable model file.",
+                "linkedFileNotFound": "Datei {fileId} wurde in der angeforderten Modellversion nicht gefunden.",
+                "linkedFileNotWeightFile": "Datei {fileId} ist keine herunterladbare Modelldatei.",
                 "mixedSources": "CivitAI- und Hugging Face-/ModelScope-URLs können nicht in derselben Charge gemischt werden.",
                 "noModelFiles": "In diesem Repository wurden keine Modelldateien gefunden."
             },
@@ -1874,16 +1874,16 @@
             "downloadButton": "{count} LoRA(s) herunterladen"
         },
         "undownloadedVersions": {
-            "title": "[TODO: Translate] Undownloaded Versions",
-            "shortAction": "[TODO: Translate] Undownloaded",
-            "selectAll": "[TODO: Translate] Select all",
-            "summary": "[TODO: Translate] {selected} / {total} selected",
-            "empty": "[TODO: Translate] All versions are already downloaded.",
-            "downloadSelected": "[TODO: Translate] Download selected ({count})",
-            "ignoreSelected": "[TODO: Translate] Ignore selected ({count})",
-            "badgeEarlyAccess": "[TODO: Translate] Early Access",
-            "badgePaid": "[TODO: Translate] Paid",
-            "badgeNotDownloadable": "[TODO: Translate] Not downloadable"
+            "title": "Nicht heruntergeladene Versionen",
+            "shortAction": "Nicht geladen",
+            "selectAll": "Alle auswählen",
+            "summary": "{selected} / {total} ausgewählt",
+            "empty": "Alle Versionen wurden bereits heruntergeladen.",
+            "downloadSelected": "Auswahl herunterladen ({count})",
+            "ignoreSelected": "Auswahl ignorieren ({count})",
+            "badgeEarlyAccess": "Early Access",
+            "badgePaid": "Kostenpflichtig",
+            "badgeNotDownloadable": "Nicht herunterladbar"
         },
         "rematchOptions": {
             "title": "Rezepte neu zuordnen",
@@ -2571,13 +2571,13 @@
             "statisticsLoadFailed": "Fehler beim Laden der Statistikdaten"
         },
         "undownloadedVersions": {
-            "loadFailed": "[TODO: Translate] Failed to load undownloaded versions",
-            "nothingSelected": "[TODO: Translate] Select at least one version first",
-            "noRoot": "[TODO: Translate] No model root directory is configured",
-            "ignored": "[TODO: Translate] Ignored {count} version(s)",
-            "ignorePartial": "[TODO: Translate] Ignored {completed} of {total} version(s)",
-            "downloadSuccess": "[TODO: Translate] Downloaded {count} version(s)",
-            "downloadPartial": "[TODO: Translate] Downloaded {completed} of {total} version(s)"
+            "loadFailed": "Nicht heruntergeladene Versionen konnten nicht geladen werden",
+            "nothingSelected": "Wählen Sie zuerst mindestens eine Version aus",
+            "noRoot": "Kein Modell-Stammverzeichnis konfiguriert",
+            "ignored": "{count} Version(en) ignoriert",
+            "ignorePartial": "{completed} von {total} Version(en) ignoriert",
+            "downloadSuccess": "{count} Version(en) heruntergeladen",
+            "downloadPartial": "{completed} von {total} Version(en) heruntergeladen"
         },
         "loras": {
             "copyOnlyForLoras": "Syntax kopieren ist nur für LoRAs verfügbar",
@@ -2851,8 +2851,8 @@
             "deleteError": "Fehler: {message}",
             "deleteSuccess": "{count} {type} erfolgreich gelöscht",
             "deleteFailed": "Fehler beim Löschen von {type}: {message}",
-            "deletePartialFailed": "[TODO: Translate] Failed to delete {failed} selected {type}: {message}",
-            "cacheUpdateFailed": "[TODO: Translate] The files were deleted but the library cache could not be updated. Run Rebuild Cache to refresh the list."
+            "deletePartialFailed": "{failed} ausgewählte {type} konnten nicht gelöscht werden: {message}",
+            "cacheUpdateFailed": "Die Dateien wurden gelöscht, aber der Bibliotheks-Cache konnte nicht aktualisiert werden. Führen Sie „Cache neu aufbauen“ aus, um die Liste zu aktualisieren."
         },
         "controls": {
             "reloadFailed": "Fehler beim Neuladen von {pageType}: {message}",

@@ -189,7 +189,7 @@
         "footer": {
             "versionCount": "{count} versions",
             "viewAllVersions": "Voir toutes les versions locales",
-            "versionRatio": "[TODO: Translate] {total} versions on Civitai, {downloaded} downloaded"
+            "versionRatio": "{total} versions sur Civitai, {downloaded} téléchargées"
         }
     },
     "globalContextMenu": {
@@ -1458,14 +1458,14 @@
         "viewOptions": "Options d’affichage",
         "treeView": "Vue arborescente",
         "listView": "Vue liste",
-        "userView": "[TODO: Translate] User view",
-        "usersTitle": "[TODO: Translate] Users",
-        "userCountOrderDesc": "[TODO: Translate] By model count: high → low",
-        "userCountOrderAsc": "[TODO: Translate] By model count: low → high",
-        "clearUserOrder": "[TODO: Translate] Reset custom order",
-        "favoriteUser": "[TODO: Translate] Favorite user (favorites sort first)",
-        "noUsers": "[TODO: Translate] No creator data found",
-        "usersLoadFailed": "[TODO: Translate] Failed to load creator data",
+        "userView": "Vue utilisateur",
+        "usersTitle": "Utilisateurs",
+        "userCountOrderDesc": "Par nombre de modèles : élevé → faible",
+        "userCountOrderAsc": "Par nombre de modèles : faible → élevé",
+        "clearUserOrder": "Réinitialiser l'ordre personnalisé",
+        "favoriteUser": "Mettre l'utilisateur en favori (les favoris en premier)",
+        "noUsers": "Aucune donnée de créateur trouvée",
+        "usersLoadFailed": "Échec du chargement des données de créateur",
         "recursiveOn": "Inclure les sous-dossiers",
         "createFolder": "Nouveau dossier",
         "newSubfolder": "Nouveau sous-dossier",
@@ -1731,8 +1731,8 @@
             "errors": {
                 "invalidUrl": "Format d'URL de modèle invalide",
                 "noVersions": "Aucune version disponible pour ce modèle",
-                "linkedFileNotFound": "[TODO: Translate] File {fileId} was not found in the requested model version.",
-                "linkedFileNotWeightFile": "[TODO: Translate] File {fileId} is not a downloadable model file.",
+                "linkedFileNotFound": "Le fichier {fileId} est introuvable dans la version du modèle demandée.",
+                "linkedFileNotWeightFile": "Le fichier {fileId} n'est pas un fichier de modèle téléchargeable.",
                 "mixedSources": "Impossible de mélanger les URL CivitAI et Hugging Face / ModelScope dans le même lot.",
                 "noModelFiles": "Aucun fichier de modèle trouvé dans ce dépôt."
             },
@@ -1874,16 +1874,16 @@
             "downloadButton": "Télécharger {count} LoRA(s)"
         },
         "undownloadedVersions": {
-            "title": "[TODO: Translate] Undownloaded Versions",
-            "shortAction": "[TODO: Translate] Undownloaded",
-            "selectAll": "[TODO: Translate] Select all",
-            "summary": "[TODO: Translate] {selected} / {total} selected",
-            "empty": "[TODO: Translate] All versions are already downloaded.",
-            "downloadSelected": "[TODO: Translate] Download selected ({count})",
-            "ignoreSelected": "[TODO: Translate] Ignore selected ({count})",
-            "badgeEarlyAccess": "[TODO: Translate] Early Access",
-            "badgePaid": "[TODO: Translate] Paid",
-            "badgeNotDownloadable": "[TODO: Translate] Not downloadable"
+            "title": "Versions non téléchargées",
+            "shortAction": "Non téléchargées",
+            "selectAll": "Tout sélectionner",
+            "summary": "{selected} / {total} sélectionnés",
+            "empty": "Toutes les versions sont déjà téléchargées.",
+            "downloadSelected": "Télécharger la sélection ({count})",
+            "ignoreSelected": "Ignorer la sélection ({count})",
+            "badgeEarlyAccess": "Accès anticipé",
+            "badgePaid": "Payant",
+            "badgeNotDownloadable": "Non téléchargeable"
         },
         "rematchOptions": {
             "title": "Réassocier les Recipes",
@@ -2571,13 +2571,13 @@
             "statisticsLoadFailed": "Échec du chargement des données statistiques"
         },
         "undownloadedVersions": {
-            "loadFailed": "[TODO: Translate] Failed to load undownloaded versions",
-            "nothingSelected": "[TODO: Translate] Select at least one version first",
-            "noRoot": "[TODO: Translate] No model root directory is configured",
-            "ignored": "[TODO: Translate] Ignored {count} version(s)",
-            "ignorePartial": "[TODO: Translate] Ignored {completed} of {total} version(s)",
-            "downloadSuccess": "[TODO: Translate] Downloaded {count} version(s)",
-            "downloadPartial": "[TODO: Translate] Downloaded {completed} of {total} version(s)"
+            "loadFailed": "Échec du chargement des versions non téléchargées",
+            "nothingSelected": "Sélectionnez d'abord au moins une version",
+            "noRoot": "Aucun répertoire racine de modèles n'est configuré",
+            "ignored": "{count} version(s) ignorée(s)",
+            "ignorePartial": "{completed} version(s) ignorée(s) sur {total}",
+            "downloadSuccess": "{count} version(s) téléchargée(s)",
+            "downloadPartial": "{completed} version(s) téléchargée(s) sur {total}"
         },
         "loras": {
             "copyOnlyForLoras": "La copie de la syntaxe est disponible uniquement pour les LoRAs",
@@ -2851,8 +2851,8 @@
             "deleteError": "Erreur : {message}",
             "deleteSuccess": "{count} {type} supprimé(s) avec succès",
             "deleteFailed": "Échec de la suppression de {type} : {message}",
-            "deletePartialFailed": "[TODO: Translate] Failed to delete {failed} selected {type}: {message}",
-            "cacheUpdateFailed": "[TODO: Translate] The files were deleted but the library cache could not be updated. Run Rebuild Cache to refresh the list."
+            "deletePartialFailed": "Échec de la suppression de {failed} élément(s) {type} sélectionné(s) : {message}",
+            "cacheUpdateFailed": "Les fichiers ont été supprimés mais le cache de la bibliothèque n'a pas pu être mis à jour. Exécutez « Reconstruire le cache » pour actualiser la liste."
         },
         "controls": {
             "reloadFailed": "Échec du rechargement de {pageType} : {message}",
