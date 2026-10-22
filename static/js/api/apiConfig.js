@@ -119,6 +119,7 @@ export function getApiEndpoints(modelType) {
         scan: `/api/lm/${modelType}/scan`,
         topTags: `/api/lm/${modelType}/top-tags`,
         creators: `/api/lm/${modelType}/creators`,
+        undownloadedVersions: `/api/lm/${modelType}/undownloaded-versions`,
         searchTags: `/api/lm/${modelType}/search-tags`,
         baseModels: `/api/lm/${modelType}/base-models`,
         roots: `/api/lm/${modelType}/roots`,

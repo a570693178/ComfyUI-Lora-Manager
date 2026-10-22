@@ -450,3 +450,59 @@ async def test_get_model_roots_reports_details():
     assert payload["roots"] == ["/mnt/a", "/mnt/b"]
     assert [detail["label"] for detail in payload["root_details"]] == ["a", "b"]
     assert all(detail["models"] == 7 for detail in payload["root_details"])
+
+
+class DummyUndownloadedService:
+    """Minimal service stub returning a fixed pending-version list."""
+
+    def __init__(self, result=None):
+        self._result = result if result is not None else []
+        self.calls = 0
+
+    async def get_undownloaded_versions(self):
+        self.calls += 1
+        return list(self._result)
+
+
+@pytest.mark.asyncio
+async def test_model_query_handler_returns_undownloaded_versions():
+    service = DummyUndownloadedService(
+        result=[
+            {
+                "modelId": 7,
+                "modelName": "Alpha",
+                "versionId": 2,
+                "versionName": "v2",
+            }
+        ]
+    )
+    handler = ModelQueryHandler(service=service, logger=logging.getLogger(__name__))
+
+    response = await handler.get_undownloaded_versions(
+        SimpleNamespace(query={})  # pyright: ignore[reportArgumentType]
+    )
+    text = response.text
+    assert text is not None
+    payload = json.loads(text)
+
+    assert payload["success"] is True
+    assert payload["total"] == 1
+    assert payload["versions"][0]["versionId"] == 2
+    assert service.calls == 1
+
+
+@pytest.mark.asyncio
+async def test_model_query_handler_undownloaded_versions_empty_list():
+    service = DummyUndownloadedService(result=[])
+    handler = ModelQueryHandler(service=service, logger=logging.getLogger(__name__))
+
+    response = await handler.get_undownloaded_versions(
+        SimpleNamespace(query={})  # pyright: ignore[reportArgumentType]
+    )
+    text = response.text
+    assert text is not None
+    payload = json.loads(text)
+
+    assert payload["success"] is True
+    assert payload["versions"] == []
+    assert payload["total"] == 0

@@ -610,6 +610,8 @@ class BaseModelService(ABC):
         if self.update_service is None:
             for item in annotated:
                 item["update_available"] = False
+                item["remote_version_count"] = 0
+                item["downloaded_version_count"] = 0
             return annotated
 
         id_to_items: Dict[int, List[Dict[str, Any]]] = {}
@@ -618,6 +620,8 @@ class BaseModelService(ABC):
             model_id = self._extract_model_id(item)
             if model_id is None:
                 item["update_available"] = False
+                item["remote_version_count"] = 0
+                item["downloaded_version_count"] = 0
                 continue
             if model_id not in id_to_items:
                 id_to_items[model_id] = []
@@ -718,6 +722,24 @@ class BaseModelService(ABC):
                     continue
                 resolved[model_id] = bool(result)
 
+        # The version counters need the full record (remote version list plus
+        # the in-library flags), which the boolean-only helpers do not return.
+        # Fetch the records when they are not already at hand.
+        if records is None:
+            record_method = getattr(self.update_service, "get_records_bulk", None)
+            if callable(record_method):
+                try:
+                    records = await cast(Awaitable[Any], record_method(self.model_type, ordered_ids))
+                except Exception as exc:
+                    logger.error(
+                        "Failed to resolve version records in bulk for %s models (%s): %s",
+                        self.model_type,
+                        ordered_ids,
+                        exc,
+                        exc_info=True,
+                    )
+                    records = None
+
         for model_id, items_for_id in id_to_items.items():
             default_flag = bool(resolved.get(model_id, False)) if resolved else False
             record = records.get(model_id) if records else None
@@ -726,6 +748,7 @@ class BaseModelService(ABC):
                 if same_base_mode and record
                 else {}
             )
+            version_counts = self._build_version_counts(record)
             for item in items_for_id:
                 if same_base_mode and record is not None:
                     base_model = self._extract_base_model(item)
@@ -746,8 +769,28 @@ class BaseModelService(ABC):
                 else:
                     flag = default_flag
                 item["update_available"] = flag
+                item["remote_version_count"] = version_counts["total"]
+                item["downloaded_version_count"] = version_counts["downloaded"]
 
         return annotated
+
+    @staticmethod
+    def _build_version_counts(record) -> Dict[str, int]:
+        """Return the remote version total and the downloaded subset size.
+
+        The record carries every known remote version and flags the ones
+        present in the local library. A model without a record has no known
+        versions, so both counters stay at zero.
+        """
+
+        if record is None or not getattr(record, "versions", None):
+            return {"total": 0, "downloaded": 0}
+
+        versions = record.versions
+        return {
+            "total": len(versions),
+            "downloaded": sum(1 for version in versions if version.is_in_library),
+        }
 
     @staticmethod
     def _extract_source_group_key(item: Dict[str, Any]) -> Optional[str]:
@@ -881,6 +924,85 @@ class BaseModelService(ABC):
     async def get_top_tags(self, limit: int = 20) -> List[Dict[str, Any]]:
         """Get top tags sorted by frequency"""
         return await self.scanner.get_top_tags(limit)
+
+    async def get_undownloaded_versions(
+        self,
+    ) -> List[Dict[str, Any]]:
+        """List every remote version that is not present in the local library.
+
+        Walks the cached models, collects their CivitAI model ids and pulls
+        the cached update records in one bulk query. A version counts as
+        "downloaded" when the record flags it as present in the library.
+        Versions the user explicitly ignored are excluded from the result,
+        so an ignored version stops showing up in the pending list.
+        """
+
+        cache = await self.scanner.get_cached_data()
+
+        model_names: Dict[int, str] = {}
+        for item in cache.raw_data:
+            if not isinstance(item, dict):
+                continue
+            model_id = self._extract_model_id(item)
+            if model_id is None or model_id in model_names:
+                continue
+            name = item.get("name") or ""
+            if not name:
+                civitai = item.get("civitai")
+                if isinstance(civitai, dict):
+                    name = civitai.get("name") or ""
+            model_names[model_id] = str(name) or str(model_id)
+
+        if not model_names:
+            return []
+
+        if self.update_service is None:
+            return []
+
+        try:
+            records = await self.update_service.get_records_bulk(
+                self.model_type, list(model_names.keys())
+            )
+        except Exception as exc:
+            logger.error(
+                "Failed to load update records for %s models (%s): %s",
+                self.model_type,
+                exc,
+                exc_info=True,
+            )
+            return []
+
+        pending: List[Dict[str, Any]] = []
+        for model_id, record in records.items():
+            if record is None or record.should_ignore_model:
+                continue
+            for version in record.versions:
+                if version.is_in_library or version.should_ignore:
+                    continue
+                pending.append(
+                    {
+                        "modelId": model_id,
+                        "modelName": model_names.get(model_id, str(model_id)),
+                        "versionId": version.version_id,
+                        "versionName": version.name or "",
+                        "baseModel": version.base_model,
+                        "previewUrl": version.preview_url,
+                        "isEarlyAccess": bool(
+                            getattr(version, "is_early_access", False)
+                        ),
+                        "isPaid": bool(getattr(version, "is_paid", False)),
+                        "usageControl": version.usage_control,
+                        "releasedAt": version.released_at,
+                    }
+                )
+
+        pending.sort(
+            key=lambda entry: (
+                str(entry.get("modelName") or "").lower(),
+                -(entry.get("versionId") or 0),
+            )
+        )
+        return pending
 
     async def get_creators(self) -> List[Dict[str, Any]]:
         """Aggregate creators as user -> base_model -> default tag.

@@ -188,7 +188,8 @@
     },
     "footer": {
       "versionCount": "{count} versions",
-      "viewAllVersions": "View all local versions"
+      "viewAllVersions": "View all local versions",
+      "versionRatio": "{total} versions on Civitai, {downloaded} downloaded"
     }
   },
   "globalContextMenu": {
@@ -1872,6 +1873,18 @@
       "note": "Files will be downloaded using default path templates. This may take a while depending on the number of LoRAs.",
       "downloadButton": "Download {count} LoRA(s)"
     },
+    "undownloadedVersions": {
+      "title": "Undownloaded Versions",
+      "shortAction": "Undownloaded",
+      "selectAll": "Select all",
+      "summary": "{selected} / {total} selected",
+      "empty": "All versions are already downloaded.",
+      "downloadSelected": "Download selected ({count})",
+      "ignoreSelected": "Ignore selected ({count})",
+      "badgeEarlyAccess": "Early Access",
+      "badgePaid": "Paid",
+      "badgeNotDownloadable": "Not downloadable"
+    },
     "rematchOptions": {
       "title": "Rematch Recipes",
       "messageGlobal": "All recipes will be scanned against your local model library.",
@@ -2556,6 +2569,15 @@
       "failedWorkflowInfo": "Failed to get workflow information",
       "pageInitFailed": "Failed to initialize {pageType} page. Please reload.",
       "statisticsLoadFailed": "Failed to load statistics data"
+    },
+    "undownloadedVersions": {
+      "loadFailed": "Failed to load undownloaded versions",
+      "nothingSelected": "Select at least one version first",
+      "noRoot": "No model root directory is configured",
+      "ignored": "Ignored {count} version(s)",
+      "ignorePartial": "Ignored {completed} of {total} version(s)",
+      "downloadSuccess": "Downloaded {count} version(s)",
+      "downloadPartial": "Downloaded {completed} of {total} version(s)"
     },
     "loras": {
       "copyOnlyForLoras": "Copy syntax is only available for LoRAs",

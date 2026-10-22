@@ -142,6 +142,12 @@
                 </div>
             </div>
             {% endif %}
+            <div class="control-group">
+                <button id="undownloadedVersionsBtn" data-action="undownloaded-versions" class="undownloaded-versions-trigger" title="{{ t('modals.undownloadedVersions.title', default='Undownloaded Versions') }}">
+                    <i class="fas fa-cloud-arrow-down"></i> <span>{{ t('modals.undownloadedVersions.shortAction', default='Undownloaded') }}</span>
+                    <span id="undownloadedVersionsBadge" class="badge"></span>
+                </button>
+            </div>
             <div id="customFilterIndicator" class="control-group hidden">
                 <div class="filter-active">
                     <i class="fas fa-filter"></i> <span class="customFilterText" title=""></span>

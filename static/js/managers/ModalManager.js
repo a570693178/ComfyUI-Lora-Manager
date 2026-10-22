@@ -346,6 +346,19 @@ export class ModalManager {
             });
         }
 
+        // Register undownloadedVersionsModal
+        const undownloadedVersionsModal = document.getElementById('undownloadedVersionsModal');
+        if (undownloadedVersionsModal) {
+            this.registerModal('undownloadedVersionsModal', {
+                element: undownloadedVersionsModal,
+                onClose: () => {
+                    this.getModal('undownloadedVersionsModal').element.style.display = 'none';
+                    document.body.classList.remove('modal-open');
+                },
+                closeOnOutsideClick: true
+            });
+        }
+
         // Register resolveFilenameConflictsModal
         const resolveFilenameConflictsModal = document.getElementById('resolveFilenameConflictsModal');
         if (resolveFilenameConflictsModal) {

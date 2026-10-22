@@ -71,6 +71,8 @@ class LoraService(BaseModelService):
             "favorite": model_data.get("favorite", False),
             "exclude": bool(model_data.get("exclude", False)),
             "update_available": bool(model_data.get("update_available", False)),
+            "remote_version_count": int(model_data.get("remote_version_count") or 0),
+            "downloaded_version_count": int(model_data.get("downloaded_version_count") or 0),
             "skip_metadata_refresh": bool(
                 model_data.get("skip_metadata_refresh", False)
             ),

@@ -188,7 +188,8 @@
         },
         "footer": {
             "versionCount": "{count}개 버전",
-            "viewAllVersions": "모든 로컬 버전 보기"
+            "viewAllVersions": "모든 로컬 버전 보기",
+            "versionRatio": "[TODO: Translate] {total} versions on Civitai, {downloaded} downloaded"
         }
     },
     "globalContextMenu": {
@@ -1872,6 +1873,18 @@
             "note": "파일은 기본 경로 템플릿을 사용하여 다운로드됩니다. LoRA의 수에 따라 다소 시간이 걸릴 수 있습니다.",
             "downloadButton": "{count}개 LoRA 다운로드"
         },
+        "undownloadedVersions": {
+            "title": "[TODO: Translate] Undownloaded Versions",
+            "shortAction": "[TODO: Translate] Undownloaded",
+            "selectAll": "[TODO: Translate] Select all",
+            "summary": "[TODO: Translate] {selected} / {total} selected",
+            "empty": "[TODO: Translate] All versions are already downloaded.",
+            "downloadSelected": "[TODO: Translate] Download selected ({count})",
+            "ignoreSelected": "[TODO: Translate] Ignore selected ({count})",
+            "badgeEarlyAccess": "[TODO: Translate] Early Access",
+            "badgePaid": "[TODO: Translate] Paid",
+            "badgeNotDownloadable": "[TODO: Translate] Not downloadable"
+        },
         "rematchOptions": {
             "title": "레시피 재매칭",
             "messageGlobal": "모든 레시피를 로컬 모델 라이브러리와 대조하여 검사합니다.",
@@ -2556,6 +2569,15 @@
             "failedWorkflowInfo": "워크플로 정보를 가져오는데 실패했습니다",
             "pageInitFailed": "{pageType} 페이지 초기화에 실패했습니다. 새로고침해주세요.",
             "statisticsLoadFailed": "통계 데이터 로딩에 실패했습니다"
+        },
+        "undownloadedVersions": {
+            "loadFailed": "[TODO: Translate] Failed to load undownloaded versions",
+            "nothingSelected": "[TODO: Translate] Select at least one version first",
+            "noRoot": "[TODO: Translate] No model root directory is configured",
+            "ignored": "[TODO: Translate] Ignored {count} version(s)",
+            "ignorePartial": "[TODO: Translate] Ignored {completed} of {total} version(s)",
+            "downloadSuccess": "[TODO: Translate] Downloaded {count} version(s)",
+            "downloadPartial": "[TODO: Translate] Downloaded {completed} of {total} version(s)"
         },
         "loras": {
             "copyOnlyForLoras": "문법 복사는 LoRA에서만 사용할 수 있습니다",

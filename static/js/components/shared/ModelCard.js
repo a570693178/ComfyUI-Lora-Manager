@@ -765,6 +765,20 @@ export function createModelCard(model, modelType) {
                             return `<span class="badge-version-unit">${badges}${versionHtml}${quantBadge}</span>`;
                         })()}
                         ${hasUsageCount ? `<span class="version-name" title="${translate('modelCard.usage.timesUsed', {}, 'Times used')}">${model.usage_count}×</span>` : ''}
+                        ${(() => {
+                            // Remote version total / downloaded count for this
+                            // model, e.g. "5/3". Only meaningful when the
+                            // backend knows the remote version list.
+                            const remoteTotal = Number(model.remote_version_count) || 0;
+                            const downloadedTotal = Number(model.downloaded_version_count) || 0;
+                            if (!remoteTotal) return '';
+                            const title = translate(
+                                'modelCard.footer.versionRatio',
+                                { total: remoteTotal, downloaded: downloadedTotal },
+                                `${remoteTotal} versions on Civitai, ${downloadedTotal} downloaded`
+                            );
+                            return `<span class="version-ratio" title="${title}">${remoteTotal}/${downloadedTotal}</span>`;
+                        })()}
                     </div>
                 </div>
                 <div class="card-actions">

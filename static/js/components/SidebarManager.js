@@ -3274,9 +3274,14 @@ export class SidebarManager {
      * first render.
      */
     restoreUserViewState() {
-        this.favoriteUsers = new Set(
-            Object.keys(getStorageItem(`${this.pageType}_favoriteUsers`, {}) || {})
-        );
+        // Accept both shapes: the current {username: true} map and the
+        // legacy array of usernames, so favorites written by an older
+        // build survive the upgrade.
+        const storedFavorites = getStorageItem(`${this.pageType}_favoriteUsers`, {});
+        const favoriteNames = Array.isArray(storedFavorites)
+            ? storedFavorites.filter(name => typeof name === 'string')
+            : Object.keys(storedFavorites || {}).filter(name => typeof name === 'string');
+        this.favoriteUsers = new Set(favoriteNames);
         const customOrder = getStorageItem(`${this.pageType}_userCustomOrder`, []);
         this.userCustomOrder = Array.isArray(customOrder) ? customOrder.filter(u => typeof u === 'string') : [];
         const countOrder = getStorageItem(`${this.pageType}_userCountOrder`, 'desc');
@@ -3290,7 +3295,14 @@ export class SidebarManager {
     }
 
     saveFavoriteUsers() {
-        setStorageItem(`${this.pageType}_favoriteUsers`, Object.fromEntries(this.favoriteUsers));
+        // Object.fromEntries() expects [key, value] pairs. Passing the Set
+        // directly throws "Iterator value <name> is not an entry object",
+        // which silently aborted the write before and lost favorites on
+        // the next page load.
+        setStorageItem(
+            `${this.pageType}_favoriteUsers`,
+            Object.fromEntries([...this.favoriteUsers].map(username => [username, true]))
+        );
     }
 
     saveUserCustomOrder() {

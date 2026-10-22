@@ -1442,6 +1442,19 @@ export class BaseModelApiClient {
         }
     }
 
+    async fetchUndownloadedVersions() {
+        try {
+            const response = await fetch(this.apiConfig.endpoints.undownloadedVersions);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch undownloaded versions: ${response.statusText}`);
+            }
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching undownloaded versions:', error);
+            throw error;
+        }
+    }
+
     async createFolder(folderPath) {
         const response = await fetch(this.apiConfig.endpoints.createFolder, {
             method: 'POST',

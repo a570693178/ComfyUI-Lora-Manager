@@ -9,6 +9,7 @@ import { getModelApiClient } from '../../api/modelApiFactory.js';
 import { initSortDropdown, applySortToSelect, randomizeSortValue } from './SortDropdown.js';
 import { initModelTypeDropdown } from './ModelTypeDropdown.js';
 import { renderScanScopeMenu, resolveScanScopeTarget } from './ScanScopeMenu.js';
+import { undownloadedVersionsManager } from '../../managers/UndownloadedVersionsManager.js';
 
 /**
  * PageControls class - Unified control management for model pages
@@ -461,6 +462,14 @@ export class PageControls {
         const updateFilterBtn = document.getElementById('updateFilterBtn');
         if (updateFilterBtn) {
             updateFilterBtn.addEventListener('click', () => this.toggleUpdateAvailableOnly());
+        }
+
+        // Undownloaded versions panel
+        const undownloadedVersionsBtn = document.getElementById('undownloadedVersionsBtn');
+        if (undownloadedVersionsBtn) {
+            undownloadedVersionsBtn.addEventListener('click', () => {
+                undownloadedVersionsManager.open(this.pageType);
+            });
         }
     }
     

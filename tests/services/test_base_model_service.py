@@ -1465,3 +1465,172 @@ async def test_get_folder_tree_include_empty_uses_live_enumeration():
 
     assert default_tree == {"a": {"b": {}}}
     assert include_empty_tree == {"a": {"b": {}}, "empty": {}}
+
+
+class StubCache:
+    def __init__(self, raw_data):
+        self.raw_data = list(raw_data)
+
+
+class StubScanner:
+    def __init__(self, raw_data):
+        self._cache = StubCache(raw_data)
+
+    async def get_cached_data(self):
+        return self._cache
+
+
+def _make_version(version_id, *, in_library=False, should_ignore=False, name=None):
+    return ModelVersionRecord(
+        version_id=version_id,
+        name=name or f"v{version_id}",
+        base_model="Pony",
+        released_at=None,
+        size_bytes=1,
+        preview_url=None,
+        is_in_library=in_library,
+        should_ignore=should_ignore,
+    )
+
+
+def _make_undownloaded_service(items, records):
+    update_service = StubUpdateServiceWithRecords(records)
+    service = DummyService(
+        model_type="stub",
+        scanner=StubScanner(items),
+        metadata_class=BaseModelMetadata,
+        cache_repository=StubRepository([]),
+        filter_set=PassThroughFilterSet(),
+        search_strategy=NoSearchStrategy(),
+        settings_provider=StubSettings({}),
+        update_service=update_service,
+    )
+    return service, update_service
+
+
+@pytest.mark.asyncio
+async def test_get_undownloaded_versions_lists_only_missing_versions():
+    items = [{"name": "Alpha", "civitai": {"modelId": 7}}]
+    records = {
+        7: ModelUpdateRecord(
+            model_type="stub",
+            model_id=7,
+            versions=[
+                _make_version(1, in_library=True),
+                _make_version(2),
+                _make_version(3),
+            ],
+            last_checked_at=None,
+            should_ignore_model=False,
+        )
+    }
+    service, update_service = _make_undownloaded_service(items, records)
+
+    pending = await service.get_undownloaded_versions()
+
+    # Newest version first, so the newest pending release is on top.
+    assert [entry["versionId"] for entry in pending] == [3, 2]
+    assert all(entry["modelId"] == 7 for entry in pending)
+    assert all(entry["modelName"] == "Alpha" for entry in pending)
+    assert update_service.records_bulk_calls == [("stub", [7])]
+
+
+@pytest.mark.asyncio
+async def test_get_undownloaded_versions_excludes_ignored_versions():
+    items = [{"name": "Alpha", "civitai": {"modelId": 7}}]
+    records = {
+        7: ModelUpdateRecord(
+            model_type="stub",
+            model_id=7,
+            versions=[
+                _make_version(1, in_library=True),
+                _make_version(2, should_ignore=True),
+                _make_version(3),
+            ],
+            last_checked_at=None,
+            should_ignore_model=False,
+        )
+    }
+    service, _ = _make_undownloaded_service(items, records)
+
+    pending = await service.get_undownloaded_versions()
+
+    assert [entry["versionId"] for entry in pending] == [3]
+
+
+@pytest.mark.asyncio
+async def test_get_undownloaded_versions_skips_ignored_models():
+    items = [{"name": "Alpha", "civitai": {"modelId": 7}}]
+    records = {
+        7: ModelUpdateRecord(
+            model_type="stub",
+            model_id=7,
+            versions=[_make_version(1), _make_version(2)],
+            last_checked_at=None,
+            should_ignore_model=True,
+        )
+    }
+    service, _ = _make_undownloaded_service(items, records)
+
+    pending = await service.get_undownloaded_versions()
+
+    assert pending == []
+
+
+@pytest.mark.asyncio
+async def test_get_undownloaded_versions_without_update_service_returns_empty():
+    service = DummyService(
+        model_type="stub",
+        scanner=StubScanner([{"name": "Alpha", "civitai": {"modelId": 7}}]),
+        metadata_class=BaseModelMetadata,
+        cache_repository=StubRepository([]),
+        filter_set=PassThroughFilterSet(),
+        search_strategy=NoSearchStrategy(),
+        settings_provider=StubSettings({}),
+        update_service=None,
+    )
+
+    assert await service.get_undownloaded_versions() == []
+
+
+@pytest.mark.asyncio
+async def test_annotate_update_flags_attaches_version_counts():
+    items = [
+        {"model_name": "Alpha", "civitai": {"modelId": 7}},
+    ]
+    records = {
+        7: ModelUpdateRecord(
+            model_type="stub",
+            model_id=7,
+            versions=[
+                _make_version(1, in_library=True),
+                _make_version(2),
+                _make_version(3),
+                _make_version(4),
+                _make_version(5),
+            ],
+            last_checked_at=None,
+            should_ignore_model=False,
+        )
+    }
+    update_service = StubUpdateServiceWithRecords(records)
+    service = DummyService(
+        model_type="stub",
+        scanner=object(),
+        metadata_class=BaseModelMetadata,
+        cache_repository=StubRepository(items),
+        filter_set=PassThroughFilterSet(),
+        search_strategy=NoSearchStrategy(),
+        settings_provider=StubSettings({}),
+        update_service=update_service,
+    )
+
+    response = await service.get_paginated_data(
+        page=1,
+        page_size=10,
+        sort_by="name:asc",
+    )
+
+    item = response["items"][0]
+    assert item["remote_version_count"] == 5
+    assert item["downloaded_version_count"] == 1

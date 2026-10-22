@@ -1110,6 +1110,21 @@ class ModelQueryHandler:
                 {"success": False, "error": "Internal server error"}, status=500
             )
 
+    async def get_undownloaded_versions(self, request: web.Request) -> web.Response:
+        """List every remote version that is not in the local library yet."""
+        try:
+            versions = await self._service.get_undownloaded_versions()
+            return web.json_response(
+                {"success": True, "versions": versions, "total": len(versions)}
+            )
+        except Exception as exc:
+            self._logger.error(
+                "Error getting undownloaded versions: %s", exc, exc_info=True
+            )
+            return web.json_response(
+                {"success": False, "error": "Internal server error"}, status=500
+            )
+
     async def get_creators(self, request: web.Request) -> web.Response:
         """Aggregate creators (CivitAI users) with model counts and tag stats."""
         try:
@@ -3719,6 +3734,7 @@ class ModelHandlerSet:
             "verify_duplicates": self.management.verify_duplicates,
             "get_top_tags": self.query.get_top_tags,
             "get_creators": self.query.get_creators,
+            "get_undownloaded_versions": self.query.get_undownloaded_versions,
             "search_tags": self.query.search_tags,
             "get_base_models": self.query.get_base_models,
             "get_model_types": self.query.get_model_types,

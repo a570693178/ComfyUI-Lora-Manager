@@ -60,6 +60,9 @@ COMMON_ROUTE_DEFINITIONS: tuple[RouteDefinition, ...] = (
     ),
     RouteDefinition("GET", "/api/lm/{prefix}/top-tags", "get_top_tags"),
     RouteDefinition("GET", "/api/lm/{prefix}/creators", "get_creators"),
+    RouteDefinition(
+        "GET", "/api/lm/{prefix}/undownloaded-versions", "get_undownloaded_versions"
+    ),
     RouteDefinition("GET", "/api/lm/{prefix}/search-tags", "search_tags"),
     RouteDefinition("GET", "/api/lm/{prefix}/base-models", "get_base_models"),
     RouteDefinition("GET", "/api/lm/{prefix}/model-types", "get_model_types"),

@@ -188,7 +188,8 @@
         },
         "footer": {
             "versionCount": "{count} גרסאות",
-            "viewAllVersions": "הצג את כל הגרסאות המקומיות"
+            "viewAllVersions": "הצג את כל הגרסאות המקומיות",
+            "versionRatio": "[TODO: Translate] {total} versions on Civitai, {downloaded} downloaded"
         }
     },
     "globalContextMenu": {
@@ -1872,6 +1873,18 @@
             "note": "הקבצים יורדו באמצעות תבניות נתיב ברירת מחדל. זה עשוי לקחת זמן בהתאם למספר ה-LoRAs.",
             "downloadButton": "הורד {count} LoRA(s)"
         },
+        "undownloadedVersions": {
+            "title": "[TODO: Translate] Undownloaded Versions",
+            "shortAction": "[TODO: Translate] Undownloaded",
+            "selectAll": "[TODO: Translate] Select all",
+            "summary": "[TODO: Translate] {selected} / {total} selected",
+            "empty": "[TODO: Translate] All versions are already downloaded.",
+            "downloadSelected": "[TODO: Translate] Download selected ({count})",
+            "ignoreSelected": "[TODO: Translate] Ignore selected ({count})",
+            "badgeEarlyAccess": "[TODO: Translate] Early Access",
+            "badgePaid": "[TODO: Translate] Paid",
+            "badgeNotDownloadable": "[TODO: Translate] Not downloadable"
+        },
         "rematchOptions": {
             "title": "התאמה מחדש של מתכונים",
             "messageGlobal": "כל המתכונים ייסרקו מול ספריית המודלים המקומית שלך.",
@@ -2556,6 +2569,15 @@
             "failedWorkflowInfo": "קבלת מידע על ה-workflow נכשלה",
             "pageInitFailed": "אתחול דף {pageType} נכשל. אנא טען מחדש.",
             "statisticsLoadFailed": "טעינת נתוני הסטטיסטיקה נכשלה"
+        },
+        "undownloadedVersions": {
+            "loadFailed": "[TODO: Translate] Failed to load undownloaded versions",
+            "nothingSelected": "[TODO: Translate] Select at least one version first",
+            "noRoot": "[TODO: Translate] No model root directory is configured",
+            "ignored": "[TODO: Translate] Ignored {count} version(s)",
+            "ignorePartial": "[TODO: Translate] Ignored {completed} of {total} version(s)",
+            "downloadSuccess": "[TODO: Translate] Downloaded {count} version(s)",
+            "downloadPartial": "[TODO: Translate] Downloaded {completed} of {total} version(s)"
         },
         "loras": {
             "copyOnlyForLoras": "העתקת תחביר זמינה רק עבור LoRAs",

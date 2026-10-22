@@ -188,7 +188,8 @@
         },
         "footer": {
             "versionCount": "{count} バージョン",
-            "viewAllVersions": "ローカルの全バージョンを表示"
+            "viewAllVersions": "ローカルの全バージョンを表示",
+            "versionRatio": "[TODO: Translate] {total} versions on Civitai, {downloaded} downloaded"
         }
     },
     "globalContextMenu": {
@@ -1872,6 +1873,18 @@
             "note": "ファイルはデフォルトのパステンプレートを使用してダウンロードされます。LoRA の数によっては時間がかかる場合があります。",
             "downloadButton": "{count} 個の LoRA をダウンロード"
         },
+        "undownloadedVersions": {
+            "title": "[TODO: Translate] Undownloaded Versions",
+            "shortAction": "[TODO: Translate] Undownloaded",
+            "selectAll": "[TODO: Translate] Select all",
+            "summary": "[TODO: Translate] {selected} / {total} selected",
+            "empty": "[TODO: Translate] All versions are already downloaded.",
+            "downloadSelected": "[TODO: Translate] Download selected ({count})",
+            "ignoreSelected": "[TODO: Translate] Ignore selected ({count})",
+            "badgeEarlyAccess": "[TODO: Translate] Early Access",
+            "badgePaid": "[TODO: Translate] Paid",
+            "badgeNotDownloadable": "[TODO: Translate] Not downloadable"
+        },
         "rematchOptions": {
             "title": "レシピの再マッチング",
             "messageGlobal": "すべてのレシピをローカルのモデルライブラリと照合します。",
@@ -2556,6 +2569,15 @@
             "failedWorkflowInfo": "ワークフロー情報の取得に失敗しました",
             "pageInitFailed": "{pageType}ページの初期化に失敗しました。再読み込みしてください。",
             "statisticsLoadFailed": "統計データの読み込みに失敗しました"
+        },
+        "undownloadedVersions": {
+            "loadFailed": "[TODO: Translate] Failed to load undownloaded versions",
+            "nothingSelected": "[TODO: Translate] Select at least one version first",
+            "noRoot": "[TODO: Translate] No model root directory is configured",
+            "ignored": "[TODO: Translate] Ignored {count} version(s)",
+            "ignorePartial": "[TODO: Translate] Ignored {completed} of {total} version(s)",
+            "downloadSuccess": "[TODO: Translate] Downloaded {count} version(s)",
+            "downloadPartial": "[TODO: Translate] Downloaded {completed} of {total} version(s)"
         },
         "loras": {
             "copyOnlyForLoras": "構文のコピーはLoRAのみ利用可能です",

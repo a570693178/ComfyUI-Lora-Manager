@@ -188,7 +188,8 @@
         },
         "footer": {
             "versionCount": "{count} Versionen",
-            "viewAllVersions": "Alle lokalen Versionen anzeigen"
+            "viewAllVersions": "Alle lokalen Versionen anzeigen",
+            "versionRatio": "[TODO: Translate] {total} versions on Civitai, {downloaded} downloaded"
         }
     },
     "globalContextMenu": {
@@ -1872,6 +1873,18 @@
             "note": "Dateien werden mit Standard-Pfad-Vorlagen heruntergeladen. Dies kann je nach Anzahl der LoRAs eine Weile dauern.",
             "downloadButton": "{count} LoRA(s) herunterladen"
         },
+        "undownloadedVersions": {
+            "title": "[TODO: Translate] Undownloaded Versions",
+            "shortAction": "[TODO: Translate] Undownloaded",
+            "selectAll": "[TODO: Translate] Select all",
+            "summary": "[TODO: Translate] {selected} / {total} selected",
+            "empty": "[TODO: Translate] All versions are already downloaded.",
+            "downloadSelected": "[TODO: Translate] Download selected ({count})",
+            "ignoreSelected": "[TODO: Translate] Ignore selected ({count})",
+            "badgeEarlyAccess": "[TODO: Translate] Early Access",
+            "badgePaid": "[TODO: Translate] Paid",
+            "badgeNotDownloadable": "[TODO: Translate] Not downloadable"
+        },
         "rematchOptions": {
             "title": "Rezepte neu zuordnen",
             "messageGlobal": "Alle Rezepte werden mit Ihrer lokalen Modellbibliothek abgeglichen.",
@@ -2556,6 +2569,15 @@
             "failedWorkflowInfo": "Fehler beim Abrufen der Workflow-Informationen",
             "pageInitFailed": "Fehler beim Initialisieren der {pageType}-Seite. Bitte neu laden.",
             "statisticsLoadFailed": "Fehler beim Laden der Statistikdaten"
+        },
+        "undownloadedVersions": {
+            "loadFailed": "[TODO: Translate] Failed to load undownloaded versions",
+            "nothingSelected": "[TODO: Translate] Select at least one version first",
+            "noRoot": "[TODO: Translate] No model root directory is configured",
+            "ignored": "[TODO: Translate] Ignored {count} version(s)",
+            "ignorePartial": "[TODO: Translate] Ignored {completed} of {total} version(s)",
+            "downloadSuccess": "[TODO: Translate] Downloaded {count} version(s)",
+            "downloadPartial": "[TODO: Translate] Downloaded {completed} of {total} version(s)"
         },
         "loras": {
             "copyOnlyForLoras": "Syntax kopieren ist nur für LoRAs verfügbar",

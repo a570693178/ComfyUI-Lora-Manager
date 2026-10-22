@@ -188,7 +188,8 @@
         },
         "footer": {
             "versionCount": "{count} 個版本",
-            "viewAllVersions": "檢視所有本地版本"
+            "viewAllVersions": "檢視所有本地版本",
+            "versionRatio": "[TODO: Translate] {total} versions on Civitai, {downloaded} downloaded"
         }
     },
     "globalContextMenu": {
@@ -1872,6 +1873,18 @@
             "note": "檔案將使用預設路徑模板下載。根據 LoRAs 的數量，這可能需要一些時間。",
             "downloadButton": "下載 {count} 個 LoRA(s)"
         },
+        "undownloadedVersions": {
+            "title": "[TODO: Translate] Undownloaded Versions",
+            "shortAction": "[TODO: Translate] Undownloaded",
+            "selectAll": "[TODO: Translate] Select all",
+            "summary": "[TODO: Translate] {selected} / {total} selected",
+            "empty": "[TODO: Translate] All versions are already downloaded.",
+            "downloadSelected": "[TODO: Translate] Download selected ({count})",
+            "ignoreSelected": "[TODO: Translate] Ignore selected ({count})",
+            "badgeEarlyAccess": "[TODO: Translate] Early Access",
+            "badgePaid": "[TODO: Translate] Paid",
+            "badgeNotDownloadable": "[TODO: Translate] Not downloadable"
+        },
         "rematchOptions": {
             "title": "重新匹配配方",
             "messageGlobal": "所有配方將對照您的本地模型庫進行掃描。",
@@ -2556,6 +2569,15 @@
             "failedWorkflowInfo": "無法獲取工作流程資訊",
             "pageInitFailed": "無法初始化 {pageType} 頁面。請重新載入。",
             "statisticsLoadFailed": "無法載入統計數據"
+        },
+        "undownloadedVersions": {
+            "loadFailed": "[TODO: Translate] Failed to load undownloaded versions",
+            "nothingSelected": "[TODO: Translate] Select at least one version first",
+            "noRoot": "[TODO: Translate] No model root directory is configured",
+            "ignored": "[TODO: Translate] Ignored {count} version(s)",
+            "ignorePartial": "[TODO: Translate] Ignored {completed} of {total} version(s)",
+            "downloadSuccess": "[TODO: Translate] Downloaded {count} version(s)",
+            "downloadPartial": "[TODO: Translate] Downloaded {completed} of {total} version(s)"
         },
         "loras": {
             "copyOnlyForLoras": "僅對 LoRA 可用的複製語法",
