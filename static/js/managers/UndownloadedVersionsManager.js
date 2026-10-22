@@ -3,204 +3,155 @@ import { translate } from '../utils/i18nHelpers.js';
 import { getModelApiClient } from '../api/modelApiFactory.js';
 import { MODEL_TYPES } from '../api/apiConfig.js';
 import { state } from '../state/index.js';
-import { modalManager } from './ModalManager.js';
 
 /**
- * Manager for the "Undownloaded Versions" panel.
+ * Manager for the "Undownloaded Versions" view.
  *
- * Lists every remote version of the local models that is not present in the
- * library yet, lets the user pick entries, then either downloads the picked
- * ones or ignores them. An ignored version stops showing up in the list
- * (the ignore flag is persisted server-side per version).
+ * Instead of a modal, the pending versions are rendered as cards in the same
+ * grid as the regular model list (see createUndownloadedVersionCard), so the
+ * view is entered by toggling the toolbar button and left by toggling it
+ * again. Selection state lives here and is resolved against every version the
+ * grid has loaded so far, which keeps "select all" and "download" correct
+ * across pagination.
+ *
+ * An ignored version stops showing up in the list (the ignore flag is
+ * persisted server-side per version).
  */
 export class UndownloadedVersionsManager {
     constructor() {
         this.apiClient = null;
         this.modelType = MODEL_TYPES.LORA;
-        this.versions = [];
         this.selected = new Set();
+        // Every version fetched so far, keyed by `${modelId}:${versionId}`.
+        // The grid only keeps the DOM for what is on screen, so selections
+        // must be resolved against this map rather than the DOM.
+        this.loaded = new Map();
         this.busy = false;
     }
 
     /**
-     * Bind the manager to a page and open the panel.
+     * Bind the manager to a page. Called by PageControls when the toolbar
+     * button is wired up.
      * @param {string} modelType - one of MODEL_TYPES
      */
-    async open(modelType = MODEL_TYPES.LORA) {
+    bind(modelType = MODEL_TYPES.LORA) {
         this.modelType = modelType;
         this.apiClient = getModelApiClient(modelType);
-        this.selected.clear();
-
-        const listEl = document.getElementById('undownloadedVersionsList');
-        if (listEl) {
-            listEl.innerHTML = `<div class="undownloaded-versions-loading">${translate(
-                'common.status.loading',
-                {},
-                'Loading...'
-            )}</div>`;
-        }
-        this._updateToolbar();
-
-        modalManager.showModal('undownloadedVersionsModal');
-
-        try {
-            const response = await this.apiClient.fetchUndownloadedVersions();
-            this.versions = Array.isArray(response?.versions) ? response.versions : [];
-        } catch (error) {
-            console.error('Failed to load undownloaded versions:', error);
-            this.versions = [];
-            showToast('toast.undownloadedVersions.loadFailed', {}, 'error');
-        }
-
-        this._render();
-    }
-
-    _render() {
-        const listEl = document.getElementById('undownloadedVersionsList');
-        if (!listEl) return;
-
-        if (!this.versions.length) {
-            listEl.innerHTML = `<div class="undownloaded-versions-empty">${translate(
-                'modals.undownloadedVersions.empty',
-                {},
-                'All versions are already downloaded.'
-            )}</div>`;
-            this._updateToolbar();
-            return;
-        }
-
-        listEl.innerHTML = this.versions.map((version) => {
-            const key = this._key(version);
-            const checked = this.selected.has(key);
-            const downloadable = this._isDownloadable(version);
-            const badges = [];
-            if (version.isEarlyAccess) {
-                badges.push(`<span class="undownloaded-version-badge is-early-access">${translate(
-                    'modals.undownloadedVersions.badgeEarlyAccess',
-                    {},
-                    'Early Access'
-                )}</span>`);
-            }
-            if (version.isPaid) {
-                badges.push(`<span class="undownloaded-version-badge is-paid">${translate(
-                    'modals.undownloadedVersions.badgePaid',
-                    {},
-                    'Paid'
-                )}</span>`);
-            }
-            if (!downloadable) {
-                badges.push(`<span class="undownloaded-version-badge is-locked">${translate(
-                    'modals.undownloadedVersions.badgeNotDownloadable',
-                    {},
-                    'Not downloadable'
-                )}</span>`);
-            }
-            const preview = version.previewUrl
-                ? `<img class="undownloaded-version-preview" src="${this._escapeAttr(version.previewUrl)}" alt="" loading="lazy">`
-                : `<span class="undownloaded-version-preview is-placeholder"><i class="fas fa-image"></i></span>`;
-            const versionLabel = version.versionName
-                ? version.versionName
-                : `#${version.versionId}`;
-            return `
-                <label class="undownloaded-version-item${checked ? ' is-selected' : ''}${downloadable ? '' : ' is-locked'}" data-version-key="${this._escapeAttr(key)}">
-                    <input type="checkbox" class="undownloaded-version-checkbox" data-version-key="${this._escapeAttr(key)}"${checked ? ' checked' : ''}${downloadable ? '' : ' disabled'}>
-                    ${preview}
-                    <span class="undownloaded-version-info">
-                        <span class="undownloaded-version-model">${this._escapeHtml(version.modelName || '')}</span>
-                        <span class="undownloaded-version-name">${this._escapeHtml(versionLabel)}</span>
-                        ${badges.length ? `<span class="undownloaded-version-badges">${badges.join('')}</span>` : ''}
-                    </span>
-                </label>
-            `;
-        }).join('');
-
-        listEl.querySelectorAll('.undownloaded-version-checkbox').forEach((checkbox) => {
-            checkbox.addEventListener('change', (event) => {
-                const key = event.target.dataset.versionKey;
-                if (!key) return;
-                if (event.target.checked) {
-                    this.selected.add(key);
-                } else {
-                    this.selected.delete(key);
-                }
-                const row = event.target.closest('.undownloaded-version-item');
-                if (row) row.classList.toggle('is-selected', event.target.checked);
-                this._updateToolbar();
-            });
-        });
-
-        this._updateToolbar();
-    }
-
-    _updateToolbar() {
-        const total = this.versions.length;
-        const selectedCount = this.selected.size;
-
-        const summaryEl = document.getElementById('undownloadedVersionsSummary');
-        if (summaryEl) {
-            summaryEl.textContent = translate(
-                'modals.undownloadedVersions.summary',
-                { selected: selectedCount, total },
-                `${selectedCount} / ${total} selected`
-            );
-        }
-
-        const selectAllEl = document.getElementById('undownloadedVersionsSelectAll');
-        if (selectAllEl) {
-            selectAllEl.checked = total > 0 && selectedCount === total;
-            selectAllEl.indeterminate = selectedCount > 0 && selectedCount < total;
-            selectAllEl.disabled = total === 0;
-        }
-
-        const downloadBtn = document.getElementById('undownloadedVersionsDownloadBtn');
-        if (downloadBtn) {
-            // Downloading requires an explicit selection.
-            downloadBtn.disabled = selectedCount === 0 || this.busy;
-            const textEl = document.getElementById('undownloadedVersionsDownloadBtnText');
-            if (textEl) {
-                textEl.textContent = translate(
-                    'modals.undownloadedVersions.downloadSelected',
-                    { count: selectedCount },
-                    `Download selected (${selectedCount})`
-                );
-            }
-        }
-
-        const ignoreBtn = document.getElementById('undownloadedVersionsIgnoreBtn');
-        if (ignoreBtn) {
-            ignoreBtn.disabled = selectedCount === 0 || this.busy;
-            const textEl = document.getElementById('undownloadedVersionsIgnoreBtnText');
-            if (textEl) {
-                textEl.textContent = translate(
-                    'modals.undownloadedVersions.ignoreSelected',
-                    { count: selectedCount },
-                    `Ignore selected (${selectedCount})`
-                );
-            }
-        }
-    }
-
-    toggleSelectAll(checked) {
-        this.selected.clear();
-        if (checked) {
-            this.versions.forEach((version) => {
-                if (this._isDownloadable(version)) {
-                    this.selected.add(this._key(version));
-                }
-            });
-        }
-        this._render();
     }
 
     /**
-     * A version can only be fetched when CivitAI allows direct downloads.
-     * "Generation" / "InternalGeneration" versions stay listed but cannot
-     * be picked, so the download action never targets them.
+     * Reload the grid from page 1. PageControls owns the scroller, and it is
+     * exposed on window by every model page.
      */
-    _isDownloadable(version) {
+    _reloadGrid() {
+        this.clearLoaded();
+        this.syncToolbar();
+        if (typeof window.pageControls?.resetAndReload === 'function') {
+            window.pageControls.resetAndReload();
+        }
+    }
+
+    /**
+     * Whether the pending view is currently shown for a page.
+     * @param {string} [modelType]
+     */
+    isActive(modelType = this.modelType) {
+        const pageState = this._pageState(modelType);
+        return Boolean(pageState?.undownloadedView);
+    }
+
+    /**
+     * Record a page of versions the grid just loaded. Called from
+     * fetchUndownloadedVersions so the manager always knows the full set of
+     * fetched entries, not only the visible ones.
+     */
+    trackLoaded(versions) {
+        if (!Array.isArray(versions)) return;
+        versions.forEach((version) => {
+            this.loaded.set(this._key(version), version);
+        });
+    }
+
+    clearLoaded() {
+        this.loaded.clear();
+        this.selected.clear();
+    }
+
+    isSelected(key) {
+        return this.selected.has(key);
+    }
+
+    isDownloadable(version) {
         const control = version?.usageControl;
         if (!control) return true;
         return control === 'Download';
+    }
+
+    /**
+     * Toggle one version and refresh the toolbar. The visible cards are
+     * re-rendered so the checkbox and the highlight follow the new state.
+     */
+    toggleVersion(key, selected) {
+        if (selected) {
+            this.selected.add(key);
+        } else {
+            this.selected.delete(key);
+        }
+        this.syncToolbar();
+        this._rerenderGrid();
+    }
+
+    /**
+     * Select or clear every loaded, downloadable version.
+     * @param {boolean} select
+     */
+    toggleSelectAll(select) {
+        if (!select) {
+            this.selected.clear();
+        } else {
+            this.loaded.forEach((version, key) => {
+                if (this.isDownloadable(version)) {
+                    this.selected.add(key);
+                }
+            });
+        }
+        this.syncToolbar();
+        // Re-render so the checkboxes and card highlight follow the new state.
+        this._rerenderGrid();
+    }
+
+    get selectedCount() {
+        return this.selected.size;
+    }
+
+    get loadedCount() {
+        return this.loaded.size;
+    }
+
+    get selectAllState() {
+        const downloadable = [...this.loaded.values()].filter((version) =>
+            this.isDownloadable(version)
+        );
+        if (!downloadable.length) {
+            return { checked: false, indeterminate: false, disabled: true };
+        }
+        const selectedDownloadable = downloadable.filter((version) =>
+            this.selected.has(this._key(version))
+        ).length;
+        return {
+            checked: selectedDownloadable === downloadable.length,
+            indeterminate: selectedDownloadable > 0 && selectedDownloadable < downloadable.length,
+            disabled: false,
+        };
+    }
+
+    _selectedVersions() {
+        const versions = [];
+        this.selected.forEach((key) => {
+            const version = this.loaded.get(key);
+            if (version) versions.push(version);
+        });
+        return versions;
     }
 
     /**
@@ -208,10 +159,10 @@ export class UndownloadedVersionsManager {
      */
     async ignoreSelected() {
         const targets = this._selectedVersions();
-        if (!targets.length) return;
+        if (!targets.length || this.busy) return;
 
         this.busy = true;
-        this._updateToolbar();
+        this.syncToolbar();
 
         let ignored = 0;
         let failed = 0;
@@ -230,28 +181,10 @@ export class UndownloadedVersionsManager {
         }
 
         this.busy = false;
-
-        // Drop the ignored entries locally, then re-read the list so the
-        // server-side filter is the single source of truth.
-        const ignoredKeys = new Set(targets.map((version) => this._key(version)));
-        this.versions = this.versions.filter((version) => !ignoredKeys.has(this._key(version)));
-        this.selected.clear();
-        this._render();
-
-        try {
-            const response = await this.apiClient.fetchUndownloadedVersions();
-            this.versions = Array.isArray(response?.versions) ? response.versions : [];
-        } catch (error) {
-            console.error('Failed to refresh undownloaded versions:', error);
-        }
-        this._render();
+        this._afterBulkAction();
 
         if (failed === 0) {
-            showToast(
-                'toast.undownloadedVersions.ignored',
-                { count: ignored },
-                'success'
-            );
+            showToast('toast.undownloadedVersions.ignored', { count: ignored }, 'success');
         } else {
             showToast(
                 'toast.undownloadedVersions.ignorePartial',
@@ -265,13 +198,14 @@ export class UndownloadedVersionsManager {
      * Download the selected versions sequentially.
      */
     async downloadSelected() {
-        const targets = this._selectedVersions().filter(
-            (version) => this._isDownloadable(version)
+        const targets = this._selectedVersions().filter((version) =>
+            this.isDownloadable(version)
         );
         if (!targets.length) {
             showToast('toast.undownloadedVersions.nothingSelected', {}, 'warning');
             return;
         }
+        if (this.busy) return;
 
         const root = await this._resolveRoot();
         if (!root) {
@@ -280,7 +214,7 @@ export class UndownloadedVersionsManager {
         }
 
         this.busy = true;
-        this._updateToolbar();
+        this.syncToolbar();
 
         const loadingManager = state.loadingManager;
         const batchDownloadId = `undl-${Date.now()}`;
@@ -321,16 +255,7 @@ export class UndownloadedVersionsManager {
             loadingManager.hide();
         }
         this.busy = false;
-
-        // Refresh the list: downloaded entries are gone, the rest stay.
-        try {
-            const response = await this.apiClient.fetchUndownloadedVersions();
-            this.versions = Array.isArray(response?.versions) ? response.versions : [];
-        } catch (error) {
-            console.error('Failed to refresh undownloaded versions:', error);
-        }
-        this.selected.clear();
-        this._render();
+        this._afterBulkAction();
 
         if (failed === 0) {
             showToast(
@@ -347,8 +272,14 @@ export class UndownloadedVersionsManager {
         }
     }
 
-    _selectedVersions() {
-        return this.versions.filter((version) => this.selected.has(this._key(version)));
+    /**
+     * After a bulk action the pending set changed, so drop the stale entries
+     * and reload page 1 — the counts in the toolbar and the cards both come
+     * from the server.
+     */
+    _afterBulkAction() {
+        this.selected.clear();
+        this._reloadGrid();
     }
 
     _key(version) {
@@ -380,56 +311,86 @@ export class UndownloadedVersionsManager {
         }
     }
 
-    _escapeHtml(value) {
-        return String(value ?? '')
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
+    _pageState(modelType = this.modelType) {
+        const key = (modelType || MODEL_TYPES.LORA).toLowerCase();
+        return state.pages?.[key];
     }
 
-    _escapeAttr(value) {
-        return this._escapeHtml(value).replace(/`/g, '&#96;');
+    /**
+     * Push the selection summary into the bar above the grid.
+     * Public: PageControls calls it right after entering the view so the
+     * summary reads 0 / 0 before the first page lands.
+     */
+    syncToolbar() {
+        const summaryEl = document.getElementById('undownloadedViewSummary');
+        if (summaryEl) {
+            summaryEl.textContent = translate(
+                'modals.undownloadedVersions.summary',
+                { selected: this.selectedCount, total: this.loadedCount },
+                `${this.selectedCount} / ${this.loadedCount} selected`
+            );
+        }
+
+        const selectAllEl = document.getElementById('undownloadedViewSelectAll');
+        if (selectAllEl) {
+            const { checked, indeterminate, disabled } = this.selectAllState;
+            selectAllEl.checked = checked;
+            selectAllEl.indeterminate = indeterminate;
+            selectAllEl.disabled = disabled || this.busy;
+        }
+
+        const downloadBtn = document.getElementById('undownloadedViewDownloadBtn');
+        if (downloadBtn) {
+            // Downloading requires an explicit selection.
+            downloadBtn.disabled = this.selectedCount === 0 || this.busy;
+            const textEl = document.getElementById('undownloadedViewDownloadBtnText');
+            if (textEl) {
+                textEl.textContent = translate(
+                    'modals.undownloadedVersions.downloadSelected',
+                    { count: this.selectedCount },
+                    `Download selected (${this.selectedCount})`
+                );
+            }
+        }
+
+        const ignoreBtn = document.getElementById('undownloadedViewIgnoreBtn');
+        if (ignoreBtn) {
+            ignoreBtn.disabled = this.selectedCount === 0 || this.busy;
+            const textEl = document.getElementById('undownloadedViewIgnoreBtnText');
+            if (textEl) {
+                textEl.textContent = translate(
+                    'modals.undownloadedVersions.ignoreSelected',
+                    { count: this.selectedCount },
+                    `Ignore selected (${this.selectedCount})`
+                );
+            }
+        }
+    }
+
+    /** Re-render the grid in place (selection changed, data did not). */
+    _rerenderGrid() {
+        const scroller = state.virtualScroller;
+        if (!scroller) return;
+        if (typeof scroller.refreshWithData === 'function') {
+            scroller.refreshWithData(scroller.items, scroller.totalItems, scroller.hasMore);
+        }
+    }
+
+    /** Re-fetch page 1 from the server (pending set changed). */
+    _reloadGrid() {
+        this.clearLoaded();
+        this.syncToolbar();
+        if (typeof window.pageControls?.resetAndReload === 'function') {
+            window.pageControls.resetAndReload();
+        }
     }
 }
 
 export const undownloadedVersionsManager = new UndownloadedVersionsManager();
 
+// Exposed on window (same convention as pageControls / modelDuplicatesManager)
+// so BaseModelApiClient can report fetched pages without importing this module
+// back — modelApiFactory -> baseModelApi -> this module would be a cycle.
 if (typeof window !== 'undefined') {
     window.undownloadedVersionsManager = undownloadedVersionsManager;
-
-    // Wire the panel controls once the DOM is ready. The markup lives in a
-    // Jinja template, so the elements may not exist at import time.
-    const bindPanelControls = () => {
-        const selectAllEl = document.getElementById('undownloadedVersionsSelectAll');
-        if (selectAllEl && !selectAllEl.dataset.bound) {
-            selectAllEl.dataset.bound = 'true';
-            selectAllEl.addEventListener('change', (event) => {
-                undownloadedVersionsManager.toggleSelectAll(event.target.checked);
-            });
-        }
-
-        const downloadBtn = document.getElementById('undownloadedVersionsDownloadBtn');
-        if (downloadBtn && !downloadBtn.dataset.bound) {
-            downloadBtn.dataset.bound = 'true';
-            downloadBtn.addEventListener('click', () => {
-                undownloadedVersionsManager.downloadSelected();
-            });
-        }
-
-        const ignoreBtn = document.getElementById('undownloadedVersionsIgnoreBtn');
-        if (ignoreBtn && !ignoreBtn.dataset.bound) {
-            ignoreBtn.dataset.bound = 'true';
-            ignoreBtn.addEventListener('click', () => {
-                undownloadedVersionsManager.ignoreSelected();
-            });
-        }
-    };
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', bindPanelControls);
-    } else {
-        bindPanelControls();
-    }
 }

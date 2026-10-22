@@ -57,6 +57,14 @@ export class BaseModelApiClient {
 
     async fetchModelsPage(page = 1, pageSize = null) {
         const pageState = this.getPageState();
+
+        // Undownloaded-versions view: same grid, different data source. It has
+        // no folder/base-model/sort semantics of its own beyond the tree
+        // filters, so it bypasses the regular query-param builder entirely.
+        if (pageState.undownloadedView) {
+            return this.fetchUndownloadedVersions(page, pageSize);
+        }
+
         const actualPageSize = pageSize || pageState.pageSize || this.apiConfig.config.defaultPageSize;
         const isExcludedView = pageState.viewMode === 'excluded';
 
@@ -1442,13 +1450,57 @@ export class BaseModelApiClient {
         }
     }
 
-    async fetchUndownloadedVersions() {
+    /**
+     * Fetch a page of remote versions that are not in the local library yet.
+     *
+     * The sidebar tree selection is forwarded so the pending list narrows the
+     * same way the regular model list does (see _buildQueryParams). Returns
+     * the shape the virtual scroller expects.
+     */
+    async fetchUndownloadedVersions(page = 1, pageSize = null) {
+        const pageState = this.getPageState();
+        const actualPageSize = pageSize || pageState.pageSize || this.apiConfig.config.defaultPageSize;
+
+        const params = new URLSearchParams({
+            page: String(page),
+            page_size: String(actualPageSize),
+        });
+
+        // Tree linkage: creator (level 1) + optional base_model (level 2) and
+        // default tag (level 3), plus the folder tree's selection.
+        if (pageState.activeFolder) {
+            params.append('folder', pageState.activeFolder);
+        }
+        if (pageState.activeCreator) {
+            params.append('creator', pageState.activeCreator);
+            if (pageState.activeCreatorBaseModel) {
+                params.append('base_model', pageState.activeCreatorBaseModel);
+            }
+            if (pageState.activeCreatorTag) {
+                params.append('creator_tag', pageState.activeCreatorTag);
+            }
+        }
+
         try {
-            const response = await fetch(this.apiConfig.endpoints.undownloadedVersions);
+            const response = await fetch(`${this.apiConfig.endpoints.undownloadedVersions}?${params}`);
             if (!response.ok) {
                 throw new Error(`Failed to fetch undownloaded versions: ${response.statusText}`);
             }
-            return await response.json();
+            const data = await response.json();
+            const items = data.items || [];
+            // Keep the manager's view of "everything fetched so far" in sync so
+            // select-all and download resolve against the full set, not just
+            // the cards currently on screen. Reached through window to avoid a
+            // modelApiFactory -> baseModelApi -> manager import cycle.
+            window.undownloadedVersionsManager?.trackLoaded(items);
+            return {
+                items,
+                totalItems: data.total || 0,
+                totalPages: data.total_pages || 0,
+                currentPage: data.page || page,
+                hasMore: (data.page || page) < (data.total_pages || 0),
+                folders: [],
+            };
         } catch (error) {
             console.error('Error fetching undownloaded versions:', error);
             throw error;

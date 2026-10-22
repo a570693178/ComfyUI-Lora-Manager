@@ -1877,6 +1877,7 @@
       "title": "Undownloaded Versions",
       "shortAction": "Undownloaded",
       "selectAll": "Select all",
+      "selectOne": "Select this version",
       "summary": "{selected} / {total} selected",
       "empty": "All versions are already downloaded.",
       "downloadSelected": "Download selected ({count})",

@@ -142,12 +142,14 @@
                 </div>
             </div>
             {% endif %}
+            {% if page_id != 'recipes' %}
             <div class="control-group">
                 <button id="undownloadedVersionsBtn" data-action="undownloaded-versions" class="undownloaded-versions-trigger" title="{{ t('modals.undownloadedVersions.title', default='Undownloaded Versions') }}">
                     <i class="fas fa-cloud-arrow-down"></i> <span>{{ t('modals.undownloadedVersions.shortAction', default='Undownloaded') }}</span>
                     <span id="undownloadedVersionsBadge" class="badge"></span>
                 </button>
             </div>
+            {% endif %}
             <div id="customFilterIndicator" class="control-group hidden">
                 <div class="filter-active">
                     <i class="fas fa-filter"></i> <span class="customFilterText" title=""></span>
@@ -155,7 +157,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="controls-right">
             {% if page_id == 'recipes' %}
             <div class="control-group layout-toggle-group" role="group" aria-label="{{ t('recipes.controls.layout.title') }}" title="{{ t('recipes.controls.layout.title') }}">
@@ -175,4 +177,26 @@
             </div>
         </div>
     </div>
+
+    {# Undownloaded-versions view bar: selection controls for the pending
+       cards rendered in the main grid. Hidden unless that view is active. #}
+    {% if page_id != 'recipes' %}
+    <div id="undownloadedViewBar" class="undownloaded-view-bar hidden">
+        <label class="undownloaded-view-select-all">
+            <input type="checkbox" id="undownloadedViewSelectAll" disabled>
+            <span>{{ t('modals.undownloadedVersions.selectAll', default='Select all') }}</span>
+        </label>
+        <span class="undownloaded-view-summary" id="undownloadedViewSummary"></span>
+        <div class="undownloaded-view-actions">
+            <button class="secondary-btn" id="undownloadedViewIgnoreBtn" disabled>
+                <i class="fas fa-ban"></i>
+                <span id="undownloadedViewIgnoreBtnText">{{ t('modals.undownloadedVersions.ignoreSelected', default='Ignore selected') }}</span>
+            </button>
+            <button class="primary-btn" id="undownloadedViewDownloadBtn" disabled>
+                <i class="fas fa-download"></i>
+                <span id="undownloadedViewDownloadBtnText">{{ t('modals.undownloadedVersions.downloadSelected', default='Download selected') }}</span>
+            </button>
+        </div>
+    </div>
+    {% endif %}
 </div>

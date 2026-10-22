@@ -927,6 +927,10 @@ class BaseModelService(ABC):
 
     async def get_undownloaded_versions(
         self,
+        creator: str | None = None,
+        creator_tag: str | None = None,
+        folder: str | None = None,
+        base_model: str | None = None,
     ) -> List[Dict[str, Any]]:
         """List every remote version that is not present in the local library.
 
@@ -935,16 +939,82 @@ class BaseModelService(ABC):
         "downloaded" when the record flags it as present in the library.
         Versions the user explicitly ignored are excluded from the result,
         so an ignored version stops showing up in the pending list.
+
+        The optional arguments mirror the sidebar tree so the pending list can
+        be narrowed the same way the regular model list is:
+
+        * ``creator`` — exact, case-insensitive CivitAI username of the model
+          that owns the version (level 1 of the user-view tree).
+        * ``creator_tag`` — the owning model's *default* tag (level 3). Only
+          meaningful together with ``creator``.
+        * ``folder`` — the owning model's folder, matched exactly or as a
+          folder prefix so subfolders are included (folder tree).
+        * ``base_model`` — matches either the owning model's ``base_model`` or
+          the version's own ``baseModel``, so a base-model node never hides a
+          version that is labelled with that base model on its card.
+
+        Filtering happens while the model ids are collected, so excluded
+        models never reach the (more expensive) record lookup.
         """
 
         cache = await self.scanner.get_cached_data()
 
+        creator_norm = (creator or "").strip().lower()
+        creator_tag_norm = (creator_tag or "").strip().lower()
+        folder_norm = (folder or "").strip()
+        folder_prefix = f"{folder_norm}/" if folder_norm else ""
+        base_model_norm = (base_model or "").strip().lower()
+
+        def matches_tree(item: Dict[str, Any]) -> bool:
+            """Whether a cached model belongs under the current tree selection.
+
+            ``base_model`` is deliberately absent: a version may carry a
+            different base model than the model that owns it, so that check
+            runs per version (against both values) once the records are in.
+            """
+            if not (creator_norm or folder_norm):
+                return True
+
+            civitai = item.get("civitai") if isinstance(item, dict) else None
+            creator_info = (civitai or {}).get("creator") or {}
+            username = (creator_info.get("username") or "").strip().lower()
+
+            if creator_norm and username != creator_norm:
+                return False
+
+            if creator_tag_norm:
+                # User-view tags are the model's default (first) tag, matching
+                # what the sidebar tree aggregates and what the list filter
+                # applies, so the counts stay consistent across both views.
+                default_tag = next(
+                    (
+                        tag.strip().lower()
+                        for tag in item.get("tags") or []
+                        if isinstance(tag, str) and tag.strip()
+                    ),
+                    "",
+                )
+                if default_tag != creator_tag_norm:
+                    return False
+
+            if folder_norm:
+                item_folder = (item.get("folder") or "").strip()
+                if item_folder != folder_norm and not item_folder.startswith(folder_prefix):
+                    return False
+
+            return True
+
         model_names: Dict[int, str] = {}
+        # Parallel map of the owning model's base_model, needed because a
+        # version can carry a different base model than its model.
+        model_base_models: Dict[int, str] = {}
         for item in cache.raw_data:
             if not isinstance(item, dict):
                 continue
             model_id = self._extract_model_id(item)
             if model_id is None or model_id in model_names:
+                continue
+            if not matches_tree(item):
                 continue
             name = item.get("name") or ""
             if not name:
@@ -952,6 +1022,7 @@ class BaseModelService(ABC):
                 if isinstance(civitai, dict):
                     name = civitai.get("name") or ""
             model_names[model_id] = str(name) or str(model_id)
+            model_base_models[model_id] = str(item.get("base_model") or "")
 
         if not model_names:
             return []
@@ -979,6 +1050,16 @@ class BaseModelService(ABC):
             for version in record.versions:
                 if version.is_in_library or version.should_ignore:
                     continue
+                if base_model_norm:
+                    # The tree groups by the model's base_model while the card
+                    # shows the version's, so accept either: a base-model node
+                    # must never hide a version that is labelled with it.
+                    version_base = (version.base_model or "").strip().lower()
+                    model_base = (
+                        model_base_models.get(model_id) or ""
+                    ).strip().lower()
+                    if base_model_norm not in (version_base, model_base):
+                        continue
                 pending.append(
                     {
                         "modelId": model_id,

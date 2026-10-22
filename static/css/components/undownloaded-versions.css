@@ -1,0 +1,160 @@
+/* Undownloaded Versions view
+ *
+ * The pending versions are rendered as regular model cards in the main grid,
+ * so this file only adds what the cards and the selection bar need on top of
+ * card.css: the bar above the grid, the per-card checkbox and status badges,
+ * and the toolbar controls that go inert while the view is active.
+ */
+
+/* ---- Selection bar above the grid ---- */
+.undownloaded-view-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: var(--space-2);
+    padding: 10px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    background: linear-gradient(
+        135deg,
+        oklch(var(--lora-accent-l) var(--lora-accent-c) var(--lora-accent-h) / 0.08),
+        var(--card-bg)
+    );
+}
+
+.undownloaded-view-bar.hidden {
+    display: none;
+}
+
+.undownloaded-view-select-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: var(--text-color);
+    cursor: pointer;
+    user-select: none;
+}
+
+.undownloaded-view-select-all input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--lora-accent, #4a9eff);
+}
+
+.undownloaded-view-select-all input[type="checkbox"]:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.undownloaded-view-summary {
+    color: var(--text-secondary, rgba(255, 255, 255, 0.65));
+    font-size: 0.9em;
+    white-space: nowrap;
+}
+
+.undownloaded-view-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.undownloaded-view-actions button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ---- Pending version cards ---- */
+.undownloaded-version-card {
+    cursor: pointer;
+}
+
+.undownloaded-version-card.is-selected {
+    outline: 2px solid var(--lora-accent, #4a9eff);
+    outline-offset: -2px;
+}
+
+.undownloaded-version-card.is-locked {
+    cursor: default;
+    opacity: 0.75;
+}
+
+/* Selection checkbox, top-right of the preview so it never covers the
+   base-model label on the left. */
+.undownloaded-version-select {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    padding: 4px;
+    border-radius: var(--border-radius-xs);
+    background: rgba(0, 0, 0, 0.45);
+    cursor: pointer;
+}
+
+.undownloaded-version-select input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    cursor: pointer;
+    accent-color: var(--lora-accent, #4a9eff);
+}
+
+.undownloaded-version-select input[type="checkbox"]:disabled {
+    cursor: not-allowed;
+}
+
+.undownloaded-version-badges {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-left: 6px;
+}
+
+.undownloaded-version-badge {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: var(--border-radius-xs);
+    font-size: 0.72em;
+    line-height: 1.5;
+    white-space: nowrap;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(0, 0, 0, 0.35);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.undownloaded-version-badge.is-early-access {
+    border-color: rgba(255, 193, 7, 0.55);
+    color: #ffc107;
+}
+
+.undownloaded-version-badge.is-paid {
+    border-color: rgba(76, 175, 80, 0.55);
+    color: #81c784;
+}
+
+.undownloaded-version-badge.is-locked {
+    border-color: rgba(244, 67, 54, 0.5);
+    color: #e57373;
+}
+
+/* ---- Toolbar controls that do not apply to pending versions ---- */
+/* Sort, model type, favorites and updates all describe local models; a remote
+   version has none of those attributes. Grey them out instead of leaving them
+   looking functional while the grid ignores them. */
+.controls.undownloaded-view-active .sort-dropdown-group,
+.controls.undownloaded-view-active .model-type-dropdown-group,
+.controls.undownloaded-view-active .update-filter-group,
+.controls.undownloaded-view-active #favoriteFilterBtn {
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+/* The pending view has its own count summary, so the toolbar badge would
+   duplicate it. */
+.controls.undownloaded-view-active #undownloadedVersionsBadge {
+    display: none;
+}

@@ -458,9 +458,11 @@ class DummyUndownloadedService:
     def __init__(self, result=None):
         self._result = result if result is not None else []
         self.calls = 0
+        self.kwargs = None
 
-    async def get_undownloaded_versions(self):
+    async def get_undownloaded_versions(self, **kwargs):
         self.calls += 1
+        self.kwargs = kwargs
         return list(self._result)
 
 
@@ -487,8 +489,52 @@ async def test_model_query_handler_returns_undownloaded_versions():
 
     assert payload["success"] is True
     assert payload["total"] == 1
-    assert payload["versions"][0]["versionId"] == 2
+    assert payload["items"][0]["versionId"] == 2
+    assert payload["page"] == 1
+    assert payload["total_pages"] == 1
     assert service.calls == 1
+
+
+@pytest.mark.asyncio
+async def test_model_query_handler_undownloaded_versions_paginates():
+    service = DummyUndownloadedService(
+        result=[{"modelId": 7, "versionId": index} for index in range(1, 6)]
+    )
+    handler = ModelQueryHandler(service=service, logger=logging.getLogger(__name__))
+
+    response = await handler.get_undownloaded_versions(
+        SimpleNamespace(query={"page": "2", "page_size": "2"})  # pyright: ignore[reportArgumentType]
+    )
+    payload = json.loads(response.text)
+
+    assert payload["total"] == 5
+    assert payload["page"] == 2
+    assert payload["total_pages"] == 3
+    assert [item["versionId"] for item in payload["items"]] == [3, 4]
+
+
+@pytest.mark.asyncio
+async def test_model_query_handler_undownloaded_versions_forwards_tree_filters():
+    service = DummyUndownloadedService(result=[])
+    handler = ModelQueryHandler(service=service, logger=logging.getLogger(__name__))
+
+    await handler.get_undownloaded_versions(
+        SimpleNamespace(  # pyright: ignore[reportArgumentType]
+            query={
+                "creator": "alice",
+                "creator_tag": "anime",
+                "folder": "Pony/character",
+                "base_model": "Illustrious",
+            }
+        )
+    )
+
+    assert service.kwargs == {
+        "creator": "alice",
+        "creator_tag": "anime",
+        "folder": "Pony/character",
+        "base_model": "Illustrious",
+    }
 
 
 @pytest.mark.asyncio
@@ -504,5 +550,5 @@ async def test_model_query_handler_undownloaded_versions_empty_list():
     payload = json.loads(text)
 
     assert payload["success"] is True
-    assert payload["versions"] == []
+    assert payload["items"] == []
     assert payload["total"] == 0

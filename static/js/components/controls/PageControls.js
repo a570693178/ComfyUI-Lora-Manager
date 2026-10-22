@@ -464,12 +464,105 @@ export class PageControls {
             updateFilterBtn.addEventListener('click', () => this.toggleUpdateAvailableOnly());
         }
 
-        // Undownloaded versions panel
+        // Undownloaded-versions view: a toggle, not a modal. Entering swaps the
+        // grid's data source; the selection bar above the cards goes with it.
         const undownloadedVersionsBtn = document.getElementById('undownloadedVersionsBtn');
         if (undownloadedVersionsBtn) {
             undownloadedVersionsBtn.addEventListener('click', () => {
-                undownloadedVersionsManager.open(this.pageType);
+                this.toggleUndownloadedView();
             });
+        }
+
+        this.bindUndownloadedViewBar();
+    }
+
+    /** Wire the select-all / download / ignore controls of the pending view. */
+    bindUndownloadedViewBar() {
+        const selectAllEl = document.getElementById('undownloadedViewSelectAll');
+        if (selectAllEl && !selectAllEl.dataset.bound) {
+            selectAllEl.dataset.bound = 'true';
+            selectAllEl.addEventListener('change', (event) => {
+                undownloadedVersionsManager.toggleSelectAll(event.target.checked);
+            });
+        }
+
+        const downloadBtn = document.getElementById('undownloadedViewDownloadBtn');
+        if (downloadBtn && !downloadBtn.dataset.bound) {
+            downloadBtn.dataset.bound = 'true';
+            downloadBtn.addEventListener('click', () => {
+                undownloadedVersionsManager.downloadSelected();
+            });
+        }
+
+        const ignoreBtn = document.getElementById('undownloadedViewIgnoreBtn');
+        if (ignoreBtn && !ignoreBtn.dataset.bound) {
+            ignoreBtn.dataset.bound = 'true';
+            ignoreBtn.addEventListener('click', () => {
+                undownloadedVersionsManager.ignoreSelected();
+            });
+        }
+    }
+
+    /**
+     * Enter or leave the undownloaded-versions view.
+     *
+     * The view is a data-source swap on the same grid, so it follows the
+     * excluded-view pattern: snapshot the interactive state, flip the flag the
+     * API client and the card creator both read, then reload. The tree
+     * selection is deliberately *not* snapshotted — narrowing the pending list
+     * from the sidebar is the point of the view.
+     */
+    async toggleUndownloadedView() {
+        if (this.pageType === 'recipes') return;
+
+        const entering = !this.pageState.undownloadedView;
+
+        // Bulk and duplicate modes act on local models (file paths, groups);
+        // the pending cards have neither, so those modes are dropped rather
+        // than snapshotted — the user did not ask for them here.
+        if (entering) {
+            if (state.bulkMode && window.bulkManager?.toggleBulkMode) {
+                window.bulkManager.toggleBulkMode();
+            }
+            if (this.pageState.duplicatesMode && window.modelDuplicatesManager?.exitDuplicateMode) {
+                window.modelDuplicatesManager.exitDuplicateMode();
+            }
+        }
+
+        this.pageState.undownloadedView = entering;
+        this.pageState.currentPage = 1;
+
+        undownloadedVersionsManager.bind(this.pageType);
+        undownloadedVersionsManager.clearLoaded();
+        this.syncUndownloadedView();
+
+        await this.resetAndReload(false);
+    }
+
+    /** Toggle the button state, the selection bar, and the inert filters. */
+    syncUndownloadedView() {
+        const active = Boolean(this.pageState.undownloadedView);
+
+        const btn = document.getElementById('undownloadedVersionsBtn');
+        if (btn) {
+            btn.classList.toggle('active', active);
+        }
+
+        const bar = document.getElementById('undownloadedViewBar');
+        if (bar) {
+            bar.classList.toggle('hidden', !active);
+        }
+
+        // Sort / model-type / favorites / updates all describe *local* models.
+        // A pending version has none of those attributes, so the controls are
+        // disabled rather than left looking functional while doing nothing.
+        const controlsRoot = document.querySelector('.controls');
+        if (controlsRoot) {
+            controlsRoot.classList.toggle('undownloaded-view-active', active);
+        }
+
+        if (active) {
+            undownloadedVersionsManager.syncToolbar();
         }
     }
     

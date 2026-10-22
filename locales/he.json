@@ -1877,6 +1877,7 @@
             "title": "גרסאות שלא הורדו",
             "shortAction": "לא הורדו",
             "selectAll": "בחר הכל",
+            "selectOne": "[TODO: Translate] Select this version",
             "summary": "{selected} / {total} נבחרו",
             "empty": "כל הגרסאות כבר הורדו.",
             "downloadSelected": "הורד נבחר ({count})",

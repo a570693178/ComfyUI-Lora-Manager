@@ -1877,6 +1877,7 @@
             "title": "미다운로드 버전",
             "shortAction": "미다운로드",
             "selectAll": "전체 선택",
+            "selectOne": "[TODO: Translate] Select this version",
             "summary": "{selected} / {total} 선택됨",
             "empty": "모든 버전이 이미 다운로드되었습니다.",
             "downloadSelected": "선택 항목 다운로드 ({count})",

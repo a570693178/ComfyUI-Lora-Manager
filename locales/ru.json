@@ -1877,6 +1877,7 @@
             "title": "Незагруженные версии",
             "shortAction": "Не загружены",
             "selectAll": "Выбрать все",
+            "selectOne": "[TODO: Translate] Select this version",
             "summary": "Выбрано {selected} / {total}",
             "empty": "Все версии уже загружены.",
             "downloadSelected": "Скачать выбранные ({count})",

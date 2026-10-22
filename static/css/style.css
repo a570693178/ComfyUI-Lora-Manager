@@ -8,6 +8,7 @@
 @import 'components/header.css';
 @import 'components/banner.css';
 @import 'components/card.css';
+@import 'components/undownloaded-versions.css';
 @import 'components/modal/_base.css';
 @import 'components/modal/delete-modal.css';
 @import 'components/modal/update-modal.css';
@@ -19,7 +20,6 @@
 @import 'components/modal/support-modal.css';
 @import 'components/modal/download-modal.css';
 @import 'components/modal/directory-picker-modal.css';
-@import 'components/modal/undownloaded-versions-modal.css';
 @import 'components/toast.css';
 @import 'components/tooltip.css';
 @import 'components/loading.css';

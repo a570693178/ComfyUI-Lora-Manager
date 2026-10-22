@@ -2,6 +2,7 @@ import { state, getCurrentPageState } from '../state/index.js';
 import { VirtualScroller } from './VirtualScroller.js';
 import { MasonryScroller } from './MasonryScroller.js';
 import { createModelCard, setupModelCardEventDelegation } from '../components/shared/ModelCard.js';
+import { createUndownloadedVersionCard } from '../components/shared/UndownloadedVersionCard.js';
 import { getModelApiClient } from '../api/modelApiFactory.js';
 import { showToast } from './uiHelpers.js';
 
@@ -60,7 +61,15 @@ async function getCardCreator(pageType) {
     }
 
     // For other page types, use the shared ModelCard creator
-    return (model) => createModelCard(model, pageType);
+    return (model) => {
+        // The undownloaded-versions view reuses this grid with its own card
+        // type; the flag is read per item so toggling the view needs no
+        // scroller rebuild.
+        if (getCurrentPageState()?.undownloadedView) {
+            return createUndownloadedVersionCard(model);
+        }
+        return createModelCard(model, pageType);
+    };
 
 }
 

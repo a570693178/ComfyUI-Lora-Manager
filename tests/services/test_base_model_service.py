@@ -1593,6 +1593,114 @@ async def test_get_undownloaded_versions_without_update_service_returns_empty():
     assert await service.get_undownloaded_versions() == []
 
 
+def _tree_item(model_id, *, username, base_model="Pony", folder="", tags=()):
+    """A cached model carrying the creator metadata the tree aggregates."""
+    return {
+        "name": f"Model {model_id}",
+        "base_model": base_model,
+        "folder": folder,
+        "tags": list(tags),
+        "civitai": {
+            "modelId": model_id,
+            "creator": {"username": username},
+        },
+    }
+
+
+def _tree_records(*model_ids):
+    return {
+        model_id: ModelUpdateRecord(
+            model_type="stub",
+            model_id=model_id,
+            versions=[_make_version(1)],
+            last_checked_at=None,
+            should_ignore_model=False,
+        )
+        for model_id in model_ids
+    }
+
+
+@pytest.mark.asyncio
+async def test_get_undownloaded_versions_filters_by_creator():
+    items = [
+        _tree_item(1, username="alice"),
+        _tree_item(2, username="bob"),
+    ]
+    service, update_service = _make_undownloaded_service(
+        items, _tree_records(1, 2)
+    )
+
+    pending = await service.get_undownloaded_versions(creator="ALICE")
+
+    assert [entry["modelId"] for entry in pending] == [1]
+    # The filter is applied before the record lookup, so only matching models
+    # are queried.
+    assert update_service.records_bulk_calls == [("stub", [1])]
+
+
+@pytest.mark.asyncio
+async def test_get_undownloaded_versions_filters_by_creator_default_tag():
+    items = [
+        _tree_item(1, username="alice", tags=["anime", "style"]),
+        _tree_item(2, username="alice", tags=["character"]),
+    ]
+    service, _ = _make_undownloaded_service(items, _tree_records(1, 2))
+
+    pending = await service.get_undownloaded_versions(
+        creator="alice", creator_tag="Anime"
+    )
+
+    assert [entry["modelId"] for entry in pending] == [1]
+
+
+@pytest.mark.asyncio
+async def test_get_undownloaded_versions_filters_by_folder_with_subfolders():
+    items = [
+        _tree_item(1, username="alice", folder="Pony/character"),
+        _tree_item(2, username="alice", folder="Pony/character/extra"),
+        _tree_item(3, username="alice", folder="Pony/style"),
+    ]
+    service, _ = _make_undownloaded_service(items, _tree_records(1, 2, 3))
+
+    pending = await service.get_undownloaded_versions(folder="Pony/character")
+
+    assert sorted(entry["modelId"] for entry in pending) == [1, 2]
+
+
+@pytest.mark.asyncio
+async def test_get_undownloaded_versions_base_model_matches_model_or_version():
+    items = [
+        # Model base_model differs from the version's own base_model.
+        _tree_item(1, username="alice", base_model="Illustrious"),
+        _tree_item(2, username="alice", base_model="Pony"),
+    ]
+    records = _tree_records(1, 2)
+    records[1] = ModelUpdateRecord(
+        model_type="stub",
+        model_id=1,
+        versions=[_make_version(1)],
+        last_checked_at=None,
+        should_ignore_model=False,
+    )
+    records[1].versions[0] = ModelVersionRecord(
+        version_id=1,
+        name="v1",
+        base_model="Pony",
+        released_at=None,
+        size_bytes=1,
+        preview_url=None,
+        is_in_library=False,
+        should_ignore=False,
+    )
+    service, _ = _make_undownloaded_service(items, records)
+
+    # "Pony" matches model 2 by its own base_model and model 1 through the
+    # version's base_model, so neither view hides the entry.
+    pending = await service.get_undownloaded_versions(base_model="pony")
+
+    assert sorted(entry["modelId"] for entry in pending) == [1, 2]
+
+
 @pytest.mark.asyncio
 async def test_annotate_update_flags_attaches_version_counts():
     items = [

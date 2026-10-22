@@ -1877,6 +1877,7 @@
             "title": "Versions non téléchargées",
             "shortAction": "Non téléchargées",
             "selectAll": "Tout sélectionner",
+            "selectOne": "[TODO: Translate] Select this version",
             "summary": "{selected} / {total} sélectionnés",
             "empty": "Toutes les versions sont déjà téléchargées.",
             "downloadSelected": "Télécharger la sélection ({count})",

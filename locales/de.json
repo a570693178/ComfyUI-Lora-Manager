@@ -1877,6 +1877,7 @@
             "title": "Nicht heruntergeladene Versionen",
             "shortAction": "Nicht geladen",
             "selectAll": "Alle auswählen",
+            "selectOne": "[TODO: Translate] Select this version",
             "summary": "{selected} / {total} ausgewählt",
             "empty": "Alle Versionen wurden bereits heruntergeladen.",
             "downloadSelected": "Auswahl herunterladen ({count})",

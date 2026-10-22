@@ -1877,6 +1877,7 @@
             "title": "未ダウンロードのバージョン",
             "shortAction": "未ダウンロード",
             "selectAll": "すべて選択",
+            "selectOne": "[TODO: Translate] Select this version",
             "summary": "{selected} / {total} 件選択中",
             "empty": "すべてのバージョンはすでにダウンロード済みです。",
             "downloadSelected": "選択したものをダウンロード ({count})",

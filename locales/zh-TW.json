@@ -1877,6 +1877,7 @@
             "title": "未下載版本",
             "shortAction": "未下載",
             "selectAll": "全選",
+            "selectOne": "選擇此版本",
             "summary": "已選 {selected} / {total}",
             "empty": "所有版本均已下載。",
             "downloadSelected": "下載所選 ({count})",

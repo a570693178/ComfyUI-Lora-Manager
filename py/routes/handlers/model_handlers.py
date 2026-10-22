@@ -1111,11 +1111,36 @@ class ModelQueryHandler:
             )
 
     async def get_undownloaded_versions(self, request: web.Request) -> web.Response:
-        """List every remote version that is not in the local library yet."""
+        """List every remote version that is not in the local library yet.
+
+        Accepts the same tree filters as the model list (``creator``,
+        ``creator_tag``, ``folder``, ``base_model``) so the pending list can be
+        narrowed from the sidebar, plus ``page``/``page_size`` for the virtual
+        scroller. ``items`` is the current page; ``total`` is the full count.
+        """
         try:
-            versions = await self._service.get_undownloaded_versions()
+            page = max(int(request.query.get("page", "1")), 1)
+            page_size = min(max(int(request.query.get("page_size", "100")), 1), 500)
+
+            versions = await self._service.get_undownloaded_versions(
+                creator=request.query.get("creator"),
+                creator_tag=request.query.get("creator_tag"),
+                folder=request.query.get("folder"),
+                base_model=request.query.get("base_model"),
+            )
+
+            total = len(versions)
+            start = (page - 1) * page_size
+            items = versions[start:start + page_size]
             return web.json_response(
-                {"success": True, "versions": versions, "total": len(versions)}
+                {
+                    "success": True,
+                    "items": items,
+                    "total": total,
+                    "page": page,
+                    "page_size": page_size,
+                    "total_pages": (total + page_size - 1) // page_size,
+                }
             )
         except Exception as exc:
             self._logger.error(
