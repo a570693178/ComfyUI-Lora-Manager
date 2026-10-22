@@ -1,6 +1,10 @@
 __pycache__/
 .pytest_cache/
 settings.json
+# Local backups/restores of the settings file (settings.json.bak-*, .restored-*)
+settings.json.*
+# ...but the shipped template stays tracked
+!settings.json.example
 path_mappings.yaml
 output/*
 py/run_test.py
