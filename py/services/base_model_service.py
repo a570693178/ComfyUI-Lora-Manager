@@ -948,10 +948,13 @@ class BaseModelService(ABC):
         * ``creator_tag`` — the owning model's *default* tag (level 3). Only
           meaningful together with ``creator``.
         * ``folder`` — the owning model's folder, matched exactly or as a
-          folder prefix so subfolders are included (folder tree).
-        * ``base_model`` — matches either the owning model's ``base_model`` or
-          the version's own ``baseModel``, so a base-model node never hides a
-          version that is labelled with that base model on its card.
+          folder prefix so subfolders are included (folder tree). When the
+          folder is named after a base model that the library knows, it also
+          narrows the list by that base model.
+        * ``base_model`` — the version's own ``baseModel``, matched exactly and
+          case-insensitively. This is the value the card shows in its
+          top-left badge, so a base-model node in the tree only ever yields
+          cards labelled with that same base model.
 
         Filtering happens while the model ids are collected, so excluded
         models never reach the (more expensive) record lookup.
@@ -965,12 +968,19 @@ class BaseModelService(ABC):
         folder_prefix = f"{folder_norm}/" if folder_norm else ""
         base_model_norm = (base_model or "").strip().lower()
 
+        # Every base model the library knows about. A folder is often named
+        # after the base model it holds ("Anima", "Pony", ...), and picking
+        # such a node in the folder tree has to narrow the pending list by
+        # that base model as well — otherwise the grid would keep showing
+        # cards whose badge says something else entirely.
+        known_base_models: set[str] = set()
+
         def matches_tree(item: Dict[str, Any]) -> bool:
             """Whether a cached model belongs under the current tree selection.
 
-            ``base_model`` is deliberately absent: a version may carry a
-            different base model than the model that owns it, so that check
-            runs per version (against both values) once the records are in.
+            ``base_model`` is deliberately absent: it is matched per version,
+            because the card shows the *version's* base model, which may
+            differ from the base model of the model that owns it.
             """
             if not (creator_norm or folder_norm):
                 return True
@@ -1005,12 +1015,12 @@ class BaseModelService(ABC):
             return True
 
         model_names: Dict[int, str] = {}
-        # Parallel map of the owning model's base_model, needed because a
-        # version can carry a different base model than its model.
-        model_base_models: Dict[int, str] = {}
         for item in cache.raw_data:
             if not isinstance(item, dict):
                 continue
+            item_base_model = (item.get("base_model") or "").strip().lower()
+            if item_base_model:
+                known_base_models.add(item_base_model)
             model_id = self._extract_model_id(item)
             if model_id is None or model_id in model_names:
                 continue
@@ -1022,10 +1032,17 @@ class BaseModelService(ABC):
                 if isinstance(civitai, dict):
                     name = civitai.get("name") or ""
             model_names[model_id] = str(name) or str(model_id)
-            model_base_models[model_id] = str(item.get("base_model") or "")
 
         if not model_names:
             return []
+
+        # A folder that is named after a base model doubles as a base-model
+        # filter: picking "Anima" in the folder tree then yields Anima cards
+        # only, exactly like picking the base-model node in the user view.
+        if not base_model_norm and folder_norm:
+            folder_as_base_model = folder_norm.strip().lower()
+            if folder_as_base_model in known_base_models:
+                base_model_norm = folder_as_base_model
 
         if self.update_service is None:
             return []
@@ -1051,14 +1068,13 @@ class BaseModelService(ABC):
                 if version.is_in_library or version.should_ignore:
                     continue
                 if base_model_norm:
-                    # The tree groups by the model's base_model while the card
-                    # shows the version's, so accept either: a base-model node
-                    # must never hide a version that is labelled with it.
+                    # The card's top-left badge shows the *version's* base
+                    # model, so the filter matches exactly that value. Matching
+                    # the owning model's base model as well would slip cards
+                    # with a different badge into the result, and the tree
+                    # node would then no longer describe what is on screen.
                     version_base = (version.base_model or "").strip().lower()
-                    model_base = (
-                        model_base_models.get(model_id) or ""
-                    ).strip().lower()
-                    if base_model_norm not in (version_base, model_base):
+                    if version_base != base_model_norm:
                         continue
                 pending.append(
                     {

@@ -35,6 +35,7 @@ vi.mock(CONSTANTS_MODULE, async (importOriginal) => {
 
 const { createUndownloadedVersionCard } = await import(CARD_MODULE);
 const { undownloadedVersionsManager } = await import(MANAGER_MODULE);
+const { state } = await import(STATE_MODULE);
 
 function makeVersion(overrides = {}) {
     return {
@@ -58,6 +59,9 @@ describe('createUndownloadedVersionCard', () => {
         // listeners, and a stale card for the same key would answer the click.
         document.body.innerHTML = '';
         undownloadedVersionsManager.clearLoaded();
+        // A test that switches the Civitai host must not leak it into the
+        // next one.
+        state.global.settings.civitai_host = 'civitai.com';
     });
 
     it('renders as a model card so the grid styling is shared', () => {
@@ -197,5 +201,89 @@ describe('createUndownloadedVersionCard', () => {
         // The only real image is the preview, whose own onerror fallback is
         // part of the card template.
         expect(card.querySelectorAll('img').length).toBe(1);
+    });
+
+    describe('Civitai link', () => {
+        it('links to the version page and opens it in a new tab', () => {
+            const card = createUndownloadedVersionCard(makeVersion());
+            const link = card.querySelector('.undownloaded-version-civitai-link');
+
+            expect(link).not.toBeNull();
+            expect(link.getAttribute('href'))
+                .toBe('https://civitai.com/models/7?modelVersionId=3419173');
+            expect(link.getAttribute('target')).toBe('_blank');
+            expect(link.getAttribute('rel')).toBe('noopener noreferrer');
+            expect(link.querySelector('i.fa-arrow-up-right-from-square')).not.toBeNull();
+        });
+
+        it('follows the configured Civitai host', () => {
+            state.global.settings.civitai_host = 'civitai.red';
+
+            const card = createUndownloadedVersionCard(makeVersion());
+            const link = card.querySelector('.undownloaded-version-civitai-link');
+
+            expect(link.getAttribute('href'))
+                .toBe('https://civitai.red/models/7?modelVersionId=3419173');
+        });
+
+        it('does not toggle the selection when the link is clicked', () => {
+            const card = createUndownloadedVersionCard(makeVersion());
+            document.body.appendChild(card);
+
+            card.querySelector('.undownloaded-version-civitai-link').click();
+
+            expect(undownloadedVersionsManager.selectedCount).toBe(0);
+        });
+    });
+
+    describe('preview media', () => {
+        it('renders a still image for a normal preview', () => {
+            const card = createUndownloadedVersionCard(makeVersion());
+
+            expect(card.querySelector('.card-preview img')).not.toBeNull();
+            expect(card.querySelector('.card-preview video')).toBeNull();
+        });
+
+        it('renders a video element for an mp4 preview', () => {
+            const card = createUndownloadedVersionCard(
+                makeVersion({ previewUrl: 'https://image.civitai.com/clip.mp4' })
+            );
+
+            const video = card.querySelector('.card-preview video');
+            expect(video).not.toBeNull();
+            expect(video.getAttribute('src')).toBe('https://image.civitai.com/clip.mp4');
+            // An <img> cannot decode a clip, so it must not be rendered too.
+            expect(card.querySelector('.card-preview img')).toBeNull();
+        });
+
+        it('renders a video element for a webm preview', () => {
+            const card = createUndownloadedVersionCard(
+                makeVersion({ previewUrl: 'https://image.civitai.com/clip.webm' })
+            );
+
+            expect(card.querySelector('.card-preview video')).not.toBeNull();
+        });
+
+        it('keeps an animated gif as an image', () => {
+            const card = createUndownloadedVersionCard(
+                makeVersion({ previewUrl: 'https://image.civitai.com/clip.gif' })
+            );
+
+            expect(card.querySelector('.card-preview img')).not.toBeNull();
+            expect(card.querySelector('.card-preview video')).toBeNull();
+        });
+
+        it('detects a real CivitAI video url with transcode parameters', () => {
+            // The real url embeds the rendition options in the path, so the
+            // extension only shows up at the very end of a long string.
+            const card = createUndownloadedVersionCard(makeVersion({
+                previewUrl: 'https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/'
+                    + '3ff28ee1-3c79-4d00-8a6b-4c1036e86809/'
+                    + 'transcode=true,width=450,optimized=true/129184406.mp4',
+            }));
+
+            expect(card.querySelector('.card-preview video')).not.toBeNull();
+            expect(card.querySelector('.card-preview img')).toBeNull();
+        });
     });
 });

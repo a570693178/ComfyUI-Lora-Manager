@@ -1668,7 +1668,7 @@ async def test_get_undownloaded_versions_filters_by_folder_with_subfolders():
 
 
 @pytest.mark.asyncio
-async def test_get_undownloaded_versions_base_model_matches_model_or_version():
+async def test_get_undownloaded_versions_base_model_matches_the_card_badge():
     items = [
         # Model base_model differs from the version's own base_model.
         _tree_item(1, username="alice", base_model="Illustrious"),
@@ -1685,7 +1685,7 @@ async def test_get_undownloaded_versions_base_model_matches_model_or_version():
     records[1].versions[0] = ModelVersionRecord(
         version_id=1,
         name="v1",
-        base_model="Pony",
+        base_model="Illustrious",
         released_at=None,
         size_bytes=1,
         preview_url=None,
@@ -1694,9 +1694,66 @@ async def test_get_undownloaded_versions_base_model_matches_model_or_version():
     )
     service, _ = _make_undownloaded_service(items, records)
 
-    # "Pony" matches model 2 by its own base_model and model 1 through the
-    # version's base_model, so neither view hides the entry.
+    # The card shows the *version's* base model, so the filter has to match
+    # that value: selecting "Pony" must not surface a card labelled
+    # "Illustrious" just because the owning model is a Pony model.
     pending = await service.get_undownloaded_versions(base_model="pony")
+
+    assert [entry["modelId"] for entry in pending] == [2]
+    assert all(entry["baseModel"] == "Pony" for entry in pending)
+
+
+@pytest.mark.asyncio
+async def test_get_undownloaded_versions_base_model_filter_is_case_insensitive():
+    items = [_tree_item(1, username="alice", base_model="Pony")]
+    service, _ = _make_undownloaded_service(items, _tree_records(1))
+
+    pending = await service.get_undownloaded_versions(base_model="PONY")
+
+    assert [entry["modelId"] for entry in pending] == [1]
+
+
+@pytest.mark.asyncio
+async def test_get_undownloaded_versions_folder_named_after_a_base_model_filters_by_it():
+    # The common "organise by base model" layout puts every Anima model in
+    # an "Anima" folder. Picking that folder has to narrow the list by the
+    # base model too, so the cards on screen all carry the Anima badge.
+    items = [
+        _tree_item(1, username="alice", base_model="Anima", folder="Anima"),
+        _tree_item(2, username="alice", base_model="Pony", folder="Anima"),
+    ]
+    records = _tree_records(1, 2)
+    # Model 2 carries a version labelled "Anima" even though the model
+    # itself is a Pony model, so it must survive the base-model filter.
+    records[2].versions[0] = ModelVersionRecord(
+        version_id=1,
+        name="v1",
+        base_model="Anima",
+        released_at=None,
+        size_bytes=1,
+        preview_url=None,
+        is_in_library=False,
+        should_ignore=False,
+    )
+    service, _ = _make_undownloaded_service(items, records)
+
+    pending = await service.get_undownloaded_versions(folder="Anima")
+
+    assert [entry["modelId"] for entry in pending] == [2]
+    assert all(entry["baseModel"] == "Anima" for entry in pending)
+
+
+@pytest.mark.asyncio
+async def test_get_undownloaded_versions_plain_folder_keeps_folder_semantics():
+    # A folder that is not a base model name must keep filtering by location
+    # only — it must not silently turn into an empty base-model filter.
+    items = [
+        _tree_item(1, username="alice", base_model="Anima", folder="stuff"),
+        _tree_item(2, username="alice", base_model="Pony", folder="stuff"),
+    ]
+    service, _ = _make_undownloaded_service(items, _tree_records(1, 2))
+
+    pending = await service.get_undownloaded_versions(folder="stuff")
 
     assert sorted(entry["modelId"] for entry in pending) == [1, 2]
 

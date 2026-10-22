@@ -1,6 +1,9 @@
 import { translate } from '../../utils/i18nHelpers.js';
 import { getBaseModelAbbreviation } from '../../utils/constants.js';
 import { undownloadedVersionsManager } from '../../managers/UndownloadedVersionsManager.js';
+import { isVideoUrl } from '../../utils/mediaUtils.js';
+import { buildCivitaiModelUrl } from '../../utils/civitaiUtils.js';
+import { state } from '../../state/index.js';
 
 /**
  * Card for one remote version that is not in the local library yet.
@@ -9,8 +12,8 @@ import { undownloadedVersionsManager } from '../../managers/UndownloadedVersions
  * footer skeleton and the same CSS classes) so the pending list reads as the
  * same grid as /loras instead of a separate list widget. The differences are
  * the parts a remote version actually has: a selection checkbox instead of
- * the local-model action icons, and status badges for early-access / paid /
- * non-downloadable versions.
+ * the local-model action icons, a "view on CivitAI" link to the version page,
+ * and status badges for early-access / paid / non-downloadable versions.
  *
  * @param {Object} version - one entry of the undownloaded-versions payload
  * @returns {HTMLElement}
@@ -41,6 +44,16 @@ export function createUndownloadedVersionCard(version) {
     const baseModelLabel = version.baseModel || 'Unknown';
     const baseModelAbbreviation = getBaseModelAbbreviation(baseModelLabel);
 
+    // A remote version can preview as a still image, an animated GIF or a
+    // video clip. A <video> element is the only way the clip renders; an
+    // <img> would fail to decode it and fall back to the placeholder.
+    const isVideo = isVideoUrl(previewUrl);
+    const previewMarkup = isVideo
+        ? `<video src="${escapeAttr(previewUrl)}" controls muted loop playsinline
+                  preload="metadata" style="pointer-events: none;"></video>`
+        : `<img draggable="false" src="${escapeAttr(previewUrl)}" alt="${escapeAttr(modelName)}"
+                 onerror="this.onerror=null; this.src='/loras_static/images/no-preview.png'">`;
+
     const badges = [];
     if (version.isEarlyAccess) {
         badges.push(`<span class="undownloaded-version-badge is-early-access">${translate(
@@ -70,10 +83,32 @@ export function createUndownloadedVersionCard(version) {
         'Select this version'
     );
 
+    // "View on CivitAI" opens the version page in a new tab, the same way the
+    // globe icon does on a local model card.
+    const civitaiUrl = buildCivitaiModelUrl(
+        version.modelId,
+        version.versionId,
+        state?.global?.settings?.civitai_host
+    );
+    const civitaiTitle = translate(
+        'modals.model.versions.actions.viewVersionOnCivitai',
+        {},
+        'View version on CivitAI'
+    );
+    const civitaiLinkMarkup = civitaiUrl
+        ? `<a class="undownloaded-version-civitai-link"
+                  href="${escapeAttr(civitaiUrl)}"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="${escapeAttr(civitaiTitle)}"
+                  aria-label="${escapeAttr(civitaiTitle)}">
+               <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
+           </a>`
+        : '';
+
     card.innerHTML = `
         <div class="card-preview">
-            <img draggable="false" src="${escapeAttr(previewUrl)}" alt="${escapeAttr(modelName)}"
-                 onerror="this.onerror=null; this.src='/loras_static/images/no-preview.png'">
+            ${previewMarkup}
             <div class="card-header">
                 <div class="card-header-info">
                     <span class="base-model-label" title="${escapeAttr(baseModelLabel)}">
@@ -81,11 +116,14 @@ export function createUndownloadedVersionCard(version) {
                     </span>
                     ${badges.length ? `<span class="undownloaded-version-badges">${badges.join('')}</span>` : ''}
                 </div>
-                <label class="undownloaded-version-select" title="${escapeAttr(selectTitle)}">
-                    <input type="checkbox" class="undownloaded-version-checkbox"
-                           data-version-key="${escapeAttr(key)}"
-                           ${checked ? 'checked' : ''} ${downloadable ? '' : 'disabled'}>
-                </label>
+                <div class="undownloaded-version-tools">
+                    ${civitaiLinkMarkup}
+                    <label class="undownloaded-version-select" title="${escapeAttr(selectTitle)}">
+                        <input type="checkbox" class="undownloaded-version-checkbox"
+                               data-version-key="${escapeAttr(key)}"
+                               ${checked ? 'checked' : ''} ${downloadable ? '' : 'disabled'}>
+                    </label>
+                </div>
             </div>
             <div class="card-footer">
                 <div class="model-info">
@@ -105,9 +143,11 @@ export function createUndownloadedVersionCard(version) {
     });
 
     // Clicking the card body toggles selection too, matching how bulk mode
-    // treats a card click. Locked versions stay inert.
+    // treats a card click. Locked versions stay inert, and the CivitAI link
+    // keeps its own behaviour instead of selecting the version.
     card.addEventListener('click', (event) => {
         if (event.target.closest('.undownloaded-version-select')) return;
+        if (event.target.closest('.undownloaded-version-civitai-link')) return;
         if (!downloadable) return;
         undownloadedVersionsManager.toggleVersion(key, !checked);
     });

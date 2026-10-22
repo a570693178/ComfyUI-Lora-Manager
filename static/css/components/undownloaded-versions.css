@@ -82,17 +82,47 @@
     opacity: 0.75;
 }
 
+/* Tools in the card header: the "view on CivitAI" link and the selection
+   checkbox, both pinned to the top-right corner. */
+.undownloaded-version-tools {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+}
+
 /* Selection checkbox, top-right of the preview so it never covers the
    base-model label on the left. */
 .undownloaded-version-select {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    margin-left: auto;
     padding: 4px;
     border-radius: var(--border-radius-xs);
     background: rgba(0, 0, 0, 0.45);
     cursor: pointer;
+}
+
+/* "View on CivitAI" link — same affordance as the globe icon on a local
+   model card: opens the version page in a new tab. */
+.undownloaded-version-civitai-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: var(--border-radius-xs);
+    background: rgba(0, 0, 0, 0.45);
+    color: #fff;
+    font-size: 0.85em;
+    line-height: 1;
+    text-decoration: none;
+    transition: opacity 0.2s, transform 0.15s ease;
+}
+
+.undownloaded-version-civitai-link:hover {
+    opacity: 0.85;
+    transform: scale(1.08);
 }
 
 .undownloaded-version-select input[type="checkbox"] {
