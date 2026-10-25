@@ -98,6 +98,13 @@ DEFAULT_SETTINGS: Dict[str, Any] = {
     "language": "en",
     "show_only_sfw": False,
     "onboarding_completed": False,
+    # First-run gate: until the user confirms the welcome page, the initial
+    # library scan is deferred (see py/services/first_run_manager.py).
+    "initial_scan_completed": False,
+    # Set when the first scan starts from the welcome page; the frontend
+    # consumes it to show the one-shot "fetch metadata for your library"
+    # banner once the scan finishes, then clears it.
+    "bulk_fetch_prompt_pending": False,
     "dismissed_banners": [],
     "enable_metadata_archive_db": False,
     "enable_civarchive_api": True,
