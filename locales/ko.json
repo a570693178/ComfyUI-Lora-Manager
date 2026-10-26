@@ -188,8 +188,7 @@
         },
         "footer": {
             "versionCount": "{count}개 버전",
-            "viewAllVersions": "모든 로컬 버전 보기",
-            "versionRatio": "Civitai 버전 {total}개 중 {downloaded}개 다운로드됨"
+            "viewAllVersions": "모든 로컬 버전 보기"
         }
     },
     "globalContextMenu": {
@@ -610,8 +609,8 @@
             "cardBlurAmountHelp": "모델 및 레시피 카드의 헤더와 푸터 오버레이 흐림 강도를 조정합니다 (0 = 흐림 없음, 20 = 최대 흐림)."
         },
         "folderSettings": {
-            "activeLibrary": "활성 라이브러리",
-            "activeLibraryHelp": "구성된 라이브러리를 전환하여 기본 폴더를 업데이트합니다. 선택을 변경하면 페이지가 다시 로드됩니다.",
+            "activeLibrary": "활성 라이브러리 (사용 중단 예정)",
+            "activeLibraryHelp": "구성된 라이브러리를 전환하여 기본 폴더를 업데이트합니다. 선택을 변경하면 페이지가 다시 로드됩니다. 사용 중단 예정: 다중 라이브러리 지원은 향후 릴리스에서 제거됩니다. 단일 라이브러리 내의 여러 폴더 루트는 계속 완전히 지원됩니다.",
             "loadingLibraries": "라이브러리를 불러오는 중...",
             "noLibraries": "구성된 라이브러리가 없습니다",
             "defaultLoraRoot": "LoRA 루트",
@@ -1458,14 +1457,6 @@
         "viewOptions": "보기 옵션",
         "treeView": "트리 보기",
         "listView": "목록 보기",
-        "userView": "사용자 보기",
-        "usersTitle": "사용자",
-        "userCountOrderDesc": "모델 수 기준: 많음 → 적음",
-        "userCountOrderAsc": "모델 수 기준: 적음 → 많음",
-        "clearUserOrder": "사용자 정렬 초기화",
-        "favoriteUser": "사용자 즐겨찾기 (즐겨찾기가 먼저 정렬됨)",
-        "noUsers": "작성자 데이터를 찾을 수 없습니다",
-        "usersLoadFailed": "작성자 데이터를 불러오지 못했습니다",
         "recursiveOn": "하위 폴더 포함",
         "createFolder": "새 폴더",
         "newSubfolder": "새 하위 폴더",
@@ -1873,19 +1864,6 @@
             "note": "파일은 기본 경로 템플릿을 사용하여 다운로드됩니다. LoRA의 수에 따라 다소 시간이 걸릴 수 있습니다.",
             "downloadButton": "{count}개 LoRA 다운로드"
         },
-        "undownloadedVersions": {
-            "title": "미다운로드 버전",
-            "shortAction": "미다운로드",
-            "selectAll": "전체 선택",
-            "selectOne": "[TODO: Translate] Select this version",
-            "summary": "{selected} / {total} 선택됨",
-            "empty": "모든 버전이 이미 다운로드되었습니다.",
-            "downloadSelected": "선택 항목 다운로드 ({count})",
-            "ignoreSelected": "선택 항목 무시 ({count})",
-            "badgeEarlyAccess": "얼리 액세스",
-            "badgePaid": "유료",
-            "badgeNotDownloadable": "다운로드 불가"
-        },
         "rematchOptions": {
             "title": "레시피 재매칭",
             "messageGlobal": "모든 레시피를 로컬 모델 라이브러리와 대조하여 검사합니다.",
@@ -2244,7 +2222,7 @@
             "downloadCsv": "CSV 다운로드",
             "columnModelName": "모델 이름",
             "columnError": "오류",
-            "rateLimitedNotice": "[TODO: Translate] Fetch aborted: the metadata provider rate limit was reached. Re-run \"Fetch from Civitai\" later to retry the remaining models."
+            "rateLimitedNotice": "가져오기를 중단했습니다: 메타데이터 제공자의 속도 제한에 도달했습니다. 나머지 모델을 다시 시도하려면 나중에 'CivitAI에서 메타데이터 가져오기'를 다시 실행하세요."
         },
         "downloadBatchSummary": {
             "title": "일괄 다운로드 요약",
@@ -2331,50 +2309,50 @@
             }
         },
         "error": {
-            "title": "[TODO: Translate] Initialization failed",
-            "message": "[TODO: Translate] Something went wrong while scanning your model library.",
-            "retry": "[TODO: Translate] Retry"
+            "title": "초기화 실패",
+            "message": "모델 라이브러리를 스캔하는 중 문제가 발생했습니다.",
+            "retry": "다시 시도"
         }
     },
     "firstRun": {
-        "title": "[TODO: Translate] Welcome to LoRA Manager",
-        "description": "[TODO: Translate] Before you start, LoRA Manager needs to scan your model libraries and generate metadata sidecar files. This is a one-time step; how long it takes depends on the size of your library and the speed of your disk.",
+        "title": "LoRA Manager에 오신 것을 환영합니다",
+        "description": "시작하기 전에 LoRA Manager가 모델 라이브러리를 스캔하고 메타데이터 사이드카 파일을 생성합니다. 이 작업은 한 번만 수행되며, 소요 시간은 라이브러리 크기와 디스크 속도에 따라 달라집니다.",
         "libraries": {
-            "loras": "[TODO: Translate] LoRAs",
-            "checkpoints": "[TODO: Translate] Checkpoints",
-            "embeddings": "[TODO: Translate] Embeddings",
-            "other": "[TODO: Translate] Other Models"
+            "loras": "LoRA",
+            "checkpoints": "Checkpoint",
+            "embeddings": "Embedding",
+            "other": "기타 모델"
         },
         "language": {
-            "label": "[TODO: Translate] Language"
+            "label": "언어"
         },
-        "libraryStats": "[TODO: Translate] {count} models · {size}",
-        "rootMissing": "[TODO: Translate] Directory not found",
-        "estimate": "[TODO: Translate] About {count} models ({size}) — estimated scan time ~{minutes} min, depending on library size and disk speed.",
+        "libraryStats": "모델 {count}개 · {size}",
+        "rootMissing": "폴더를 찾을 수 없습니다",
+        "estimate": "모델 약 {count}개({size}) — 예상 스캔 시간 약 {minutes}분이며, 라이브러리 크기와 디스크 속도에 따라 달라집니다.",
         "noRoots": {
-            "plugin": "[TODO: Translate] No accessible model folders were found. Open Settings to configure your model directories, then reload this page.",
-            "standalone": "[TODO: Translate] No accessible model folders were found. Edit folder_paths in settings.json, then restart the server."
+            "plugin": "접근 가능한 모델 폴더를 찾을 수 없습니다. 설정을 열어 모델 디렉터리를 구성한 다음 이 페이지를 새로고침하세요.",
+            "standalone": "접근 가능한 모델 폴더를 찾을 수 없습니다. settings.json의 folder_paths를 편집한 다음 서버를 다시 시작하세요."
         },
         "sidecar": {
-            "title": "[TODO: Translate] Metadata storage",
+            "title": "메타데이터 저장",
             "alongside": {
-                "label": "[TODO: Translate] Next to model files (recommended)",
-                "description": "[TODO: Translate] Metadata .json files are stored next to each model file, so they move together with the model."
+                "label": "모델 파일 옆 (권장)",
+                "description": "메타데이터 .json 파일을 각 모델 파일 옆에 저장하므로 모델과 함께 이동합니다."
             },
             "centralized": {
-                "label": "[TODO: Translate] Centralized directory",
-                "description": "[TODO: Translate] Metadata is stored in a separate directory, keeping your model folders clean.",
-                "pathPlaceholder": "[TODO: Translate] Directory for centralized metadata storage"
+                "label": "중앙 집중식 디렉터리",
+                "description": "메타데이터가 별도 디렉터리에 저장되어 모델 폴더를 깔끔하게 유지합니다.",
+                "pathPlaceholder": "중앙 집중식 메타데이터 저장 디렉터리"
             }
         },
         "actions": {
-            "start": "[TODO: Translate] Start Scan",
-            "defer": "[TODO: Translate] Later"
+            "start": "스캔 시작",
+            "defer": "나중에"
         },
         "errors": {
-            "loadFailed": "[TODO: Translate] Failed to load library information.",
-            "pathRequired": "[TODO: Translate] Please enter a storage directory for centralized metadata.",
-            "startFailed": "[TODO: Translate] Failed to start the scan."
+            "loadFailed": "라이브러리 정보를 불러오지 못했습니다.",
+            "pathRequired": "중앙 집중식 메타데이터 저장 디렉터리를 입력하세요.",
+            "startFailed": "스캔을 시작하지 못했습니다."
         }
     },
     "duplicates": {
@@ -2617,17 +2595,6 @@
             "failedWorkflowInfo": "워크플로 정보를 가져오는데 실패했습니다",
             "pageInitFailed": "{pageType} 페이지 초기화에 실패했습니다. 새로고침해주세요.",
             "statisticsLoadFailed": "통계 데이터 로딩에 실패했습니다"
-        },
-        "undownloadedVersions": {
-            "loadFailed": "미다운로드 버전을 불러오지 못했습니다",
-            "nothingSelected": "먼저 하나 이상의 버전을 선택하세요",
-            "noRoot": "모델 루트 디렉터리가 설정되지 않았습니다",
-            "ignored": "{count}개 버전을 무시했습니다",
-            "ignorePartial": "{total}개 중 {completed}개 버전을 무시했습니다",
-            "downloadSuccess": "{count}개 버전을 다운로드했습니다",
-            "downloadPartial": "{total}개 중 {completed}개 버전을 다운로드했습니다",
-            "downloadSkipped": "[TODO: Translate] Skipped {count} version(s) that were already downloaded before",
-            "downloadSkippedBaseModel": "[TODO: Translate] Skipped {count} version(s) because the base model is excluded in settings"
         },
         "loras": {
             "copyOnlyForLoras": "문법 복사는 LoRA에서만 사용할 수 있습니다",
@@ -2901,8 +2868,8 @@
             "deleteError": "오류: {message}",
             "deleteSuccess": "{count}개의 {type}이(가) 성공적으로 삭제되었습니다",
             "deleteFailed": "{type} 삭제 실패: {message}",
-            "deletePartialFailed": "선택한 {type} 삭제 중 {failed}개 실패했습니다: {message}",
-            "cacheUpdateFailed": "파일은 삭제되었지만 라이브러리 캐시를 업데이트하지 못했습니다. 목록을 새로 고치려면 캐시 재구성을 실행하세요."
+            "deletePartialFailed": "선택한 {type} {failed}개 삭제 실패: {message}",
+            "cacheUpdateFailed": "파일은 삭제되었지만 라이브러리 캐시를 업데이트하지 못했습니다. 목록을 새로 고치려면 '캐시 재구성'을 실행하세요."
         },
         "controls": {
             "reloadFailed": "{pageType} 다시 로딩 실패: {message}",
@@ -2915,7 +2882,7 @@
             "contentRatingFailed": "콘텐츠 등급 설정 실패: {message}",
             "relinkSuccess": "모델이 CivitAI에 성공적으로 다시 연결되었습니다",
             "relinkFailed": "오류: {message}",
-            "linkHfSuccess": "모델이 HuggingFace에 연결되었습니다",
+            "linkHfSuccess": "모델이 모델 소스에 연결되었습니다",
             "linkHfFailed": "오류: {message}",
             "linkCivArchSuccess": "모델이 CivitArchive을 통해 성공적으로 다시 연결되었습니다",
             "fetchMetadataFirst": "먼저 CivitAI에서 메타데이터를 가져와주세요",
@@ -2962,7 +2929,7 @@
             "metadataUpdateComplete": "메타데이터 업데이트 완료",
             "operationCancelled": "사용자에 의해 작업이 취소되었습니다",
             "operationCancelledPartial": "작업이 취소되었습니다. {success}개 항목이 처리되었습니다.",
-            "metadataFetchRateLimited": "[TODO: Translate] Metadata fetch aborted due to rate limiting — updated {success} of {total}, {failed} failed, {skipped} skipped. Re-run Fetch from Civitai later to retry the rest.",
+            "metadataFetchRateLimited": "속도 제한으로 메타데이터 가져오기가 중단되었습니다 — {total}개 중 {success}개 업데이트, {failed}개 실패, {skipped}개 건너뜀. 나머지를 다시 시도하려면 나중에 CivitAI에서 메타데이터를 다시 가져오세요.",
             "metadataFetchFailed": "메타데이터 가져오기 실패: {message}",
             "bulkMetadataCompleteAll": "모든 {count}개 {type}이(가) 성공적으로 새로고침되었습니다",
             "bulkMetadataCompletePartial": "{total}개 중 {success}개 {type}이(가) 새로고침되었습니다",
@@ -3095,10 +3062,10 @@
             "openSettings": "설정 열기"
         },
         "bulkFetchPrompt": {
-            "title": "[TODO: Translate] Bring Your Library to Life",
-            "content": "[TODO: Translate] Your first scan found {count} models without metadata. Fetch their info from CivitAI to get preview images, descriptions, and trigger words.",
-            "fetch": "[TODO: Translate] Fetch Metadata",
-            "later": "[TODO: Translate] Maybe Later"
+            "title": "라이브러리에 생기를 불어넣으세요",
+            "content": "첫 스캔에서 메타데이터가 없는 모델이 {count}개 발견되었습니다. CivitAI에서 정보를 가져오면 미리보기 이미지, 설명, 트리거 단어를 얻을 수 있습니다.",
+            "fetch": "메타데이터 가져오기",
+            "later": "나중에 하기"
         },
         "pager": {
             "previous": "이전 알림",

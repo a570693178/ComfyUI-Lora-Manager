@@ -11,8 +11,9 @@ from typing import Any, Awaitable, Callable, Dict, List, Mapping, Optional, Sequ
 
 from ..utils.models import BaseModelMetadata, autov3_from_civitai_files, quantization_from_civitai_files
 from ..config import config
+from ..utils.constants import is_empty_placeholder_hash
 from ..utils.file_utils import find_preview_file, get_preview_extension, calculate_sha256, calculate_autov3
-from ..utils.gc_utils import schedule_refreeze_after_rebuild
+from ..utils.gc_utils import schedule_refreeze, schedule_refreeze_after_rebuild
 from ..utils.gguf_utils import detect_quantization
 from ..utils.metadata_manager import MetadataManager
 from ..utils.sidecar_paths import (
@@ -2587,6 +2588,10 @@ class ModelScanner:
                 elapsed_seconds=time.time() - start_time,
                 **summary,
             )
+            if total_added > 0 or total_removed > 0:
+                # Reconcile-added entries are GC-tracked again; re-freeze
+                # once the follow-up work settles (issue #1161).
+                schedule_refreeze(f"{self.model_type} cache reconcile")
             return summary
         except Exception as e:
             logger.error(f"{self.model_type.capitalize()} Scanner: Error reconciling cache: {e}", exc_info=True)
@@ -3481,6 +3486,19 @@ class ModelScanner:
         if _is_pending_delete_path(file_path):
             return None
 
+        # A zero-byte file is not a model. Hashing it yields the empty-string
+        # SHA256, which is shared by every unread/unfinished file: the library
+        # would show one bogus duplicate group and every member would resolve
+        # to the same polluted remote entry (issue #1162). Leave it unmanaged;
+        # a later scan picks it up once the file has content.
+        try:
+            if os.path.getsize(file_path) == 0:
+                logger.debug("Skipping empty model file: %s", file_path)
+                return None
+        except OSError as exc:
+            logger.debug("Skipping unreadable model file %s: %s", file_path, exc)
+            return None
+
         metadata, should_skip = await MetadataManager.load_metadata(file_path, self.model_class)
     
         if should_skip:
@@ -3541,8 +3559,14 @@ class ModelScanner:
             
         if metadata is None:
             metadata = await self._create_default_metadata(file_path)
-        
-        assert metadata is not None
+
+        if metadata is None:
+            # create_default_metadata returns None for empty/vanished files and
+            # for failures; one bad file must never abort the whole scan.
+            logger.warning(
+                "Skipping model %s: metadata could not be created", file_path
+            )
+            return None
 
         # Hook: allow subclasses to adjust metadata
         metadata = self.adjust_metadata(metadata, file_path, root_path)
@@ -3557,11 +3581,22 @@ class ModelScanner:
         # Respect hash_status='pending' (set by CheckpointScanner for large models) to defer
         # hash calculation until on-demand — avoids reading entire checkpoint files at startup.
         hash_status = model_data.get('hash_status', '')
-        if not model_data.get('sha256') and hash_status != 'pending' and file_path:
+        stored_sha = (model_data.get('sha256') or '').strip()
+        # The empty-string placeholder is not an identity: models poisoned by a
+        # hash of zero bytes (issue #1162) are re-hashed once the file has
+        # content, so an existing library heals on its next full scan.
+        needs_sha = not stored_sha or is_empty_placeholder_hash(stored_sha)
+        if needs_sha and hash_status != 'pending' and file_path:
             try:
-                logger.info(f"Computing SHA256 hash for {file_path} (was empty from metadata)")
+                if stored_sha:
+                    logger.info(
+                        "Recomputing SHA256 for %s (stored hash is the empty-file placeholder)",
+                        file_path,
+                    )
+                else:
+                    logger.info(f"Computing SHA256 hash for {file_path} (was empty from metadata)")
                 sha256 = await calculate_sha256(file_path)
-                if sha256:
+                if sha256 and not is_empty_placeholder_hash(sha256):
                     model_data['sha256'] = sha256.lower()
                     if isinstance(metadata, BaseModelMetadata):
                         metadata.sha256 = sha256.lower()
@@ -3858,7 +3893,20 @@ class ModelScanner:
 
             # Update folder in metadata
             metadata_dict['folder'] = folder
-            
+
+            # Insert the slim cache representation, not the full payload: a
+            # fresh download/import carries the entire source payload, while
+            # scan-path entries keep only a handful of civitai keys. Keeping
+            # the fat payload per download re-tracks thousands of objects for
+            # the GC until the next restart (issue #1161). License flags must
+            # be derived before slimming — they read model-level fields the
+            # slim payload drops.
+            cache_entry = dict(metadata_dict)
+            if cache_entry.get('civitai'):
+                self._ensure_license_flags(cache_entry)
+                cache_entry['civitai'] = self._slim_civitai_payload(cache_entry['civitai'])
+            metadata_dict = cache_entry
+
             file_path = metadata_dict.get('file_path', '')
             if file_path:
                 old_entries = [item for item in self._cache.raw_data if item.get('file_path') == file_path]
@@ -3886,6 +3934,9 @@ class ModelScanner:
             )
             await self._persist_current_cache()
             self.bump_cache_version()
+            # The new entry is GC-tracked again; re-freeze once the write
+            # burst settles (issue #1161).
+            schedule_refreeze(f"{self.model_type} model added to cache")
             return True
         except Exception as e:
             logger.error(f"Error adding model to cache: {e}")
@@ -4182,6 +4233,9 @@ class ModelScanner:
             await self._cache.resort()
             await self._persist_current_cache(force=True)
             self.bump_cache_version()
+            # Bulk updates replace entries en masse; re-freeze once settled
+            # (issue #1161).
+            schedule_refreeze(f"{self.model_type} bulk cache update")
         except Exception:
             logger.error(
                 "%s Scanner: failed to finalize deferred cache persist",
@@ -4303,6 +4357,9 @@ class ModelScanner:
             if cache_modified:
                 await self._persist_current_cache()
                 self.bump_cache_version()
+                # The replacement entry is GC-tracked again; re-freeze once
+                # the write burst settles (issue #1161).
+                schedule_refreeze(f"{self.model_type} cache update")
 
         if metadata and cache_entry is not None:
             return cache_entry
@@ -4508,6 +4565,9 @@ class ModelScanner:
                 old_item_for_sql,
             )
 
+        # In-place updates still allocate fresh values; re-freeze once the
+        # sync burst settles (issue #1161).
+        schedule_refreeze(f"{self.model_type} metadata sync")
         return True
 
     async def update_autov3_for_model(self, model_type: str, file_path: str, autov3: str) -> bool:
