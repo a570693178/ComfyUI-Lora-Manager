@@ -156,7 +156,9 @@
             "embeddingNameCopied": "Embedding構文をコピーしました",
             "modelNameCopied": "モデル名をコピーしました",
             "sendCheckpointToWorkflow": "ComfyUIに送信",
-            "sendEmbeddingToWorkflow": "ComfyUIに送信"
+            "sendEmbeddingToWorkflow": "ComfyUIに送信",
+            "openInComfyUI": "ComfyUIで開く",
+            "copyWorkflowToClipboard": "ワークフローをクリップボードにコピー"
         },
         "nsfw": {
             "matureContent": "成人向けコンテンツ",
@@ -244,6 +246,7 @@
             "checkpoints": "Checkpoint",
             "embeddings": "Embedding",
             "other": "その他",
+            "workflows": "ワークフロー",
             "statistics": "統計"
         },
         "search": {
@@ -633,6 +636,11 @@
             "defaultControlnetRootHelp": "ダウンロード、インポート、移動用のデフォルトControlNetルートディレクトリを設定",
             "enableOtherModels": "その他のモデル管理",
             "enableOtherModelsHelp": "オフにすると、VAE / Upscaler / Text Encoder / CLIP Vision / ControlNet フォルダーはスキャンされず、その他のモデルページは無効のままになり、これらのモデルタイプはダウンロードできません。",
+            "enableWorkflows": "ワークフロー管理",
+            "enableWorkflowsHelp": "オフにすると、ワークフローライブラリフォルダーはスキャンされず、ワークフローページは無効のままになり、CivitAIのWorkflowリソースをリンクしたりダウンロードしたりできなくなります。",
+            "workflowFolder": "ワークフローライブラリフォルダー",
+            "workflowFolderHelp": "ComfyUIのワークフローJSONファイルをスキャンする単一のフォルダーです。LoRA Managerのみが管理し（ComfyUIとは共有されません）、変更はすぐに反映されます。",
+            "workflowFolderPlaceholder": "/path/to/workflows",
             "otherSubTypes": "管理するモデルタイプ",
             "otherSubTypesHelp": "その他のモデルページでスキャンおよび表示するカテゴリを選択します。",
             "subTypeVae": "VAE",
@@ -1099,11 +1107,25 @@
     "recipes": {
         "title": "LoRAレシピ",
         "filter": {
+            "title": "レシピをフィルタ",
             "countTitle": "{name} —— {count} 件のレシピ"
+        },
+        "bulk": {
+            "noSelection": "レシピが選択されていません"
+        },
+        "move": {
+            "failed": "レシピの移動に失敗しました：{message}"
+        },
+        "deleteModal": {
+            "message": "このレシピを削除してもよろしいですか？",
+            "note": "このレシピを削除しても、使用されているLoRAファイルには影響しません。",
+            "deleting": "削除中..."
         },
         "actions": {
             "sendCheckpoint": "ComfyUIへ送信",
             "sendRecipe": "ComfyUIへ送信",
+            "sendRecipeModes": "レシピをワークフローへ送信（クリック：追加、Shift+クリック：置き換え）",
+            "shareRecipe": "レシピを共有",
             "copyRecipeSyntax": "レシピ構文をコピー",
             "deleteRecipeWithShortcut": "レシピを削除（Del）"
         },
@@ -1445,6 +1467,82 @@
             "openSettings": "設定を開く",
             "openModelPaths": "モデルフォルダーを設定",
             "openSettingsFolder": "設定フォルダーを開く"
+        }
+    },
+    "workflows": {
+        "title": "ワークフロー",
+        "itemLabel": "ワークフロー",
+        "filter": {
+            "title": "ワークフローをフィルタ"
+        },
+        "bulk": {
+            "noSelection": "ワークフローが選択されていません"
+        },
+        "contextMenu": {
+            "sendToComfy": "ComfyUIで開く",
+            "updateFromComfy": "ComfyUIから更新",
+            "copyWorkflow": "ワークフローをコピー",
+            "restoreDownloaded": "ダウンロード済みバージョンを復元",
+            "moveWorkflow": "ワークフローをフォルダに移動",
+            "deleteWorkflow": "ワークフローを削除"
+        },
+        "modals": {
+            "delete": {
+                "title": "ワークフローを削除",
+                "message": "このワークフローと関連するすべてのファイルを削除してもよろしいですか？",
+                "failed": "ワークフローの削除に失敗しました：{message}"
+            },
+            "move": {
+                "title": "ワークフローを移動",
+                "bulkTitle": "{count} 件のワークフローを移動",
+                "selectRoot": "ワークフロールートを選択：",
+                "targetHint": "ワークフローのルートディレクトリを選択",
+                "noRoots": "ワークフロールートが見つかりません",
+                "failed": "ワークフローの移動に失敗しました：{message}"
+            },
+            "bulkDelete": {
+                "title": "複数のワークフローを削除",
+                "message": "選択したすべてのワークフローと関連ファイルを削除してもよろしいですか？",
+                "countMessage": "ワークフローが完全に削除されます。"
+            }
+        },
+        "relink": {
+            "success": "ワークフローがCivitAIに正常に再リンクされました",
+            "civArchiveSuccess": "ワークフローがCivitArchive経由で正常に再リンクされました"
+        },
+        "sendToComfy": {
+            "success": "ワークフローをComfyUIへ送信しました",
+            "failed": "ワークフローの送信に失敗しました：{message}"
+        },
+        "restoreDownloaded": {
+            "title": "ダウンロード済みバージョンを復元しますか？",
+            "message": "ローカルの編集内容は破棄され、ワークフローはダウンロード時のバージョンに復元されます。",
+            "confirmButton": "復元",
+            "restoring": "ワークフローを復元中...",
+            "success": "ワークフローをダウンロード済みバージョンに復元しました",
+            "failed": "ワークフローの復元に失敗しました：{message}"
+        },
+        "updateFromComfy": {
+            "success": "ComfyUIからワークフローを更新しました",
+            "noChanges": "ComfyUI側に書き戻す変更はありません",
+            "cancelled": "更新はキャンセルされました",
+            "failed": "ComfyUIからの更新に失敗しました：{message}"
+        },
+        "copyWorkflow": {
+            "failed": "ワークフローのコピーに失敗しました：{message}"
+        },
+        "disabled": {
+            "title": "ワークフロー管理はオフです",
+            "description": "有効にすると、ComfyUIのワークフローファイルをスキャン・管理し、CivitAIのメタデータとプレビューを保持したまま、実行中のComfyUIに送信できます。",
+            "enableButton": "ワークフローを有効にする",
+            "hint": "この機能は後で「設定 > ライブラリ」から再度オフにできます。",
+            "enableFailed": "ワークフローの有効化に失敗しました"
+        },
+        "noPaths": {
+            "title": "ワークフローフォルダーが設定されていません",
+            "description": "ワークフロー管理はオンですが、ワークフローフォルダーが設定されていません。「設定 > ライブラリ」でワークフローフォルダーを設定し、このページを再読み込みしてください。",
+            "hint": "ワークフローライブラリフォルダーは、ComfyUI標準のワークフローリストとは別です。",
+            "openSettings": "設定を開く"
         }
     },
     "sidebar": {
@@ -2271,6 +2369,10 @@
         "other": {
             "title": "その他のモデルマネージャーを初期化中",
             "message": "モデルキャッシュをスキャンして構築中です。数分かかる場合があります..."
+        },
+        "workflows": {
+            "title": "ワークフローマネージャーを初期化中",
+            "message": "ワークフローキャッシュをスキャンして構築中。数分かかる場合があります..."
         },
         "recipes": {
             "title": "レシピマネージャーを初期化中",

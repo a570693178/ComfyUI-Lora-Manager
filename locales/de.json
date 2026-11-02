@@ -156,7 +156,9 @@
             "embeddingNameCopied": "Embedding-Syntax kopiert",
             "modelNameCopied": "Modellname kopiert",
             "sendCheckpointToWorkflow": "An ComfyUI senden",
-            "sendEmbeddingToWorkflow": "An ComfyUI senden"
+            "sendEmbeddingToWorkflow": "An ComfyUI senden",
+            "openInComfyUI": "In ComfyUI öffnen",
+            "copyWorkflowToClipboard": "Workflow in die Zwischenablage kopieren"
         },
         "nsfw": {
             "matureContent": "Nicht jugendfreie Inhalte",
@@ -244,6 +246,7 @@
             "checkpoints": "Checkpoints",
             "embeddings": "Embeddings",
             "other": "Andere",
+            "workflows": "Workflows",
             "statistics": "Statistiken"
         },
         "search": {
@@ -633,6 +636,11 @@
             "defaultControlnetRootHelp": "Legen Sie den Standard-ControlNet-Stammordner für Downloads, Importe und Verschiebungen fest",
             "enableOtherModels": "Verwaltung weiterer Modelle",
             "enableOtherModelsHelp": "Wenn deaktiviert, werden VAE-, Upscaler-, Text-Encoder-, CLIP-Vision- und ControlNet-Ordner nicht gescannt, die Seite für weitere Modelle bleibt deaktiviert und diese Modelltypen können nicht heruntergeladen werden.",
+            "enableWorkflows": "Workflow-Verwaltung",
+            "enableWorkflowsHelp": "Wenn deaktiviert, wird der Workflow-Bibliotheksordner nicht gescannt, die Workflows-Seite bleibt deaktiviert und CivitAI-Workflow-Ressourcen können weder verknüpft noch heruntergeladen werden.",
+            "workflowFolder": "Workflow-Bibliotheksordner",
+            "workflowFolderHelp": "Der einzelne Ordner, der nach ComfyUI-Workflow-JSON-Dateien gescannt wird. Wird nur von LoRA Manager verwaltet (nicht mit ComfyUI geteilt); Änderungen gelten sofort.",
+            "workflowFolderPlaceholder": "/path/to/workflows",
             "otherSubTypes": "Verwaltete Modelltypen",
             "otherSubTypesHelp": "Wählen Sie, welche Kategorien weiterer Modelle gescannt und auf der Seite für weitere Modelle angezeigt werden.",
             "subTypeVae": "VAE",
@@ -1099,11 +1107,25 @@
     "recipes": {
         "title": "LoRA-Rezepte",
         "filter": {
+            "title": "Rezepte filtern",
             "countTitle": "{name} — {count} Rezepte"
+        },
+        "bulk": {
+            "noSelection": "Keine Rezepte ausgewählt"
+        },
+        "move": {
+            "failed": "Fehler beim Verschieben des/der Rezepte: {message}"
+        },
+        "deleteModal": {
+            "message": "Sind Sie sicher, dass Sie dieses Rezept löschen möchten?",
+            "note": "Das Löschen dieses Rezepts hat keine Auswirkungen auf die darin verwendeten LoRA-Dateien.",
+            "deleting": "Wird gelöscht..."
         },
         "actions": {
             "sendCheckpoint": "Send to ComfyUI",
             "sendRecipe": "Send to ComfyUI",
+            "sendRecipeModes": "Rezept an Workflow senden (Klick: anhängen, Umschalt+Klick: ersetzen)",
+            "shareRecipe": "Rezept teilen",
             "copyRecipeSyntax": "Rezept-Syntax kopieren",
             "deleteRecipeWithShortcut": "Rezept löschen (Del)"
         },
@@ -1445,6 +1467,82 @@
             "openSettings": "Einstellungen öffnen",
             "openModelPaths": "Modellordner konfigurieren",
             "openSettingsFolder": "Einstellungsordner öffnen"
+        }
+    },
+    "workflows": {
+        "title": "Workflows",
+        "itemLabel": "Workflow",
+        "filter": {
+            "title": "Workflows filtern"
+        },
+        "bulk": {
+            "noSelection": "Keine Workflows ausgewählt"
+        },
+        "contextMenu": {
+            "sendToComfy": "In ComfyUI öffnen",
+            "updateFromComfy": "Von ComfyUI aktualisieren",
+            "copyWorkflow": "Workflow kopieren",
+            "restoreDownloaded": "Heruntergeladene Version wiederherstellen",
+            "moveWorkflow": "Workflow in Ordner verschieben",
+            "deleteWorkflow": "Workflow löschen"
+        },
+        "modals": {
+            "delete": {
+                "title": "Workflow löschen",
+                "message": "Sind Sie sicher, dass Sie diesen Workflow und alle zugehörigen Dateien löschen möchten?",
+                "failed": "Fehler beim Löschen des Workflows: {message}"
+            },
+            "move": {
+                "title": "Workflow verschieben",
+                "bulkTitle": "{count} Workflows verschieben",
+                "selectRoot": "Workflow-Stammverzeichnis auswählen:",
+                "targetHint": "Wählen Sie ein Workflow-Stammverzeichnis",
+                "noRoots": "Kein Workflow-Stammverzeichnis gefunden",
+                "failed": "Fehler beim Verschieben des/der Workflows: {message}"
+            },
+            "bulkDelete": {
+                "title": "Mehrere Workflows löschen",
+                "message": "Sind Sie sicher, dass Sie alle ausgewählten Workflows und ihre zugehörigen Dateien löschen möchten?",
+                "countMessage": "Workflows werden dauerhaft gelöscht."
+            }
+        },
+        "relink": {
+            "success": "Workflow erfolgreich mit CivitAI neu verknüpft",
+            "civArchiveSuccess": "Workflow erfolgreich über CivitArchive neu verknüpft"
+        },
+        "sendToComfy": {
+            "success": "Workflow an ComfyUI gesendet",
+            "failed": "Fehler beim Senden des Workflows: {message}"
+        },
+        "restoreDownloaded": {
+            "title": "Heruntergeladene Version wiederherstellen?",
+            "message": "Dadurch werden lokale Änderungen verworfen und der Workflow auf die heruntergeladene Version zurückgesetzt.",
+            "confirmButton": "Wiederherstellen",
+            "restoring": "Workflow wird wiederhergestellt...",
+            "success": "Workflow auf die heruntergeladene Version zurückgesetzt",
+            "failed": "Fehler beim Wiederherstellen des Workflows: {message}"
+        },
+        "updateFromComfy": {
+            "success": "Workflow von ComfyUI aktualisiert",
+            "noChanges": "Keine Änderungen in ComfyUI zum Zurückschreiben",
+            "cancelled": "Aktualisierung abgebrochen",
+            "failed": "Fehler beim Aktualisieren von ComfyUI: {message}"
+        },
+        "copyWorkflow": {
+            "failed": "Fehler beim Kopieren des Workflows: {message}"
+        },
+        "disabled": {
+            "title": "Die Workflow-Verwaltung ist deaktiviert",
+            "description": "Aktivieren Sie die Option, um ComfyUI-Workflow-Dateien zu scannen und zu verwalten, ihre CivitAI-Metadaten und Vorschaubilder zu behalten und sie in den laufenden ComfyUI-Graph zu senden.",
+            "enableButton": "Workflows aktivieren",
+            "hint": "Sie können die Funktion später unter Einstellungen > Bibliothek wieder deaktivieren.",
+            "enableFailed": "Aktivierung der Workflows fehlgeschlagen"
+        },
+        "noPaths": {
+            "title": "Kein Workflow-Ordner konfiguriert",
+            "description": "Die Workflow-Verwaltung ist aktiviert, aber es ist kein Workflow-Ordner konfiguriert. Legen Sie den Workflow-Ordner unter Einstellungen → Bibliothek fest und laden Sie diese Seite neu.",
+            "hint": "Der Workflow-Bibliotheksordner ist von der in ComfyUI integrierten Workflow-Liste getrennt.",
+            "openSettings": "Einstellungen öffnen"
         }
     },
     "sidebar": {
@@ -2271,6 +2369,10 @@
         "other": {
             "title": "Manager für weitere Modelle wird initialisiert",
             "message": "Modell-Cache wird gescannt und aufgebaut. Dies kann einige Minuten dauern..."
+        },
+        "workflows": {
+            "title": "Workflow Manager wird initialisiert",
+            "message": "Workflow-Cache wird gescannt und aufgebaut. Dies kann einige Minuten dauern..."
         },
         "recipes": {
             "title": "Rezept Manager wird initialisiert",

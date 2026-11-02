@@ -156,7 +156,9 @@
             "embeddingNameCopied": "תחביר Embedding הועתק",
             "modelNameCopied": "שם המודל הועתק",
             "sendCheckpointToWorkflow": "שלח ל-ComfyUI",
-            "sendEmbeddingToWorkflow": "שלח ל-ComfyUI"
+            "sendEmbeddingToWorkflow": "שלח ל-ComfyUI",
+            "openInComfyUI": "פתח ב-ComfyUI",
+            "copyWorkflowToClipboard": "העתק workflow ללוח"
         },
         "nsfw": {
             "matureContent": "תוכן למבוגרים",
@@ -244,6 +246,7 @@
             "checkpoints": "Checkpoints",
             "embeddings": "Embeddings",
             "other": "אחרים",
+            "workflows": "Workflows",
             "statistics": "סטטיסטיקה"
         },
         "search": {
@@ -633,6 +636,11 @@
             "defaultControlnetRootHelp": "הגדר את ספריית השורש המוגדרת כברירת מחדל של ControlNet להורדות, ייבוא והעברות",
             "enableOtherModels": "ניהול מודלים אחרים",
             "enableOtherModelsHelp": "כשהאפשרות כבויה, תיקיות VAE / Upscaler / Text Encoder / CLIP Vision / ControlNet אינן נסרקות, עמוד המודלים האחרים נשאר מושבת ולא ניתן להוריד סוגי מודלים אלה.",
+            "enableWorkflows": "ניהול workflow",
+            "enableWorkflowsHelp": "כשהאפשרות כבויה, תיקיית ספריית ה-workflow אינה נסרקת, עמוד Workflows נשאר מושבת ולא ניתן לקשר או להוריד משאבי Workflow מ-CivitAI.",
+            "workflowFolder": "תיקיית ספריית ה-workflow",
+            "workflowFolderHelp": "התיקייה היחידה שנסרקת עבור קובצי JSON של workflow של ComfyUI. מנוהלת על ידי LoRA Manager בלבד (אינה משותפת עם ComfyUI); השינויים חלים מיד.",
+            "workflowFolderPlaceholder": "/path/to/workflows",
             "otherSubTypes": "סוגי מודלים מנוהלים",
             "otherSubTypesHelp": "בחר אילו קטגוריות של מודלים אחרים ייסרקו ויוצגו בעמוד המודלים האחרים.",
             "subTypeVae": "VAE",
@@ -1099,11 +1107,25 @@
     "recipes": {
         "title": "מתכוני LoRA",
         "filter": {
+            "title": "סינון מתכונים",
             "countTitle": "{name} — {count} מתכונים"
+        },
+        "bulk": {
+            "noSelection": "לא נבחרו מתכונים"
+        },
+        "move": {
+            "failed": "העברת המתכון/ים נכשלה: {message}"
+        },
+        "deleteModal": {
+            "message": "האם אתה בטוח שברצונך למחוק מתכון זה?",
+            "note": "מחיקת המתכון לא תשפיע על קבצי ה-LoRA שבהם הוא משתמש.",
+            "deleting": "מוחק..."
         },
         "actions": {
             "sendCheckpoint": "שלח ל-ComfyUI",
             "sendRecipe": "שלח ל-ComfyUI",
+            "sendRecipeModes": "שלח מתכון ל-workflow (לחיצה: הוספה, Shift+לחיצה: החלפה)",
+            "shareRecipe": "שתף מתכון",
             "copyRecipeSyntax": "העתק תחביר מתכון",
             "deleteRecipeWithShortcut": "מחק מתכון (Del)"
         },
@@ -1445,6 +1467,82 @@
             "openSettings": "פתח הגדרות",
             "openModelPaths": "הגדר תיקיות מודלים",
             "openSettingsFolder": "פתח תיקיית הגדרות"
+        }
+    },
+    "workflows": {
+        "title": "Workflows",
+        "itemLabel": "workflow",
+        "filter": {
+            "title": "סינון workflows"
+        },
+        "bulk": {
+            "noSelection": "לא נבחרו workflows"
+        },
+        "contextMenu": {
+            "sendToComfy": "פתח ב-ComfyUI",
+            "updateFromComfy": "עדכן מ-ComfyUI",
+            "copyWorkflow": "העתק workflow",
+            "restoreDownloaded": "שחזר את הגרסה שהורדה",
+            "moveWorkflow": "העבר workflow לתיקייה",
+            "deleteWorkflow": "מחק workflow"
+        },
+        "modals": {
+            "delete": {
+                "title": "מחק workflow",
+                "message": "האם אתה בטוח שברצונך למחוק workflow זה ואת כל הקבצים הנלווים?",
+                "failed": "מחיקת ה-workflow נכשלה: {message}"
+            },
+            "move": {
+                "title": "העבר workflow",
+                "bulkTitle": "העבר {count} workflows",
+                "selectRoot": "בחר שורש workflow:",
+                "targetHint": "בחר ספריית שורש של workflow",
+                "noRoots": "לא נמצא שורש workflow",
+                "failed": "העברת ה-workflow נכשלה: {message}"
+            },
+            "bulkDelete": {
+                "title": "מחק מספר workflows",
+                "message": "האם אתה בטוח שברצונך למחוק את כל ה-workflows שנבחרו ואת הקבצים הנלווים אליהם?",
+                "countMessage": "workflows יימחקו לצמיתות."
+            }
+        },
+        "relink": {
+            "success": "ה-workflow קושר מחדש ל-CivitAI בהצלחה",
+            "civArchiveSuccess": "ה-workflow קושר מחדש דרך CivitArchive בהצלחה"
+        },
+        "sendToComfy": {
+            "success": "ה-workflow נשלח ל-ComfyUI",
+            "failed": "שליחת ה-workflow נכשלה: {message}"
+        },
+        "restoreDownloaded": {
+            "title": "לשחזר את הגרסה שהורדה?",
+            "message": "פעולה זו מבטלת עריכות מקומיות ומשחזרת את ה-workflow לגרסה שהורדה.",
+            "confirmButton": "שחזר",
+            "restoring": "משחזר workflow...",
+            "success": "ה-workflow שוחזר לגרסה שהורדה",
+            "failed": "שחזור ה-workflow נכשל: {message}"
+        },
+        "updateFromComfy": {
+            "success": "ה-workflow עודכן מ-ComfyUI",
+            "noChanges": "אין שינויים ב-ComfyUI לכתיבה חזרה",
+            "cancelled": "העדכון בוטל",
+            "failed": "העדכון מ-ComfyUI נכשל: {message}"
+        },
+        "copyWorkflow": {
+            "failed": "העתקת ה-workflow נכשלה: {message}"
+        },
+        "disabled": {
+            "title": "ניהול ה-workflow כבוי",
+            "description": "הפעל כדי לסרוק ולנהל קבצי workflow של ComfyUI, לשמור את המטא-נתונים והתצוגות המקדימות שלהם מ-CivitAI, ולשלוח אותם ל-ComfyUI הפעיל.",
+            "enableButton": "הפעל Workflows",
+            "hint": "ניתן לכבות את התכונה שוב מאוחר יותר בהגדרות > ספרייה.",
+            "enableFailed": "הפעלת Workflows נכשלה"
+        },
+        "noPaths": {
+            "title": "לא הוגדרה תיקיית workflow",
+            "description": "ניהול ה-workflow פועל, אך לא הוגדרה תיקיית workflow. הגדר את תיקיית ה-workflow תחת הגדרות > ספרייה, ולאחר מכן טען מחדש עמוד זה.",
+            "hint": "תיקיית ספריית ה-workflow נפרדת מרשימת ה-workflow המובנית של ComfyUI.",
+            "openSettings": "פתח הגדרות"
         }
     },
     "sidebar": {
@@ -2271,6 +2369,10 @@
         "other": {
             "title": "מאתחל את מנהל המודלים האחרים",
             "message": "סורק ובונה מטמון מודלים. זה עשוי לקחת מספר דקות..."
+        },
+        "workflows": {
+            "title": "מאתחל מנהל Workflow",
+            "message": "סורק ובונה מטמון workflow. זה עשוי לקחת מספר דקות..."
         },
         "recipes": {
             "title": "מאתחל מנהל מתכונים",

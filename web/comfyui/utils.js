@@ -500,27 +500,59 @@ export function collectActiveLorasFromChain(node, visited = new Set()) {
     return allActiveLoraNames;
 }
 
-// Update trigger words for connected toggle nodes
+// Pending trigger-word sync per source node (node key -> timeout id). Stored
+// on the node itself instead of module scope because this module is loaded
+// twice: once directly (lora_loader.js) and once inlined into the Vue widget
+// bundle (main.ts). Callers from both copies must coalesce together.
+const TRIGGER_WORD_SYNC_TIMER = "__lmTriggerWordSyncTimer";
+const TRIGGER_WORD_SYNC_DELAY_MS = 50;
+
+/**
+ * Update trigger words for connected toggle nodes.
+ *
+ * Calls are coalesced per source node: while a workflow configures, the same
+ * loader is asked to sync several times within one task - first when its own
+ * restored `loras` widget fires (the upstream cycler/randomizer has not
+ * configured its widget yet, so the resolved LoRA set is empty), then again
+ * once that upstream node reflects the saved selection (the real set). Sending
+ * the intermediate empty set clears the connected toggle nodes right before
+ * they are repopulated; a draft or change-tracker snapshot taken in that
+ * window then makes an untouched workflow compare dirty. Only the last
+ * computed set is sent.
+ */
 export function updateConnectedTriggerWords(node, loraNames) {
     const connectedNodes = getConnectedTriggerToggleNodes(node);
-    if (connectedNodes.length > 0) {
-        const nodeIds = connectedNodes
-            .map((connectedNode) => getNodeReference(connectedNode))
-            .filter((reference) => reference !== null);
+    if (connectedNodes.length === 0) {
+        return;
+    }
 
-        if (nodeIds.length === 0) {
-            return;
-        }
+    const nodeIds = connectedNodes
+        .map((connectedNode) => getNodeReference(connectedNode))
+        .filter((reference) => reference !== null);
+
+    if (nodeIds.length === 0) {
+        return;
+    }
+
+    const pendingTimer = node[TRIGGER_WORD_SYNC_TIMER];
+    if (pendingTimer) {
+        clearTimeout(pendingTimer);
+    }
+
+    const loraNamesSnapshot = Array.from(loraNames);
+
+    node[TRIGGER_WORD_SYNC_TIMER] = setTimeout(() => {
+        delete node[TRIGGER_WORD_SYNC_TIMER];
 
         fetch(lmUrl("/api/lm/loras/get_trigger_words"), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                lora_names: Array.from(loraNames),
+                lora_names: loraNamesSnapshot,
                 node_ids: nodeIds
             })
         }).catch(err => console.error("Error fetching trigger words:", err));
-    }
+    }, TRIGGER_WORD_SYNC_DELAY_MS);
 }
 
 export function mergeLoras(lorasText, lorasArr) {
@@ -548,6 +580,7 @@ export function mergeLoras(lorasText, lorasArr) {
         expanded: lora.expanded !== undefined ? lora.expanded : false,
         clipStrength: lora.clipStrength !== undefined ? lora.clipStrength : parsedLoras[lora.name].clipStrength,
         selected: !!lora.selected,
+        locked: lora.locked !== undefined ? lora.locked : false,
       });
       usedNames.add(lora.name);
     }

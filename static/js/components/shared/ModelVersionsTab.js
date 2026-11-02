@@ -9,6 +9,7 @@ import { parseModelSourceGroupKey } from '../../utils/modelSourceHelpers.js';
 import { isVideoUrl } from '../../utils/mediaUtils.js';
 import { formatFileSize } from './utils.js';
 import { setSessionItem, removeSessionItem } from '../../utils/storageHelpers.js';
+import { isVideoPreviewUrl } from '../../utils/mediaTypes.js';
 
 const PREVIEW_PLACEHOLDER_URL = '/loras_static/images/no-preview.png';
 
@@ -396,7 +397,7 @@ function renderMediaMarkup(version) {
         return `<div class="version-media version-media-placeholder">${escapeHtml(placeholderText)}</div>`;
     }
 
-    if (isVideoUrl(version.previewUrl)) {
+    if (isVideoPreviewUrl(version.previewUrl)) {
         const autoplayOnHover = getAutoplaySetting();
         return `
             <div class="version-media">
@@ -422,7 +423,7 @@ function renderMediaMarkup(version) {
 
 function renderDeletePreview(version, versionName) {
     const previewUrl = version?.previewUrl;
-    if (previewUrl && isVideoUrl(previewUrl)) {
+    if (previewUrl && isVideoPreviewUrl(previewUrl)) {
         return `
             <video
                 src="${escapeHtml(previewUrl)}"
