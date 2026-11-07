@@ -151,6 +151,8 @@ DEFAULT_SETTINGS: Dict[str, Any] = {
     "blur_mature_content": True,
     "mature_blur_level": "R",
     "autoplay_on_hover": False,
+    "card_preview_cycle": True,
+    "card_preview_cycle_interval": 3,
     "display_density": "default",
     "recipes_layout": "grid",
     "card_info_display": "always",
@@ -2795,7 +2797,7 @@ class SettingsManager:
 
         Args:
             model_type: The type of model ('lora', 'checkpoint', 'embedding',
-                'other')
+                'workflow', 'other')
 
         Returns:
             Template string for the model type. Falls back to the per-type

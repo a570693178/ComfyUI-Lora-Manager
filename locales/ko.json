@@ -262,7 +262,8 @@
                 "title": "레시피 제목",
                 "loraName": "LoRA 파일명",
                 "loraModel": "LoRA 모델명",
-                "prompt": "프롬프트"
+                "prompt": "프롬프트",
+                "triggerWords": "트리거 단어"
             }
         },
         "filter": {
@@ -388,6 +389,7 @@
             "contentFiltering": "콘텐츠 필터링",
             "downloads": "다운로드",
             "videoSettings": "비디오 설정",
+            "cardPreview": "[TODO: Translate] Card Preview",
             "layoutSettings": "레이아웃 설정",
             "licenseIcons": "라이선스 아이콘",
             "misc": "기타",
@@ -439,6 +441,18 @@
         "videoSettings": {
             "autoplayOnHover": "호버 시 비디오 자동 재생",
             "autoplayOnHoverHelp": "마우스를 올렸을 때만 비디오 미리보기를 재생합니다"
+        },
+        "cardPreview": {
+            "cycleOnHover": "[TODO: Translate] Cycle Example Images on Hover",
+            "cycleOnHoverHelp": "[TODO: Translate] When hovering a card with an image preview, cycle through its example images. The selected preview image itself stays unchanged. Video previews are not affected.",
+            "cycleInterval": "[TODO: Translate] Cycle Interval",
+            "cycleIntervalHelp": "[TODO: Translate] Time between example image switches while hovering a card.",
+            "cycleIntervalOptions": {
+                "fast": "[TODO: Translate] Fast (2s)",
+                "normal": "[TODO: Translate] Normal (3s)",
+                "relaxed": "[TODO: Translate] Relaxed (5s)",
+                "slow": "[TODO: Translate] Slow (8s)"
+            }
         },
         "autoOrganizeExclusions": {
             "label": "자동 정리 제외 항목",
@@ -704,7 +718,16 @@
             "pathPlaceholder": "경로 입력...",
             "go": "이동",
             "emptyFolder": "하위 폴더 없음",
-            "loadError": "디렉터리를 불러오지 못했습니다"
+            "loadError": "디렉터리를 불러오지 못했습니다",
+            "newFolder": "새 폴더",
+            "newFolderPlaceholder": "폴더 이름",
+            "create": "만들기",
+            "cancel": "취소",
+            "createError": "폴더 생성 실패",
+            "nameRequired": "폴더 이름을 입력하세요",
+            "nameInvalid": "폴더 이름에 잘못된 문자가 포함되어 있습니다",
+            "alreadyExists": "같은 이름의 폴더가 이미 있습니다",
+            "permissionDenied": "권한이 없습니다"
         },
         "pathValidation": {
             "valid": "유효한 경로입니다",
@@ -749,10 +772,12 @@
                 "customTemplate": "사용자 정의 템플릿"
             },
             "customTemplatePlaceholder": "사용자 정의 템플릿 입력 (예: {base_model}/{author}/{first_tag})",
+            "workflowHint": "워크플로 다운로드와 워크플로 페이지의 자동 정리에 적용됩니다.",
             "modelTypes": {
                 "lora": "LoRA",
                 "checkpoint": "Checkpoint",
-                "embedding": "Embedding"
+                "embedding": "Embedding",
+                "workflow": "워크플로"
             },
             "baseModelPathMappings": "베이스 모델 경로 매핑",
             "baseModelPathMappingsHelp": "특정 베이스 모델의 폴더 이름을 사용자 정의합니다 (예: \"Flux.1 D\" → \"flux\")",

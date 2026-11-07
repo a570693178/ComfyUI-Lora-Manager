@@ -262,7 +262,8 @@
                 "title": "Título de la receta",
                 "loraName": "Nombre de archivo LoRA",
                 "loraModel": "Nombre del modelo LoRA",
-                "prompt": "Prompt"
+                "prompt": "Prompt",
+                "triggerWords": "Palabras de activación"
             }
         },
         "filter": {
@@ -388,6 +389,7 @@
             "contentFiltering": "Filtrado de contenido",
             "downloads": "Descargas",
             "videoSettings": "Configuración de video",
+            "cardPreview": "[TODO: Translate] Card Preview",
             "layoutSettings": "Configuración de diseño",
             "licenseIcons": "Iconos de licencia",
             "misc": "Varios",
@@ -439,6 +441,18 @@
         "videoSettings": {
             "autoplayOnHover": "Reproducir videos automáticamente al pasar el ratón",
             "autoplayOnHoverHelp": "Solo reproducir vistas previas de video al pasar el ratón sobre ellas"
+        },
+        "cardPreview": {
+            "cycleOnHover": "[TODO: Translate] Cycle Example Images on Hover",
+            "cycleOnHoverHelp": "[TODO: Translate] When hovering a card with an image preview, cycle through its example images. The selected preview image itself stays unchanged. Video previews are not affected.",
+            "cycleInterval": "[TODO: Translate] Cycle Interval",
+            "cycleIntervalHelp": "[TODO: Translate] Time between example image switches while hovering a card.",
+            "cycleIntervalOptions": {
+                "fast": "[TODO: Translate] Fast (2s)",
+                "normal": "[TODO: Translate] Normal (3s)",
+                "relaxed": "[TODO: Translate] Relaxed (5s)",
+                "slow": "[TODO: Translate] Slow (8s)"
+            }
         },
         "autoOrganizeExclusions": {
             "label": "Exclusiones de auto-organización",
@@ -704,7 +718,16 @@
             "pathPlaceholder": "Introducir ruta...",
             "go": "Ir",
             "emptyFolder": "No hay subcarpetas",
-            "loadError": "Error al cargar el directorio"
+            "loadError": "Error al cargar el directorio",
+            "newFolder": "Nueva carpeta",
+            "newFolderPlaceholder": "Nombre de la carpeta",
+            "create": "Crear",
+            "cancel": "Cancelar",
+            "createError": "Error al crear la carpeta",
+            "nameRequired": "Introduce un nombre de carpeta",
+            "nameInvalid": "El nombre de la carpeta contiene caracteres no válidos",
+            "alreadyExists": "Ya existe una carpeta con ese nombre",
+            "permissionDenied": "Permiso denegado"
         },
         "pathValidation": {
             "valid": "La ruta es válida",
@@ -749,10 +772,12 @@
                 "customTemplate": "Plantilla personalizada"
             },
             "customTemplatePlaceholder": "Introduce plantilla personalizada (ej., {base_model}/{author}/{first_tag})",
+            "workflowHint": "Se aplica a las descargas de workflows y a la organización automática en la página Workflows.",
             "modelTypes": {
                 "lora": "LoRA",
                 "checkpoint": "Checkpoint",
-                "embedding": "Embedding"
+                "embedding": "Embedding",
+                "workflow": "Workflow"
             },
             "baseModelPathMappings": "Mapeos de rutas de modelo base",
             "baseModelPathMappingsHelp": "Personalizar nombres de carpetas para modelos base específicos (ej., \"Flux.1 D\" → \"flux\")",
@@ -2136,7 +2161,7 @@
                 "updated": "Parámetro preajustado actualizado"
             },
             "triggerWords": {
-                "label": "Palabras clave",
+                "label": "Palabras de activación",
                 "noTriggerWordsNeeded": "No se necesita palabra de activación",
                 "edit": "Editar palabras de activación",
                 "cancel": "Cancelar edición",
@@ -2949,7 +2974,7 @@
             "tooLong": "La palabra de activación no debe exceder 500 palabras",
             "tooMany": "Máximo 100 palabras de activación permitidas",
             "alreadyExists": "Esta palabra de activación ya existe",
-            "updateSuccess": "Palabras clave actualizadas exitosamente",
+            "updateSuccess": "Palabras de activación actualizadas exitosamente",
             "updateFailed": "Error al actualizar palabras de activación",
             "copyFailed": "Error al copiar"
         },

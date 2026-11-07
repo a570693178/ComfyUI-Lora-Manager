@@ -263,7 +263,8 @@
         "title": "Recipe Title",
         "loraName": "LoRA Filename",
         "loraModel": "LoRA Model Name",
-        "prompt": "Prompt"
+        "prompt": "Prompt",
+        "triggerWords": "Trigger Words"
       }
     },
     "filter": {
@@ -389,6 +390,7 @@
       "contentFiltering": "Content Filtering",
       "downloads": "Downloads",
       "videoSettings": "Video Settings",
+      "cardPreview": "Card Preview",
       "layoutSettings": "Layout Settings",
       "licenseIcons": "License Icons",
       "misc": "Miscellaneous",
@@ -440,6 +442,18 @@
     "videoSettings": {
       "autoplayOnHover": "Autoplay Videos on Hover",
       "autoplayOnHoverHelp": "Only play video previews when hovering over them"
+    },
+    "cardPreview": {
+      "cycleOnHover": "Cycle Example Images on Hover",
+      "cycleOnHoverHelp": "When hovering a card with an image preview, cycle through its example images. The selected preview image itself stays unchanged. Video previews are not affected.",
+      "cycleInterval": "Cycle Interval",
+      "cycleIntervalHelp": "Time between example image switches while hovering a card.",
+      "cycleIntervalOptions": {
+        "fast": "Fast (2s)",
+        "normal": "Normal (3s)",
+        "relaxed": "Relaxed (5s)",
+        "slow": "Slow (8s)"
+      }
     },
     "autoOrganizeExclusions": {
       "label": "Auto-organize exclusions",
@@ -705,7 +719,16 @@
       "pathPlaceholder": "Enter path...",
       "go": "Go",
       "emptyFolder": "No subfolders",
-      "loadError": "Failed to load directory"
+      "loadError": "Failed to load directory",
+      "newFolder": "New Folder",
+      "newFolderPlaceholder": "Folder name",
+      "create": "Create",
+      "cancel": "Cancel",
+      "createError": "Failed to create folder",
+      "nameRequired": "Enter a folder name",
+      "nameInvalid": "Folder name contains invalid characters",
+      "alreadyExists": "A folder with this name already exists",
+      "permissionDenied": "Permission denied"
     },
     "pathValidation": {
       "valid": "Path is valid",
@@ -750,10 +773,12 @@
         "customTemplate": "Custom Template"
       },
       "customTemplatePlaceholder": "Enter custom template (e.g., {base_model}/{author}/{first_tag})",
+      "workflowHint": "Applies to workflow downloads and to Auto-Organize on the Workflows page.",
       "modelTypes": {
         "lora": "LoRA",
         "checkpoint": "Checkpoint",
-        "embedding": "Embedding"
+        "embedding": "Embedding",
+        "workflow": "Workflow"
       },
       "baseModelPathMappings": "Base Model Path Mappings",
       "baseModelPathMappingsHelp": "Customize folder names for specific base models (e.g., \"Flux.1 D\" → \"flux\")",

@@ -262,7 +262,8 @@
                 "title": "配方標題",
                 "loraName": "LoRA 檔案名稱",
                 "loraModel": "LoRA 模型名稱",
-                "prompt": "提示詞"
+                "prompt": "提示詞",
+                "triggerWords": "觸發詞"
             }
         },
         "filter": {
@@ -388,6 +389,7 @@
             "contentFiltering": "內容過濾",
             "downloads": "下載",
             "videoSettings": "影片設定",
+            "cardPreview": "[TODO: Translate] Card Preview",
             "layoutSettings": "版面設定",
             "licenseIcons": "許可協議圖標",
             "misc": "其他",
@@ -439,6 +441,18 @@
         "videoSettings": {
             "autoplayOnHover": "滑鼠懸停自動播放影片",
             "autoplayOnHoverHelp": "僅在滑鼠懸停時播放影片預覽"
+        },
+        "cardPreview": {
+            "cycleOnHover": "[TODO: Translate] Cycle Example Images on Hover",
+            "cycleOnHoverHelp": "[TODO: Translate] When hovering a card with an image preview, cycle through its example images. The selected preview image itself stays unchanged. Video previews are not affected.",
+            "cycleInterval": "[TODO: Translate] Cycle Interval",
+            "cycleIntervalHelp": "[TODO: Translate] Time between example image switches while hovering a card.",
+            "cycleIntervalOptions": {
+                "fast": "[TODO: Translate] Fast (2s)",
+                "normal": "[TODO: Translate] Normal (3s)",
+                "relaxed": "[TODO: Translate] Relaxed (5s)",
+                "slow": "[TODO: Translate] Slow (8s)"
+            }
         },
         "autoOrganizeExclusions": {
             "label": "自動整理排除項目",
@@ -704,7 +718,16 @@
             "pathPlaceholder": "輸入路徑...",
             "go": "前往",
             "emptyFolder": "沒有子資料夾",
-            "loadError": "目錄載入失敗"
+            "loadError": "目錄載入失敗",
+            "newFolder": "新增資料夾",
+            "newFolderPlaceholder": "資料夾名稱",
+            "create": "建立",
+            "cancel": "取消",
+            "createError": "建立資料夾失敗",
+            "nameRequired": "請輸入資料夾名稱",
+            "nameInvalid": "資料夾名稱包含無效字元",
+            "alreadyExists": "已存在同名資料夾",
+            "permissionDenied": "權限不足"
         },
         "pathValidation": {
             "valid": "路徑有效",
@@ -749,10 +772,12 @@
                 "customTemplate": "自訂範本"
             },
             "customTemplatePlaceholder": "輸入自訂範本（例如：{base_model}/{author}/{first_tag}）",
+            "workflowHint": "適用於工作流下載及工作流頁面上的自動整理。",
             "modelTypes": {
                 "lora": "LoRA",
                 "checkpoint": "Checkpoint",
-                "embedding": "Embedding"
+                "embedding": "Embedding",
+                "workflow": "工作流"
             },
             "baseModelPathMappings": "基礎模型路徑對應",
             "baseModelPathMappingsHelp": "自訂特定基礎模型的資料夾名稱（例如：「Flux.1 D」→「flux」）",

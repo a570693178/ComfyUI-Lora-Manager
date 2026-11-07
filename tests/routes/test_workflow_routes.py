@@ -106,6 +106,9 @@ def test_common_and_specific_routes_registered():
     assert ("POST", "/api/lm/workflows/fetch-civitai") in registered
     assert ("POST", "/api/lm/workflows/delete") in registered
     assert ("POST", "/api/lm/workflows/move_model") in registered
+    # Auto-Organize selected (shared model route; workflow path template).
+    assert ("POST", "/api/lm/workflows/auto-organize") in registered
+    assert ("GET", "/api/lm/workflows/auto-organize-progress") in registered
     assert ("GET", "/api/lm/workflows/info/{name}") in registered
     # The companion browser extension is GET-only (see AGENTS.md).
     assert ("POST", "/api/lm/workflows/send-to-comfy") in registered
@@ -1461,7 +1464,7 @@ async def test_create_workflow_attaches_preview_for_matching_prompt(
 
     assert response.status == 200
     assert payload["preview"] is True
-    assert (root / "With Preview.preview.webp").exists()
+    assert (root / "With Preview.json.preview.webp").exists()
 
 
 async def test_create_workflow_skips_preview_for_other_prompt(

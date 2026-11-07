@@ -262,7 +262,8 @@
                 "title": "Rezept-Titel",
                 "loraName": "LoRA-Dateiname",
                 "loraModel": "LoRA-Modellname",
-                "prompt": "Prompt"
+                "prompt": "Prompt",
+                "triggerWords": "Trigger Words"
             }
         },
         "filter": {
@@ -388,6 +389,7 @@
             "contentFiltering": "Inhaltsfilterung",
             "downloads": "Downloads",
             "videoSettings": "Video-Einstellungen",
+            "cardPreview": "[TODO: Translate] Card Preview",
             "layoutSettings": "Layout-Einstellungen",
             "licenseIcons": "Lizenzsymbole",
             "misc": "Verschiedenes",
@@ -439,6 +441,18 @@
         "videoSettings": {
             "autoplayOnHover": "Videos bei Hover automatisch abspielen",
             "autoplayOnHoverHelp": "Video-Vorschauen nur beim Darüberfahren mit der Maus abspielen"
+        },
+        "cardPreview": {
+            "cycleOnHover": "[TODO: Translate] Cycle Example Images on Hover",
+            "cycleOnHoverHelp": "[TODO: Translate] When hovering a card with an image preview, cycle through its example images. The selected preview image itself stays unchanged. Video previews are not affected.",
+            "cycleInterval": "[TODO: Translate] Cycle Interval",
+            "cycleIntervalHelp": "[TODO: Translate] Time between example image switches while hovering a card.",
+            "cycleIntervalOptions": {
+                "fast": "[TODO: Translate] Fast (2s)",
+                "normal": "[TODO: Translate] Normal (3s)",
+                "relaxed": "[TODO: Translate] Relaxed (5s)",
+                "slow": "[TODO: Translate] Slow (8s)"
+            }
         },
         "autoOrganizeExclusions": {
             "label": "Auto-Organisierungs-Ausnahmen",
@@ -704,7 +718,16 @@
             "pathPlaceholder": "Pfad eingeben...",
             "go": "Los",
             "emptyFolder": "Keine Unterordner",
-            "loadError": "Verzeichnis konnte nicht geladen werden"
+            "loadError": "Verzeichnis konnte nicht geladen werden",
+            "newFolder": "Neuer Ordner",
+            "newFolderPlaceholder": "Ordnername",
+            "create": "Erstellen",
+            "cancel": "Abbrechen",
+            "createError": "Ordner konnte nicht erstellt werden",
+            "nameRequired": "Geben Sie einen Ordnernamen ein",
+            "nameInvalid": "Ordnername enthält ungültige Zeichen",
+            "alreadyExists": "Ein Ordner mit diesem Namen ist bereits vorhanden",
+            "permissionDenied": "Zugriff verweigert"
         },
         "pathValidation": {
             "valid": "Pfad ist gültig",
@@ -749,10 +772,12 @@
                 "customTemplate": "Benutzerdefinierte Vorlage"
             },
             "customTemplatePlaceholder": "Benutzerdefinierte Vorlage eingeben (z.B. {base_model}/{author}/{first_tag})",
+            "workflowHint": "Gilt für Workflow-Downloads und die automatische Organisation auf der Workflows-Seite.",
             "modelTypes": {
                 "lora": "LoRA",
                 "checkpoint": "Checkpoint",
-                "embedding": "Embedding"
+                "embedding": "Embedding",
+                "workflow": "Workflow"
             },
             "baseModelPathMappings": "Basismodell-Pfad-Zuordnungen",
             "baseModelPathMappingsHelp": "Passen Sie Ordnernamen für spezifische Basismodelle an (z.B. \"Flux.1 D\" → \"flux\")",

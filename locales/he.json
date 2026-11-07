@@ -262,7 +262,8 @@
                 "title": "כותרת מתכון",
                 "loraName": "שם קובץ LoRA",
                 "loraModel": "שם מודל LoRA",
-                "prompt": "פרומפט"
+                "prompt": "פרומפט",
+                "triggerWords": "מילות טריגר"
             }
         },
         "filter": {
@@ -388,6 +389,7 @@
             "contentFiltering": "סינון תוכן",
             "downloads": "הורדות",
             "videoSettings": "הגדרות וידאו",
+            "cardPreview": "[TODO: Translate] Card Preview",
             "layoutSettings": "הגדרות פריסה",
             "licenseIcons": "סמלי רישיון",
             "misc": "שונות",
@@ -439,6 +441,18 @@
         "videoSettings": {
             "autoplayOnHover": "נגן וידאו אוטומטית בריחוף",
             "autoplayOnHoverHelp": "נגן תצוגות מקדימות של וידאו רק בעת ריחוף מעליהן"
+        },
+        "cardPreview": {
+            "cycleOnHover": "[TODO: Translate] Cycle Example Images on Hover",
+            "cycleOnHoverHelp": "[TODO: Translate] When hovering a card with an image preview, cycle through its example images. The selected preview image itself stays unchanged. Video previews are not affected.",
+            "cycleInterval": "[TODO: Translate] Cycle Interval",
+            "cycleIntervalHelp": "[TODO: Translate] Time between example image switches while hovering a card.",
+            "cycleIntervalOptions": {
+                "fast": "[TODO: Translate] Fast (2s)",
+                "normal": "[TODO: Translate] Normal (3s)",
+                "relaxed": "[TODO: Translate] Relaxed (5s)",
+                "slow": "[TODO: Translate] Slow (8s)"
+            }
         },
         "autoOrganizeExclusions": {
             "label": "יוצא דופן של ארגון אוטומטי",
@@ -704,7 +718,16 @@
             "pathPlaceholder": "הזן נתיב...",
             "go": "עבור",
             "emptyFolder": "אין תתי-תיקיות",
-            "loadError": "טעינת התיקייה נכשלה"
+            "loadError": "טעינת התיקייה נכשלה",
+            "newFolder": "תיקייה חדשה",
+            "newFolderPlaceholder": "שם תיקייה",
+            "create": "צור",
+            "cancel": "ביטול",
+            "createError": "יצירת התיקייה נכשלה",
+            "nameRequired": "הזן שם תיקייה",
+            "nameInvalid": "שם התיקייה מכיל תווים לא חוקיים",
+            "alreadyExists": "תיקייה בשם זה כבר קיימת",
+            "permissionDenied": "אין הרשאה"
         },
         "pathValidation": {
             "valid": "הנתיב תקין",
@@ -749,10 +772,12 @@
                 "customTemplate": "תבנית מותאמת אישית"
             },
             "customTemplatePlaceholder": "הזן תבנית מותאמת אישית (למשל, {base_model}/{author}/{first_tag})",
+            "workflowHint": "חל על הורדות workflow ועל ארגון אוטומטי בדף Workflows.",
             "modelTypes": {
                 "lora": "LoRA",
                 "checkpoint": "Checkpoint",
-                "embedding": "Embedding"
+                "embedding": "Embedding",
+                "workflow": "Workflow"
             },
             "baseModelPathMappings": "מיפוי נתיבי מודל בסיס",
             "baseModelPathMappingsHelp": "התאם אישית שמות תיקיות עבור מודלי בסיס ספציפיים (למשל, \"Flux.1 D\" → \"flux\")",

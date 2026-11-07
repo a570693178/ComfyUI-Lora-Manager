@@ -262,7 +262,8 @@
                 "title": "配方标题",
                 "loraName": "LoRA 文件名",
                 "loraModel": "LoRA 模型名称",
-                "prompt": "提示词"
+                "prompt": "提示词",
+                "triggerWords": "触发词"
             }
         },
         "filter": {
@@ -388,6 +389,7 @@
             "contentFiltering": "内容过滤",
             "downloads": "下载",
             "videoSettings": "视频设置",
+            "cardPreview": "[TODO: Translate] Card Preview",
             "layoutSettings": "布局设置",
             "licenseIcons": "许可协议图标",
             "misc": "其他",
@@ -439,6 +441,18 @@
         "videoSettings": {
             "autoplayOnHover": "悬停时自动播放视频",
             "autoplayOnHoverHelp": "仅在悬停时播放视频预览"
+        },
+        "cardPreview": {
+            "cycleOnHover": "[TODO: Translate] Cycle Example Images on Hover",
+            "cycleOnHoverHelp": "[TODO: Translate] When hovering a card with an image preview, cycle through its example images. The selected preview image itself stays unchanged. Video previews are not affected.",
+            "cycleInterval": "[TODO: Translate] Cycle Interval",
+            "cycleIntervalHelp": "[TODO: Translate] Time between example image switches while hovering a card.",
+            "cycleIntervalOptions": {
+                "fast": "[TODO: Translate] Fast (2s)",
+                "normal": "[TODO: Translate] Normal (3s)",
+                "relaxed": "[TODO: Translate] Relaxed (5s)",
+                "slow": "[TODO: Translate] Slow (8s)"
+            }
         },
         "autoOrganizeExclusions": {
             "label": "自动整理排除项",
@@ -704,7 +718,16 @@
             "pathPlaceholder": "输入路径...",
             "go": "跳转",
             "emptyFolder": "没有子文件夹",
-            "loadError": "目录加载失败"
+            "loadError": "目录加载失败",
+            "newFolder": "新建文件夹",
+            "newFolderPlaceholder": "文件夹名称",
+            "create": "创建",
+            "cancel": "取消",
+            "createError": "创建文件夹失败",
+            "nameRequired": "请输入文件夹名称",
+            "nameInvalid": "文件夹名称包含无效字符",
+            "alreadyExists": "已存在同名文件夹",
+            "permissionDenied": "权限不足"
         },
         "pathValidation": {
             "valid": "路径有效",
@@ -749,10 +772,12 @@
                 "customTemplate": "自定义模板"
             },
             "customTemplatePlaceholder": "输入自定义模板（如：{base_model}/{author}/{first_tag}）",
+            "workflowHint": "适用于工作流下载以及工作流页面上的自动整理。",
             "modelTypes": {
                 "lora": "LoRA",
                 "checkpoint": "Checkpoint",
-                "embedding": "Embedding"
+                "embedding": "Embedding",
+                "workflow": "工作流"
             },
             "baseModelPathMappings": "基础模型路径映射",
             "baseModelPathMappingsHelp": "为特定基础模型自定义文件夹名称（如“Flux.1 D”→“flux”）",

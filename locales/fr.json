@@ -262,7 +262,8 @@
                 "title": "Titre de la recipe",
                 "loraName": "Nom de fichier LoRA",
                 "loraModel": "Nom du modèle LoRA",
-                "prompt": "Prompt"
+                "prompt": "Prompt",
+                "triggerWords": "Mots-clés"
             }
         },
         "filter": {
@@ -388,6 +389,7 @@
             "contentFiltering": "Filtrage du contenu",
             "downloads": "Téléchargements",
             "videoSettings": "Paramètres vidéo",
+            "cardPreview": "[TODO: Translate] Card Preview",
             "layoutSettings": "Paramètres d'affichage",
             "licenseIcons": "Icônes de licence",
             "misc": "Divers",
@@ -439,6 +441,18 @@
         "videoSettings": {
             "autoplayOnHover": "Lecture automatique vidéo au survol",
             "autoplayOnHoverHelp": "Lire les aperçus vidéo uniquement lors du survol"
+        },
+        "cardPreview": {
+            "cycleOnHover": "[TODO: Translate] Cycle Example Images on Hover",
+            "cycleOnHoverHelp": "[TODO: Translate] When hovering a card with an image preview, cycle through its example images. The selected preview image itself stays unchanged. Video previews are not affected.",
+            "cycleInterval": "[TODO: Translate] Cycle Interval",
+            "cycleIntervalHelp": "[TODO: Translate] Time between example image switches while hovering a card.",
+            "cycleIntervalOptions": {
+                "fast": "[TODO: Translate] Fast (2s)",
+                "normal": "[TODO: Translate] Normal (3s)",
+                "relaxed": "[TODO: Translate] Relaxed (5s)",
+                "slow": "[TODO: Translate] Slow (8s)"
+            }
         },
         "autoOrganizeExclusions": {
             "label": "Exclusions de l'auto-organisation",
@@ -704,7 +718,16 @@
             "pathPlaceholder": "Saisir un chemin...",
             "go": "Aller",
             "emptyFolder": "Aucun sous-dossier",
-            "loadError": "Échec du chargement du dossier"
+            "loadError": "Échec du chargement du dossier",
+            "newFolder": "Nouveau dossier",
+            "newFolderPlaceholder": "Nom du dossier",
+            "create": "Créer",
+            "cancel": "Annuler",
+            "createError": "Échec de la création du dossier",
+            "nameRequired": "Saisissez un nom de dossier",
+            "nameInvalid": "Le nom du dossier contient des caractères invalides",
+            "alreadyExists": "Un dossier portant ce nom existe déjà",
+            "permissionDenied": "Permission refusée"
         },
         "pathValidation": {
             "valid": "Le chemin est valide",
@@ -749,10 +772,12 @@
                 "customTemplate": "Modèle personnalisé"
             },
             "customTemplatePlaceholder": "Entrez un modèle personnalisé (ex: {base_model}/{author}/{first_tag})",
+            "workflowHint": "S'applique aux téléchargements de workflows et à l'organisation automatique sur la page Workflows.",
             "modelTypes": {
                 "lora": "LoRA",
                 "checkpoint": "Checkpoint",
-                "embedding": "Embedding"
+                "embedding": "Embedding",
+                "workflow": "Workflow"
             },
             "baseModelPathMappings": "Mappages de chemin de modèle de base",
             "baseModelPathMappingsHelp": "Personnaliser les noms de dossiers pour des modèles de base spécifiques (ex: \"Flux.1 D\" → \"flux\")",

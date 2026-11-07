@@ -262,7 +262,8 @@
                 "title": "Название рецепта",
                 "loraName": "Имя файла LoRA",
                 "loraModel": "Название модели LoRA",
-                "prompt": "Промпт"
+                "prompt": "Промпт",
+                "triggerWords": "Триггерные слова"
             }
         },
         "filter": {
@@ -388,6 +389,7 @@
             "contentFiltering": "Фильтрация контента",
             "downloads": "Загрузки",
             "videoSettings": "Настройки видео",
+            "cardPreview": "[TODO: Translate] Card Preview",
             "layoutSettings": "Настройки макета",
             "licenseIcons": "Значки лицензии",
             "misc": "Разное",
@@ -439,6 +441,18 @@
         "videoSettings": {
             "autoplayOnHover": "Автовоспроизведение видео при наведении",
             "autoplayOnHoverHelp": "Воспроизводить превью видео только при наведении курсора"
+        },
+        "cardPreview": {
+            "cycleOnHover": "[TODO: Translate] Cycle Example Images on Hover",
+            "cycleOnHoverHelp": "[TODO: Translate] When hovering a card with an image preview, cycle through its example images. The selected preview image itself stays unchanged. Video previews are not affected.",
+            "cycleInterval": "[TODO: Translate] Cycle Interval",
+            "cycleIntervalHelp": "[TODO: Translate] Time between example image switches while hovering a card.",
+            "cycleIntervalOptions": {
+                "fast": "[TODO: Translate] Fast (2s)",
+                "normal": "[TODO: Translate] Normal (3s)",
+                "relaxed": "[TODO: Translate] Relaxed (5s)",
+                "slow": "[TODO: Translate] Slow (8s)"
+            }
         },
         "autoOrganizeExclusions": {
             "label": "Исключения автосортировки",
@@ -704,7 +718,16 @@
             "pathPlaceholder": "Введите путь...",
             "go": "Перейти",
             "emptyFolder": "Нет подпапок",
-            "loadError": "Не удалось загрузить каталог"
+            "loadError": "Не удалось загрузить каталог",
+            "newFolder": "Новая папка",
+            "newFolderPlaceholder": "Имя папки",
+            "create": "Создать",
+            "cancel": "Отмена",
+            "createError": "Не удалось создать папку",
+            "nameRequired": "Введите имя папки",
+            "nameInvalid": "Имя папки содержит недопустимые символы",
+            "alreadyExists": "Папка с таким именем уже существует",
+            "permissionDenied": "Доступ запрещён"
         },
         "pathValidation": {
             "valid": "Путь действителен",
@@ -749,10 +772,12 @@
                 "customTemplate": "Пользовательский шаблон"
             },
             "customTemplatePlaceholder": "Введите пользовательский шаблон (например, {base_model}/{author}/{first_tag})",
+            "workflowHint": "Применяется к загрузкам workflow и автоматической организации на странице Workflows.",
             "modelTypes": {
                 "lora": "LoRA",
                 "checkpoint": "Checkpoint",
-                "embedding": "Embedding"
+                "embedding": "Embedding",
+                "workflow": "Workflow"
             },
             "baseModelPathMappings": "Сопоставления путей базовых моделей",
             "baseModelPathMappingsHelp": "Настройте имена папок для конкретных базовых моделей (например, \"Flux.1 D\" → \"flux\")",
