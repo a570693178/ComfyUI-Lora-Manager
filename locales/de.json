@@ -385,6 +385,14 @@
             "copied": "Einstellungspfad in die Zwischenablage kopiert: {{path}}",
             "clipboardFallback": "Einstellungspfad: {{path}}"
         },
+        "comfyuiNodes": {
+            "title": "ComfyUI-Knoteneinstellungen",
+            "description": "Knotenbezogene Einstellungen finden Sie in den ComfyUI-Einstellungen.",
+            "openButton": "ComfyUI-Einstellungen öffnen",
+            "modelNameDisplayLink": "Knotenbeschriftungen werden separat in den ComfyUI-Knoteneinstellungen konfiguriert",
+            "openSucceeded": "ComfyUI-Einstellungen geöffnet.",
+            "openFailed": "ComfyUI-Einstellungen konnten nicht geöffnet werden. Bitte öffnen Sie zuerst ComfyUI."
+        },
         "sections": {
             "contentFiltering": "Inhaltsfilterung",
             "downloads": "Downloads",
@@ -411,9 +419,33 @@
         "nav": {
             "general": "Allgemein",
             "interface": "Oberfläche",
+            "comfyuiNodes": "ComfyUI-Knoten",
             "library": "Bibliothek",
             "organization": "Organisation",
+            "about": "Über",
             "modelPaths": "Modellpfade"
+        },
+        "about": {
+            "environmentTitle": "Umgebung",
+            "environmentDescription": "Von LoRA Manager und ComfyUI verwendete Versionen.",
+            "copy": "Kopieren",
+            "appVersion": "LoRA Manager",
+            "comfyuiVersion": "ComfyUI",
+            "frontendVersion": "ComfyUI-Frontend",
+            "pythonVersion": "Python",
+            "os": "Betriebssystem",
+            "browser": "Browser",
+            "hint": "Fügen Sie diese Informationen beim Melden eines Problems bei.",
+            "unavailable": "Nicht verfügbar",
+            "copySuccess": "Umgebungsinformationen kopiert",
+            "copyFailed": "Kopieren der Umgebungsinformationen fehlgeschlagen",
+            "linksTitle": "Unterstützung & Links",
+            "links": {
+                "reportIssue": "Problem melden",
+                "wiki": "Dokumentations-Wiki",
+                "github": "GitHub-Repository",
+                "discord": "Discord beitreten"
+            }
         },
         "search": {
             "placeholder": "Einstellungen durchsuchen...",
@@ -444,14 +476,13 @@
         },
         "cardPreview": {
             "cycleOnHover": "Beispielbilder bei Hover durchblättern",
-            "cycleOnHoverHelp": "Beim Hovern über eine Karte mit Bildvorschau werden die Beispielbilder durchgeblättert. Das ausgewählte Vorschaubild selbst bleibt unverändert. Video-Vorschauen sind nicht betroffen.",
+            "cycleOnHoverHelp": "Beim Hovern über das Vorschaubild einer Karte werden die Beispielbilder durchgeblättert. Das Hovern über die Kopf- oder Fußzeile der Karte startet das Durchblättern nicht, sodass Aktions-Schaltflächen und Tooltips nutzbar bleiben. Das ausgewählte Vorschaubild selbst bleibt unverändert. Video-Vorschauen sind nicht betroffen.",
             "cycleInterval": "Wechselintervall",
             "cycleIntervalHelp": "Zeit zwischen dem Wechsel der Beispielbilder beim Hovern über eine Karte.",
             "cycleIntervalOptions": {
-                "fast": "Schnell (2 s)",
-                "normal": "Normal (3 s)",
-                "relaxed": "Gemächlich (5 s)",
-                "slow": "Langsam (8 s)"
+                "fast": "Schnell (1,5 s)",
+                "normal": "Normal (2 s)",
+                "relaxed": "Gemächlich (3 s)"
             }
         },
         "autoOrganizeExclusions": {
@@ -626,10 +657,6 @@
             "cardBlurAmountHelp": "Passen Sie die Unschärfeintensität der Kopf- und Fußzeilen-Overlays auf Modell- und Rezeptkarten an (0 = keine Unschärfe, 20 = maximale Unschärfe)."
         },
         "folderSettings": {
-            "activeLibrary": "Aktive Bibliothek (veraltet)",
-            "activeLibraryHelp": "Zwischen den konfigurierten Bibliotheken wechseln, um die Standardordner zu aktualisieren. Eine Änderung der Auswahl lädt die Seite neu. Veraltet: Die Unterstützung mehrerer Bibliotheken wird in einem kommenden Release entfernt. Mehrere Stammordner innerhalb einer Bibliothek werden weiterhin vollständig unterstützt.",
-            "loadingLibraries": "Bibliotheken werden geladen...",
-            "noLibraries": "Keine Bibliotheken konfiguriert",
             "defaultLoraRoot": "LoRA-Stammordner",
             "defaultLoraRootHelp": "Legen Sie den Standard-LoRA-Stammordner für Downloads, Importe und Verschiebungen fest",
             "defaultCheckpointRoot": "Checkpoint-Stammordner",
@@ -739,6 +766,13 @@
         "priorityTags": {
             "title": "Prioritäts-Tags",
             "description": "Passen Sie die Tag-Prioritätsreihenfolge für jeden Modelltyp an (z. B. character, concept, style(toon|toon_style))",
+            "unsortedFallback": {
+                "label": "Modelle ohne passenden Prioritäts-Tag in einen Ordner verschieben",
+                "help": "Modelle, deren Tags zu keinem Prioritäts-Tag passen, werden in einem einzigen Ordner abgelegt statt in einem Ordner aus {first_tag}. Modelle ohne Tags sind nicht betroffen. Standardmäßig aus; vorhandene Ordner bleiben unverändert, bis ein Modell erneut organisiert wird.",
+                "folderLabel": "Ordnername",
+                "folderHelp": "Wird anstelle von {first_tag} verwendet, wenn kein Prioritäts-Tag passt. Mit der Standardvorlage {base_model}/{first_tag} ergibt sich {base_model}/<Ordnername>. Leer lassen, um das aktuelle Verhalten beizubehalten.",
+                "folderPlaceholder": "unsorted"
+            },
             "placeholder": "character, concept, style(toon|toon_style)",
             "helpLinkLabel": "Prioritäts-Tags-Hilfe öffnen",
             "modelTypes": {
@@ -2747,6 +2781,7 @@
             "downloadSkippedByBaseModel": "Download übersprungen, weil das Basismodell {baseModel} ausgeschlossen ist",
             "autoOrganizeSuccess": "Automatische Organisation für {count} {type} erfolgreich abgeschlossen",
             "autoOrganizePartialSuccess": "Automatische Organisation abgeschlossen: {success} verschoben, {failures} fehlgeschlagen von insgesamt {total} Modellen",
+            "autoOrganizeProgressUnavailable": "Automatische Organisation abgeschlossen: {success} verschoben, {failures} fehlgeschlagen von insgesamt {total} Modellen; der Live-Fortschritt war nicht verfügbar",
             "autoOrganizeFailed": "Automatische Organisation fehlgeschlagen: {error}",
             "filenameTemplateSuccess": "Dateinamen-Vorlage erfolgreich für {count} {type} angewendet",
             "filenameTemplatePartialSuccess": "Dateinamen-Vorlage angewendet: {success} umbenannt, {failures} von {total} Modellen fehlgeschlagen",
@@ -2925,8 +2960,6 @@
             "compactModeToggled": "Kompakt-Modus {state}",
             "settingSaveFailed": "Fehler beim Speichern der Einstellung: {message}",
             "displayDensitySet": "Anzeige-Dichte auf {density} gesetzt",
-            "libraryLoadFailed": "Bibliotheken konnten nicht geladen werden: {message}",
-            "libraryActivateFailed": "Bibliothek konnte nicht aktiviert werden: {message}",
             "languageChangeFailed": "Fehler beim Ändern der Sprache: {message}",
             "cacheCleared": "Cache-Dateien wurden erfolgreich gelöscht. Cache wird bei der nächsten Aktion neu aufgebaut.",
             "cacheClearFailed": "Fehler beim Löschen des Caches: {error}",

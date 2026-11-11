@@ -20,7 +20,11 @@ from ..services.connectivity_guard import (
 from ..services.service_registry import ServiceRegistry
 from ..services.settings_manager import get_settings_manager
 from ..utils.civitai_utils import build_civitai_media_url
-from ..utils.example_images_paths import get_model_folder, get_model_relative_path
+from ..utils.example_images_paths import (
+    get_model_folder,
+    get_model_relative_path,
+    mark_example_folder_complete,
+)
 from .example_images_metadata import MetadataUpdater, update_cache_from_metadata
 from .file_utils import detect_media_extension
 from ..utils.metadata_manager import MetadataManager
@@ -175,8 +179,15 @@ class MediaDownloadLimiter:
         default_cooldown: float = 30.0,
         max_cooldown: float = 300.0,
         recovery_successes: int | None = None,
+        probe_max_concurrency: int | None = None,
+        probe_successes: int | None = None,
     ) -> None:
         self.max_concurrency = max(1, int(max_concurrency))
+        # Probe above the configured base only after a longer success streak.
+        # ``None`` preserves the pre-probe behavior (base is the hard ceiling).
+        self.probe_max_concurrency = max(
+            self.max_concurrency, int(probe_max_concurrency or self.max_concurrency)
+        )
         self._limit = self.max_concurrency
         self._in_flight = 0
         self._cooldown_until = 0.0
@@ -186,12 +197,26 @@ class MediaDownloadLimiter:
         self._recovery_successes = max(
             1, int(recovery_successes or max(8, self.max_concurrency * 2))
         )
+        self._probe_successes = max(
+            1,
+            int(
+                probe_successes
+                or max(
+                    self._recovery_successes * 2,
+                    self.max_concurrency * 4,
+                )
+            ),
+        )
         self._successes = 0
         self._condition = asyncio.Condition()
 
     @property
     def limit(self) -> int:
-        """Current concurrency limit (may be below ``max_concurrency``)."""
+        """Current concurrency limit.
+
+        It may sit below ``max_concurrency`` after a 429 and may probe above it
+        up to ``probe_max_concurrency`` when the CDN keeps accepting requests.
+        """
 
         return self._limit
 
@@ -243,15 +268,24 @@ class MediaDownloadLimiter:
             return cooldown
 
     async def report_success(self) -> None:
-        """Slowly restore concurrency after a run of successful requests."""
+        """Recover after 429s, then cautiously probe above the base limit."""
 
         async with self._condition:
-            if self._limit >= self.max_concurrency:
+            if self._limit >= self.probe_max_concurrency:
                 return
+            threshold = (
+                self._recovery_successes
+                if self._limit < self.max_concurrency
+                else self._probe_successes
+            )
             self._successes += 1
-            if self._successes >= self._recovery_successes:
+            if self._successes >= threshold:
                 self._limit += 1
                 self._successes = 0
+                if self._limit > self.max_concurrency:
+                    logger.info(
+                        "Probing media concurrency above base: %s", self._limit
+                    )
                 self._condition.notify()
 
     def reset(self) -> None:
@@ -830,6 +864,11 @@ class ExampleImagesProcessor:
                 scanner,
                 newly_imported_paths
             )
+
+            if imported_files:
+                # Preserve the pre-marker behavior: a folder the user populated
+                # via import counts as complete until an explicit download.
+                mark_example_folder_complete(model_folder)
 
             return {
                 'success': len(imported_files) > 0,
