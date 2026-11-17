@@ -478,12 +478,7 @@
             "cycleOnHover": "עבור בין תמונות דוגמה בריחוף",
             "cycleOnHoverHelp": "בריחוף מעל תמונת התצוגה המקדימה של כרטיס, תמונות הדוגמה שלו מוצגות בזו אחר זו. ריחוף מעל הכותרת העליונה או התחתונה של הכרטיס אינו מתחיל את המעבר, כך שכפתורי הפעולה וההסברים הקופצים נשארים שמישים. תמונת התצוגה המקדימה שנבחרה נשארת ללא שינוי. תצוגות מקדימות של וידאו אינן מושפעות.",
             "cycleInterval": "מרווח החלפה",
-            "cycleIntervalHelp": "הזמן בין החלפת תמונות דוגמה בעת ריחוף מעל כרטיס.",
-            "cycleIntervalOptions": {
-                "fast": "מהיר (1.5 שניות)",
-                "normal": "רגיל (2 שניות)",
-                "relaxed": "נינוח (3 שניות)"
-            }
+            "cycleIntervalHelp": "הזמן בין החלפת תמונות דוגמה בעת ריחוף מעל כרטיס."
         },
         "autoOrganizeExclusions": {
             "label": "יוצא דופן של ארגון אוטומטי",
@@ -1828,6 +1823,54 @@
         }
     },
     "modals": {
+        "autoOrganizePreview": {
+            "title": "תצוגה מקדימה של ארגון אוטומטי",
+            "scopeSelected": "מודלים נבחרים",
+            "scopeAll": "כל המודלים",
+            "scope": "היקף: {scope} · {count} מודלים",
+            "previewNotice": "תצוגה מקדימה בלבד. לא הועברו קבצים ולא נוקו תיקיות.",
+            "emptyPreview": "אין מודלים זמינים לתצוגה מקדימה זו.",
+            "alreadyOrganized": "כל המודלים כבר נמצאים במיקום הנכון.",
+            "loadingTitle": "מחשב תצוגה מקדימה...",
+            "loadingMessage": "לא מתבצע שום שינוי בקבצים.",
+            "previewFailed": "התצוגה המקדימה נכשלה",
+            "retry": "נסה שוב",
+            "statWillMove": "יועברו",
+            "statSkipped": "דולגו",
+            "statIssues": "בעיות",
+            "issuesWarning": "צפויים {count} מודלים להיכשל; שאר המודלים עדיין יעובדו.",
+            "detailsLabel": "פרטי התצוגה המקדימה",
+            "movesTab": "העברות ({count})",
+            "skippedTab": "דולגו ({count})",
+            "issuesTab": "בעיות ({count})",
+            "searchPlaceholder": "חפש מודל או נתיב...",
+            "from": "מקור",
+            "to": "יעד",
+            "location": "מיקום",
+            "organizingWith": "ארגון לפי:",
+            "flatStructureRule": "מבנה שטוח (שורש הספרייה)",
+            "emptyMoves": "אין מודלים שצריך להעביר.",
+            "emptySkipped": "לא ידולגו מודלים.",
+            "emptyIssues": "אין בעיות לבדיקה.",
+            "emptySearch": "אין תוצאות שמתאימות לחיפוש שלך.",
+            "replanNote": "ההרצה מחשבת מחדש לפי מצב הספרייה העדכני, לכן התוצאות בפועל עשויות להיות שונות מתצוגה מקדימה זו.",
+            "copyReport": "העתק דוח",
+            "refresh": "רענן תצוגה מקדימה",
+            "apply": "ארגן ({count})",
+            "noMoves": "אין העברות ליישום",
+            "pageStatus": "{from}–{to} מתוך {total}",
+            "reasons": {
+                "already_organized": "כבר מאורגן",
+                "no_file_path": "אין נתיב קובץ",
+                "outside_roots": "מחוץ לשורשי הספרייה",
+                "missing_metadata": "חסרים מטא-נתונים",
+                "path_too_long": "נתיב היעד ארוך מדי",
+                "target_exists": "היעד כבר קיים",
+                "planned_collision": "התנגשות בהעברות מתוכננות",
+                "move_failed": "ההעברה נכשלה",
+                "error": "שגיאה"
+            }
+        },
         "exclude": {
             "confirm": "החרג"
         },
@@ -2170,7 +2213,35 @@
                 "aboutThisVersion": "אודות גרסה זו",
                 "baseModelSearchPlaceholder": "חפש מודל בסיס...",
                 "baseModelSuggested": "מוצע",
-                "baseModelNoMatch": "אין מודלי בסיס תואמים"
+                "baseModelNoMatch": "אין מודלי בסיס תואמים",
+                "creator": "יוצר",
+                "creatorAdd": "הוסף יוצר",
+                "creatorEdit": "ערוך יוצר",
+                "creatorSearchPlaceholder": "חפש יוצרים או הקלד שם חדש...",
+                "creatorLibraryHeader": "יוצרים בספרייה שלך",
+                "creatorMatchingHeader": "יוצרים מתאימים",
+                "creatorLibraryCount": "{count} בספרייה",
+                "creatorCurrent": "נוכחי: {name}",
+                "creatorCreate": "צור «{name}»",
+                "creatorCreateAnnounce": "לחץ Enter כדי ליצור את {name}.",
+                "creatorNew": "יוצר חדש",
+                "creatorNoMatch": "אין יוצר קיים שמתאים ל«{name}»",
+                "creatorEmptyLibrary": "עדיין אין יוצרים בספרייה שלך. הקלד שם כדי להוסיף את הראשון.",
+                "creatorModelCount": "{count} מודלים",
+                "creatorModelCountOne": "{count} מודל",
+                "creatorMatchCount": "{count} התאמות",
+                "creatorMatchCountOne": "{count} התאמה",
+                "creatorShowing": "מציג {shown} מתוך {total} — המשך להקליד כדי לצמצם",
+                "creatorRemove": "הסר יוצר",
+                "creatorManual": "ידני",
+                "creatorManualHint": "נוסף ידנית. רענון מטא-נתונים לא ידרוס אותו.",
+                "creatorSaved": "היוצר עודכן",
+                "creatorRemoved": "היוצר הוסר",
+                "creatorSaveFailed": "לא ניתן היה לעדכן את היוצר. נסה שוב.",
+                "creatorLoadFailed": "לא ניתן היה לטעון יוצרים. עדיין אפשר להקליד שם חדש.",
+                "creatorTooLong": "שם היוצר ארוך מדי (עד 64 תווים)",
+                "creatorLoading": "טוען יוצרים...",
+                "creatorKeyboardHint": "↑↓ ניווט · ↵ בחירה · esc ביטול"
             },
             "notes": {
                 "saved": "הערות נשמרו בהצלחה",
@@ -2218,6 +2289,7 @@
             "description": {
                 "noDescription": "אין תיאור מודל זמין",
                 "failedToLoad": "טעינת תיאור המודל נכשלה",
+                "offline": "התיאור נשמר יחד עם קובץ המודל, שנמצא בדיסק לא זמין. חבר מחדש את הדיסק כדי לקרוא אותו.",
                 "editTitle": "ערוך תיאור מודל",
                 "validation": {
                     "cannotBeEmpty": "התיאור לא יכול להיות ריק"
@@ -2249,6 +2321,10 @@
                 "noDerivatives": "אין שיתוף מיזוגים",
                 "noReLicense": "נדרשות אותן הרשאות",
                 "restrictionsLabel": "הגבלות רישיון"
+            },
+            "notices": {
+                "offline": "הדיסק שמכיל את המודל הזה אינו זמין. מוצג מידע שמור במטמון — פעולות קובץ ועריכות לא יהיו זמינות עד לחיבור מחדש.",
+                "partial": "לא ניתן היה לקרוא את קובץ מטא-הנתונים של המודל. מוצג מידע שמור במטמון — ייתכן שהתיאור, תמונות לדוגמה ותמונת הפרופיל של היוצר לא יהיו זמינים."
             },
             "loading": {
                 "exampleImages": "טוען תמונות דוגמה...",
@@ -2592,12 +2668,20 @@
         "title": "עזרה ומדריכים",
         "tabs": {
             "gettingStarted": "תחילת עבודה",
-            "updateVlogs": "בלוגי וידאו של עדכונים",
+            "updates": "[TODO: Translate] Updates",
             "documentation": "תיעוד",
             "shortcuts": "קיצורי דרך"
         },
         "gettingStarted": {
             "title": "תחילת עבודה עם מנהל LoRA",
+            "stepsTitle": "[TODO: Translate] First steps",
+            "steps": {
+                "configure": "[TODO: Translate] Configure your model folders and add a CivitAI API key if you plan to download models.",
+                "find": "[TODO: Translate] Find a model by browsing folders or searching names, tags, and trigger words.",
+                "send": "[TODO: Translate] Use Send to ComfyUI or copy LoRA syntax into a compatible LoRA Manager node.",
+                "refresh": "[TODO: Translate] Use Refresh after changing files outside LoRA Manager; rebuild the cache only for cache inconsistencies."
+            },
+            "readGuide": "[TODO: Translate] Open the Getting Started guide",
             "replayTutorial": "הפעל את המדריך מחדש"
         },
         "shortcuts": {
@@ -2622,7 +2706,6 @@
                 "closeModal": "סגור חלון / פאנל",
                 "openShortcuts": "פתח את פאנל קיצורי הדרך הזה",
                 "refresh": "רענן את רשימת המודלים",
-                "fetchMetadata": "אחזר מטא-נתונים מ-CivitAI (דפי מודלים בלבד)",
                 "downloadModel": "הורד מודל (דפי מודלים בלבד)",
                 "toggleBulkMode": "הפעל/כבה מצב בכמות גדולה",
                 "selectAll": "בחר את כל המודלים הגלויים",
@@ -2644,17 +2727,26 @@
             "title": "עדכונים אחרונים",
             "watchOnYouTube": "צפה ביוטיוב",
             "playlistTitle": "פלייליסט עדכוני מנהל LoRA",
-            "playlistDescription": "צפה בכל סרטוני העדכונים המציגים את התכונות והשיפורים האחרונים."
+            "playlistDescription": "צפה בכל סרטוני העדכונים המציגים את התכונות והשיפורים האחרונים.",
+            "releaseNotes": "[TODO: Translate] Read release notes on GitHub"
         },
         "documentation": {
             "title": "תיעוד",
-            "general": "כללי",
+            "startSupport": "[TODO: Translate] Start & Support",
+            "workingWithAssets": "[TODO: Translate] Working with Assets",
+            "integrationConfiguration": "[TODO: Translate] Integration & Configuration",
+            "gettingStarted": "[TODO: Translate] Getting Started",
+            "faq": "[TODO: Translate] FAQ",
             "troubleshooting": "פתרון בעיות",
-            "modelManagement": "ניהול מודלים",
+            "modelLibrary": "[TODO: Translate] Model Library",
+            "downloadsOrganization": "[TODO: Translate] Downloading and Organizing Models",
             "recipes": "מתכונים",
-            "settings": "הגדרות ותצורה",
-            "extensions": "הרחבות",
-            "newBadge": "חדש"
+            "workflowLibrary": "[TODO: Translate] Workflow Library",
+            "comfyuiIntegration": "[TODO: Translate] ComfyUI Integration",
+            "configuration": "[TODO: Translate] Configuration",
+            "loraSyntax": "[TODO: Translate] LoRA Syntax and Duplicate Filenames",
+            "browserExtension": "[TODO: Translate] LM Civitai Extension",
+            "browseAll": "[TODO: Translate] Browse all documentation"
         },
         "newContentBadge": "חדש"
     },

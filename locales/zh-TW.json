@@ -478,12 +478,7 @@
             "cycleOnHover": "滑鼠懸停時輪播範例圖片",
             "cycleOnHoverHelp": "滑鼠懸停在卡片的預覽圖片上時，會輪播其範例圖片。滑鼠懸停在卡片的頂部或底部區域不會觸發輪播，因此操作按鈕和懸浮提示仍可正常使用。所選的預覽圖片本身不會改變。影片預覽不受影響。",
             "cycleInterval": "輪播間隔",
-            "cycleIntervalHelp": "滑鼠懸停於卡片時，範例圖片切換的時間間隔。",
-            "cycleIntervalOptions": {
-                "fast": "快（1.5 秒）",
-                "normal": "正常（2 秒）",
-                "relaxed": "舒緩（3 秒）"
-            }
+            "cycleIntervalHelp": "滑鼠懸停於卡片時，範例圖片切換的時間間隔。"
         },
         "autoOrganizeExclusions": {
             "label": "自動整理排除項目",
@@ -1828,6 +1823,54 @@
         }
     },
     "modals": {
+        "autoOrganizePreview": {
+            "title": "預覽自動整理",
+            "scopeSelected": "所選模型",
+            "scopeAll": "所有模型",
+            "scope": "範圍：{scope} · {count} 個模型",
+            "previewNotice": "僅供預覽。尚未移動任何檔案，也未清理任何目錄。",
+            "emptyPreview": "此預覽沒有可用的模型。",
+            "alreadyOrganized": "所有模型都已在正確的位置。",
+            "loadingTitle": "正在計算預覽...",
+            "loadingMessage": "不會變更任何檔案。",
+            "previewFailed": "預覽失敗",
+            "retry": "重試",
+            "statWillMove": "待移動",
+            "statSkipped": "已跳過",
+            "statIssues": "問題",
+            "issuesWarning": "預計有 {count} 個模型會失敗；其餘模型仍會被處理。",
+            "detailsLabel": "預覽詳情",
+            "movesTab": "移動（{count}）",
+            "skippedTab": "已跳過（{count}）",
+            "issuesTab": "問題（{count}）",
+            "searchPlaceholder": "搜尋模型或路徑...",
+            "from": "從",
+            "to": "到",
+            "location": "位置",
+            "organizingWith": "整理方式：",
+            "flatStructureRule": "扁平結構（模型庫根目錄）",
+            "emptyMoves": "沒有需要移動的模型。",
+            "emptySkipped": "沒有模型會被跳過。",
+            "emptyIssues": "沒有問題需要檢查。",
+            "emptySearch": "沒有與搜尋相符的結果。",
+            "replanNote": "執行時會根據模型庫的最新狀態重新計算，因此實際結果可能與此預覽不同。",
+            "copyReport": "複製報告",
+            "refresh": "重新整理預覽",
+            "apply": "整理（{count}）",
+            "noMoves": "沒有可套用的移動",
+            "pageStatus": "第 {from}–{to} 項，共 {total} 項",
+            "reasons": {
+                "already_organized": "已整理",
+                "no_file_path": "沒有檔案路徑",
+                "outside_roots": "模型庫根目錄之外",
+                "missing_metadata": "缺少中繼資料",
+                "path_too_long": "目標路徑過長",
+                "target_exists": "目標已存在",
+                "planned_collision": "計畫移動衝突",
+                "move_failed": "移動失敗",
+                "error": "錯誤"
+            }
+        },
         "exclude": {
             "confirm": "排除"
         },
@@ -2170,7 +2213,35 @@
                 "aboutThisVersion": "關於此版本",
                 "baseModelSearchPlaceholder": "搜尋基礎模型...",
                 "baseModelSuggested": "推薦",
-                "baseModelNoMatch": "沒有符合的基礎模型"
+                "baseModelNoMatch": "沒有符合的基礎模型",
+                "creator": "創作者",
+                "creatorAdd": "新增創作者",
+                "creatorEdit": "編輯創作者",
+                "creatorSearchPlaceholder": "搜尋創作者或輸入新名稱...",
+                "creatorLibraryHeader": "模型庫中的創作者",
+                "creatorMatchingHeader": "符合的創作者",
+                "creatorLibraryCount": "模型庫中 {count} 個",
+                "creatorCurrent": "目前：{name}",
+                "creatorCreate": "建立「{name}」",
+                "creatorCreateAnnounce": "按 Enter 鍵建立 {name}。",
+                "creatorNew": "新創作者",
+                "creatorNoMatch": "沒有符合「{name}」的現有創作者",
+                "creatorEmptyLibrary": "模型庫中還沒有創作者。請輸入名稱以新增第一個。",
+                "creatorModelCount": "{count} 個模型",
+                "creatorModelCountOne": "{count} 個模型",
+                "creatorMatchCount": "{count} 個符合",
+                "creatorMatchCountOne": "{count} 個符合",
+                "creatorShowing": "顯示 {shown}/{total} —— 繼續輸入以縮小範圍",
+                "creatorRemove": "移除創作者",
+                "creatorManual": "手動",
+                "creatorManualHint": "手動新增。中繼資料重新整理不會覆寫。",
+                "creatorSaved": "創作者已更新",
+                "creatorRemoved": "創作者已移除",
+                "creatorSaveFailed": "無法更新創作者，請重試。",
+                "creatorLoadFailed": "無法載入創作者。您仍可以輸入新名稱。",
+                "creatorTooLong": "創作者名稱過長（最多 64 個字元）",
+                "creatorLoading": "正在載入創作者...",
+                "creatorKeyboardHint": "↑↓ 導覽 · ↵ 選擇 · esc 取消"
             },
             "notes": {
                 "saved": "備註已儲存",
@@ -2218,6 +2289,7 @@
             "description": {
                 "noDescription": "無模型描述",
                 "failedToLoad": "載入模型描述失敗",
+                "offline": "描述與模型檔案儲存在一起，而該檔案位於離線磁碟上。請重新連接磁碟以讀取描述。",
                 "editTitle": "編輯模型描述",
                 "validation": {
                     "cannotBeEmpty": "描述不可為空"
@@ -2249,6 +2321,10 @@
                 "noDerivatives": "禁止分享合併作品",
                 "noReLicense": "需要相同授權",
                 "restrictionsLabel": "授權限制"
+            },
+            "notices": {
+                "offline": "存放此模型的磁碟處於離線狀態。目前顯示快取資訊——重新連接磁碟之前，檔案操作與編輯不可用。",
+                "partial": "無法讀取模型中繼資料檔案。目前顯示快取資訊——描述、範例圖片和創作者頭像可能不可用。"
             },
             "loading": {
                 "exampleImages": "載入範例圖片中...",
@@ -2592,12 +2668,20 @@
         "title": "說明與教學",
         "tabs": {
             "gettingStarted": "快速開始",
-            "updateVlogs": "更新影片",
+            "updates": "[TODO: Translate] Updates",
             "documentation": "文件",
             "shortcuts": "快捷鍵"
         },
         "gettingStarted": {
             "title": "LoRA 管理器快速開始",
+            "stepsTitle": "[TODO: Translate] First steps",
+            "steps": {
+                "configure": "[TODO: Translate] Configure your model folders and add a CivitAI API key if you plan to download models.",
+                "find": "[TODO: Translate] Find a model by browsing folders or searching names, tags, and trigger words.",
+                "send": "[TODO: Translate] Use Send to ComfyUI or copy LoRA syntax into a compatible LoRA Manager node.",
+                "refresh": "[TODO: Translate] Use Refresh after changing files outside LoRA Manager; rebuild the cache only for cache inconsistencies."
+            },
+            "readGuide": "[TODO: Translate] Open the Getting Started guide",
             "replayTutorial": "重新播放教學"
         },
         "shortcuts": {
@@ -2622,7 +2706,6 @@
                 "closeModal": "關閉彈窗 / 面板",
                 "openShortcuts": "開啟此快捷鍵面板",
                 "refresh": "重新整理模型列表",
-                "fetchMetadata": "從 CivitAI 擷取中繼資料（僅限模型頁面）",
                 "downloadModel": "下載模型（僅限模型頁面）",
                 "toggleBulkMode": "切換批量模式",
                 "selectAll": "選取所有可見模型",
@@ -2644,17 +2727,26 @@
             "title": "最新更新",
             "watchOnYouTube": "在 YouTube 觀看",
             "playlistTitle": "LoRA 管理器更新影片清單",
-            "playlistDescription": "觀看所有展示最新功能與改進的更新影片。"
+            "playlistDescription": "觀看所有展示最新功能與改進的更新影片。",
+            "releaseNotes": "[TODO: Translate] Read release notes on GitHub"
         },
         "documentation": {
             "title": "文件",
-            "general": "一般",
+            "startSupport": "[TODO: Translate] Start & Support",
+            "workingWithAssets": "[TODO: Translate] Working with Assets",
+            "integrationConfiguration": "[TODO: Translate] Integration & Configuration",
+            "gettingStarted": "[TODO: Translate] Getting Started",
+            "faq": "[TODO: Translate] FAQ",
             "troubleshooting": "疑難排解",
-            "modelManagement": "模型管理",
+            "modelLibrary": "[TODO: Translate] Model Library",
+            "downloadsOrganization": "[TODO: Translate] Downloading and Organizing Models",
             "recipes": "配方",
-            "settings": "設定與配置",
-            "extensions": "擴充功能",
-            "newBadge": "新"
+            "workflowLibrary": "[TODO: Translate] Workflow Library",
+            "comfyuiIntegration": "[TODO: Translate] ComfyUI Integration",
+            "configuration": "[TODO: Translate] Configuration",
+            "loraSyntax": "[TODO: Translate] LoRA Syntax and Duplicate Filenames",
+            "browserExtension": "[TODO: Translate] LM Civitai Extension",
+            "browseAll": "[TODO: Translate] Browse all documentation"
         },
         "newContentBadge": "新"
     },

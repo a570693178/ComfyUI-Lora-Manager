@@ -478,12 +478,7 @@
             "cycleOnHover": "호버 시 예시 이미지 전환",
             "cycleOnHoverHelp": "카드의 미리보기 이미지에 마우스를 올리면 예시 이미지가 차례로 전환됩니다. 카드의 헤더나 푸터에 마우스를 올려도 전환이 시작되지 않으므로 작업 버튼과 툴팁을 그대로 사용할 수 있습니다. 선택한 미리보기 이미지 자체는 바뀌지 않습니다. 비디오 미리보기는 영향을 받지 않습니다.",
             "cycleInterval": "전환 간격",
-            "cycleIntervalHelp": "카드에 마우스를 올려 둔 동안 예시 이미지가 전환되는 간격입니다.",
-            "cycleIntervalOptions": {
-                "fast": "빠름 (1.5초)",
-                "normal": "보통 (2초)",
-                "relaxed": "느긋함 (3초)"
-            }
+            "cycleIntervalHelp": "카드에 마우스를 올려 둔 동안 예시 이미지가 전환되는 간격입니다."
         },
         "autoOrganizeExclusions": {
             "label": "자동 정리 제외 항목",
@@ -1828,6 +1823,54 @@
         }
     },
     "modals": {
+        "autoOrganizePreview": {
+            "title": "자동 정리 미리보기",
+            "scopeSelected": "선택한 모델",
+            "scopeAll": "모든 모델",
+            "scope": "범위: {scope} · 모델 {count}개",
+            "previewNotice": "미리보기 전용입니다. 파일이 이동되지 않았고 빈 폴더도 정리되지 않았습니다.",
+            "emptyPreview": "이 미리보기에 사용할 수 있는 모델이 없습니다.",
+            "alreadyOrganized": "모든 모델이 이미 올바른 위치에 있습니다.",
+            "loadingTitle": "미리보기를 계산하는 중...",
+            "loadingMessage": "변경되는 파일은 없습니다.",
+            "previewFailed": "미리보기 실패",
+            "retry": "다시 시도",
+            "statWillMove": "이동 예정",
+            "statSkipped": "건너뜀",
+            "statIssues": "문제",
+            "issuesWarning": "모델 {count}개는 실패할 것으로 예상되며, 나머지 모델은 계속 처리됩니다.",
+            "detailsLabel": "미리보기 상세 정보",
+            "movesTab": "이동 ({count})",
+            "skippedTab": "건너뜀 ({count})",
+            "issuesTab": "문제 ({count})",
+            "searchPlaceholder": "모델 또는 경로 검색...",
+            "from": "원본",
+            "to": "대상",
+            "location": "위치",
+            "organizingWith": "정리 기준:",
+            "flatStructureRule": "플랫 구조 (라이브러리 루트)",
+            "emptyMoves": "이동할 모델이 없습니다.",
+            "emptySkipped": "건너뛸 모델이 없습니다.",
+            "emptyIssues": "확인할 문제가 없습니다.",
+            "emptySearch": "검색과 일치하는 결과가 없습니다.",
+            "replanNote": "실행 시 최신 라이브러리 상태를 기준으로 다시 계산되므로 실제 결과는 이 미리보기와 다를 수 있습니다.",
+            "copyReport": "보고서 복사",
+            "refresh": "미리보기 새로고침",
+            "apply": "정리 ({count})",
+            "noMoves": "적용할 이동 없음",
+            "pageStatus": "전체 {total}개 중 {from}–{to}번째",
+            "reasons": {
+                "already_organized": "이미 정리됨",
+                "no_file_path": "파일 경로 없음",
+                "outside_roots": "라이브러리 루트 밖",
+                "missing_metadata": "메타데이터 없음",
+                "path_too_long": "대상 경로가 너무 김",
+                "target_exists": "대상이 이미 존재",
+                "planned_collision": "이동 계획 충돌",
+                "move_failed": "이동 실패",
+                "error": "오류"
+            }
+        },
         "exclude": {
             "confirm": "제외"
         },
@@ -2170,7 +2213,35 @@
                 "aboutThisVersion": "이 버전에 대해",
                 "baseModelSearchPlaceholder": "베이스 모델 검색...",
                 "baseModelSuggested": "추천",
-                "baseModelNoMatch": "일치하는 베이스 모델 없음"
+                "baseModelNoMatch": "일치하는 베이스 모델 없음",
+                "creator": "제작자",
+                "creatorAdd": "제작자 추가",
+                "creatorEdit": "제작자 편집",
+                "creatorSearchPlaceholder": "제작자를 검색하거나 새 이름 입력...",
+                "creatorLibraryHeader": "라이브러리의 제작자",
+                "creatorMatchingHeader": "일치하는 제작자",
+                "creatorLibraryCount": "라이브러리에 {count}개",
+                "creatorCurrent": "현재: {name}",
+                "creatorCreate": "'{name}' 만들기",
+                "creatorCreateAnnounce": "Enter 키를 눌러 '{name}' 제작자를 만드세요.",
+                "creatorNew": "새 제작자",
+                "creatorNoMatch": "'{name}'에 해당하는 기존 제작자가 없습니다",
+                "creatorEmptyLibrary": "라이브러리에 아직 제작자가 없습니다. 이름을 입력하여 첫 제작자를 추가하세요.",
+                "creatorModelCount": "모델 {count}개",
+                "creatorModelCountOne": "모델 {count}개",
+                "creatorMatchCount": "{count}개 일치",
+                "creatorMatchCountOne": "{count}개 일치",
+                "creatorShowing": "{shown}/{total}개 표시 —— 계속 입력하여 범위를 좁히기",
+                "creatorRemove": "제작자 제거",
+                "creatorManual": "수동",
+                "creatorManualHint": "수동으로 추가됨. 메타데이터 새로 고침으로 덮어쓰지 않습니다.",
+                "creatorSaved": "제작자 업데이트됨",
+                "creatorRemoved": "제작자 제거됨",
+                "creatorSaveFailed": "제작자를 업데이트할 수 없습니다. 다시 시도하세요.",
+                "creatorLoadFailed": "제작자를 불러오지 못했습니다. 새 이름을 직접 입력할 수 있습니다.",
+                "creatorTooLong": "제작자 이름이 너무 깁니다(최대 64자)",
+                "creatorLoading": "제작자 불러오는 중...",
+                "creatorKeyboardHint": "↑↓ 이동 · ↵ 선택 · esc 취소"
             },
             "notes": {
                 "saved": "메모가 성공적으로 저장됨",
@@ -2218,6 +2289,7 @@
             "description": {
                 "noDescription": "사용 가능한 모델 설명이 없습니다",
                 "failedToLoad": "모델 설명 로딩 실패",
+                "offline": "설명은 모델 파일과 함께 저장되어 있으며, 해당 파일은 오프라인 디스크에 있습니다. 디스크를 다시 연결하여 읽어 주세요.",
                 "editTitle": "모델 설명 편집",
                 "validation": {
                     "cannotBeEmpty": "설명은 비어있을 수 없습니다"
@@ -2249,6 +2321,10 @@
                 "noDerivatives": "공유 병합 불가",
                 "noReLicense": "동일한 권한 필요",
                 "restrictionsLabel": "라이선스 제한"
+            },
+            "notices": {
+                "offline": "이 모델이 있는 디스크가 오프라인입니다. 캐시된 정보를 표시하고 있습니다——다시 연결할 때까지 파일 작업과 편집을 사용할 수 없습니다.",
+                "partial": "모델 메타데이터 파일을 읽을 수 없습니다. 캐시된 정보를 표시하고 있습니다——설명, 예시 이미지, 제작자 아바타를 사용하지 못할 수 있습니다."
             },
             "loading": {
                 "exampleImages": "예시 이미지 로딩 중...",
@@ -2592,12 +2668,20 @@
         "title": "도움말 & 튜토리얼",
         "tabs": {
             "gettingStarted": "시작하기",
-            "updateVlogs": "업데이트 영상",
+            "updates": "[TODO: Translate] Updates",
             "documentation": "문서",
             "shortcuts": "단축키"
         },
         "gettingStarted": {
             "title": "LoRA Manager 시작하기",
+            "stepsTitle": "[TODO: Translate] First steps",
+            "steps": {
+                "configure": "[TODO: Translate] Configure your model folders and add a CivitAI API key if you plan to download models.",
+                "find": "[TODO: Translate] Find a model by browsing folders or searching names, tags, and trigger words.",
+                "send": "[TODO: Translate] Use Send to ComfyUI or copy LoRA syntax into a compatible LoRA Manager node.",
+                "refresh": "[TODO: Translate] Use Refresh after changing files outside LoRA Manager; rebuild the cache only for cache inconsistencies."
+            },
+            "readGuide": "[TODO: Translate] Open the Getting Started guide",
             "replayTutorial": "튜토리얼 다시 보기"
         },
         "shortcuts": {
@@ -2622,7 +2706,6 @@
                 "closeModal": "모달 / 패널 닫기",
                 "openShortcuts": "이 단축키 패널 열기",
                 "refresh": "모델 목록 새로고침",
-                "fetchMetadata": "CivitAI에서 메타데이터 가져오기 (모델 페이지만)",
                 "downloadModel": "모델 다운로드 (모델 페이지만)",
                 "toggleBulkMode": "일괄 모드 전환",
                 "selectAll": "표시된 모든 모델 선택",
@@ -2644,17 +2727,26 @@
             "title": "최신 업데이트",
             "watchOnYouTube": "YouTube에서 보기",
             "playlistTitle": "LoRA Manager 업데이트 재생목록",
-            "playlistDescription": "최신 기능과 개선사항을 보여주는 모든 업데이트 비디오를 시청하세요."
+            "playlistDescription": "최신 기능과 개선사항을 보여주는 모든 업데이트 비디오를 시청하세요.",
+            "releaseNotes": "[TODO: Translate] Read release notes on GitHub"
         },
         "documentation": {
             "title": "문서",
-            "general": "일반",
+            "startSupport": "[TODO: Translate] Start & Support",
+            "workingWithAssets": "[TODO: Translate] Working with Assets",
+            "integrationConfiguration": "[TODO: Translate] Integration & Configuration",
+            "gettingStarted": "[TODO: Translate] Getting Started",
+            "faq": "[TODO: Translate] FAQ",
             "troubleshooting": "문제 해결",
-            "modelManagement": "모델 관리",
+            "modelLibrary": "[TODO: Translate] Model Library",
+            "downloadsOrganization": "[TODO: Translate] Downloading and Organizing Models",
             "recipes": "레시피",
-            "settings": "설정 & 구성",
-            "extensions": "확장",
-            "newBadge": "신규"
+            "workflowLibrary": "[TODO: Translate] Workflow Library",
+            "comfyuiIntegration": "[TODO: Translate] ComfyUI Integration",
+            "configuration": "[TODO: Translate] Configuration",
+            "loraSyntax": "[TODO: Translate] LoRA Syntax and Duplicate Filenames",
+            "browserExtension": "[TODO: Translate] LM Civitai Extension",
+            "browseAll": "[TODO: Translate] Browse all documentation"
         },
         "newContentBadge": "신규"
     },

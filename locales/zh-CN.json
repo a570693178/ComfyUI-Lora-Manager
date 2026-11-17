@@ -478,12 +478,7 @@
             "cycleOnHover": "悬停时轮播示例图片",
             "cycleOnHoverHelp": "悬停在卡片的预览图片上时，会轮播其示例图片。悬停在卡片的头部或底部区域不会触发轮播，因此操作按钮和悬浮提示仍可正常使用。所选预览图片本身不会改变。视频预览不受影响。",
             "cycleInterval": "轮播间隔",
-            "cycleIntervalHelp": "悬停卡片时，示例图片切换的时间间隔。",
-            "cycleIntervalOptions": {
-                "fast": "快（1.5 秒）",
-                "normal": "正常（2 秒）",
-                "relaxed": "舒缓（3 秒）"
-            }
+            "cycleIntervalHelp": "悬停卡片时，示例图片切换的时间间隔。"
         },
         "autoOrganizeExclusions": {
             "label": "自动整理排除项",
@@ -1828,6 +1823,54 @@
         }
     },
     "modals": {
+        "autoOrganizePreview": {
+            "title": "预览自动整理",
+            "scopeSelected": "所选模型",
+            "scopeAll": "所有模型",
+            "scope": "范围：{scope} · {count} 个模型",
+            "previewNotice": "仅供预览。尚未移动任何文件，也未清理任何目录。",
+            "emptyPreview": "此预览没有可用的模型。",
+            "alreadyOrganized": "所有模型都已在正确的位置。",
+            "loadingTitle": "正在计算预览...",
+            "loadingMessage": "不会更改任何文件。",
+            "previewFailed": "预览失败",
+            "retry": "重试",
+            "statWillMove": "待移动",
+            "statSkipped": "已跳过",
+            "statIssues": "问题",
+            "issuesWarning": "预计有 {count} 个模型会失败；其余模型仍会被处理。",
+            "detailsLabel": "预览详情",
+            "movesTab": "移动（{count}）",
+            "skippedTab": "已跳过（{count}）",
+            "issuesTab": "问题（{count}）",
+            "searchPlaceholder": "搜索模型或路径...",
+            "from": "从",
+            "to": "到",
+            "location": "位置",
+            "organizingWith": "整理方式：",
+            "flatStructureRule": "扁平结构（库根目录）",
+            "emptyMoves": "没有需要移动的模型。",
+            "emptySkipped": "没有模型会被跳过。",
+            "emptyIssues": "没有问题需要检查。",
+            "emptySearch": "没有与搜索匹配的结果。",
+            "replanNote": "执行时会根据模型库的最新状态重新计算，因此实际结果可能与此预览不同。",
+            "copyReport": "复制报告",
+            "refresh": "刷新预览",
+            "apply": "整理（{count}）",
+            "noMoves": "没有可应用的移动",
+            "pageStatus": "第 {from}–{to} 项，共 {total} 项",
+            "reasons": {
+                "already_organized": "已整理",
+                "no_file_path": "没有文件路径",
+                "outside_roots": "库根目录之外",
+                "missing_metadata": "缺少元数据",
+                "path_too_long": "目标路径过长",
+                "target_exists": "目标已存在",
+                "planned_collision": "计划移动冲突",
+                "move_failed": "移动失败",
+                "error": "错误"
+            }
+        },
         "exclude": {
             "confirm": "排除"
         },
@@ -2170,7 +2213,35 @@
                 "aboutThisVersion": "关于此版本",
                 "baseModelSearchPlaceholder": "搜索基础模型...",
                 "baseModelSuggested": "推荐",
-                "baseModelNoMatch": "没有匹配的基础模型"
+                "baseModelNoMatch": "没有匹配的基础模型",
+                "creator": "创作者",
+                "creatorAdd": "添加创作者",
+                "creatorEdit": "编辑创作者",
+                "creatorSearchPlaceholder": "搜索创作者或输入新名称...",
+                "creatorLibraryHeader": "模型库中的创作者",
+                "creatorMatchingHeader": "匹配的创作者",
+                "creatorLibraryCount": "模型库中 {count} 个",
+                "creatorCurrent": "当前：{name}",
+                "creatorCreate": "创建“{name}”",
+                "creatorCreateAnnounce": "按回车键创建 {name}。",
+                "creatorNew": "新创作者",
+                "creatorNoMatch": "没有匹配“{name}”的现有创作者",
+                "creatorEmptyLibrary": "模型库中还没有创作者。输入名称以添加第一个。",
+                "creatorModelCount": "{count} 个模型",
+                "creatorModelCountOne": "{count} 个模型",
+                "creatorMatchCount": "{count} 个匹配",
+                "creatorMatchCountOne": "{count} 个匹配",
+                "creatorShowing": "显示 {shown}/{total} —— 继续输入以缩小范围",
+                "creatorRemove": "移除创作者",
+                "creatorManual": "手动",
+                "creatorManualHint": "手动添加。元数据刷新不会覆盖。",
+                "creatorSaved": "创作者已更新",
+                "creatorRemoved": "创作者已移除",
+                "creatorSaveFailed": "无法更新创作者，请重试。",
+                "creatorLoadFailed": "无法加载创作者。你仍可以输入新名称。",
+                "creatorTooLong": "创作者名称过长（最多 64 个字符）",
+                "creatorLoading": "正在加载创作者...",
+                "creatorKeyboardHint": "↑↓ 导航 · ↵ 选择 · esc 取消"
             },
             "notes": {
                 "saved": "备注保存成功",
@@ -2218,6 +2289,7 @@
             "description": {
                 "noDescription": "暂无模型描述",
                 "failedToLoad": "加载模型描述失败",
+                "offline": "描述与模型文件存储在一起，而该文件位于离线磁盘上。请重新连接磁盘以读取描述。",
                 "editTitle": "编辑模型描述",
                 "validation": {
                     "cannotBeEmpty": "描述不能为空"
@@ -2249,6 +2321,10 @@
                 "noDerivatives": "禁止分享合并作品",
                 "noReLicense": "需要相同权限",
                 "restrictionsLabel": "许可证限制"
+            },
+            "notices": {
+                "offline": "存放此模型的磁盘处于离线状态。当前显示缓存信息——重新连接磁盘之前，文件操作和编辑不可用。",
+                "partial": "无法读取模型元数据文件。当前显示缓存信息——描述、示例图片和创作者头像可能不可用。"
             },
             "loading": {
                 "exampleImages": "正在加载示例图片...",
@@ -2592,12 +2668,20 @@
         "title": "帮助与教程",
         "tabs": {
             "gettingStarted": "新手入门",
-            "updateVlogs": "更新日志",
+            "updates": "[TODO: Translate] Updates",
             "documentation": "文档",
             "shortcuts": "快捷键"
         },
         "gettingStarted": {
             "title": "LoRA 管理器新手入门",
+            "stepsTitle": "[TODO: Translate] First steps",
+            "steps": {
+                "configure": "[TODO: Translate] Configure your model folders and add a CivitAI API key if you plan to download models.",
+                "find": "[TODO: Translate] Find a model by browsing folders or searching names, tags, and trigger words.",
+                "send": "[TODO: Translate] Use Send to ComfyUI or copy LoRA syntax into a compatible LoRA Manager node.",
+                "refresh": "[TODO: Translate] Use Refresh after changing files outside LoRA Manager; rebuild the cache only for cache inconsistencies."
+            },
+            "readGuide": "[TODO: Translate] Open the Getting Started guide",
             "replayTutorial": "重播教程"
         },
         "shortcuts": {
@@ -2622,7 +2706,6 @@
                 "closeModal": "关闭弹窗 / 面板",
                 "openShortcuts": "打开本快捷键面板",
                 "refresh": "刷新模型列表",
-                "fetchMetadata": "从 CivitAI 获取元数据（仅模型页面）",
                 "downloadModel": "下载模型（仅模型页面）",
                 "toggleBulkMode": "切换批量模式",
                 "selectAll": "全选所有可见模型",
@@ -2644,17 +2727,26 @@
             "title": "最新更新",
             "watchOnYouTube": "在 YouTube 上观看",
             "playlistTitle": "LoRA 管理器更新播放列表",
-            "playlistDescription": "观看所有更新视频，了解最新功能和改进。"
+            "playlistDescription": "观看所有更新视频，了解最新功能和改进。",
+            "releaseNotes": "[TODO: Translate] Read release notes on GitHub"
         },
         "documentation": {
             "title": "文档",
-            "general": "通用",
+            "startSupport": "[TODO: Translate] Start & Support",
+            "workingWithAssets": "[TODO: Translate] Working with Assets",
+            "integrationConfiguration": "[TODO: Translate] Integration & Configuration",
+            "gettingStarted": "[TODO: Translate] Getting Started",
+            "faq": "[TODO: Translate] FAQ",
             "troubleshooting": "故障排查",
-            "modelManagement": "模型管理",
+            "modelLibrary": "[TODO: Translate] Model Library",
+            "downloadsOrganization": "[TODO: Translate] Downloading and Organizing Models",
             "recipes": "配方",
-            "settings": "设置与配置",
-            "extensions": "扩展",
-            "newBadge": "新"
+            "workflowLibrary": "[TODO: Translate] Workflow Library",
+            "comfyuiIntegration": "[TODO: Translate] ComfyUI Integration",
+            "configuration": "[TODO: Translate] Configuration",
+            "loraSyntax": "[TODO: Translate] LoRA Syntax and Duplicate Filenames",
+            "browserExtension": "[TODO: Translate] LM Civitai Extension",
+            "browseAll": "[TODO: Translate] Browse all documentation"
         },
         "newContentBadge": "新"
     },

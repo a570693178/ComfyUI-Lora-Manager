@@ -478,12 +478,7 @@
             "cycleOnHover": "ホバー時に例画像を切り替え",
             "cycleOnHoverHelp": "カードのプレビュー画像にホバーすると、その例画像が順に切り替わります。カードのヘッダーやフッターにホバーしても切り替えは開始されないため、アクションボタンやツールチップはそのまま利用できます。選択中のプレビュー画像自体は変わりません。動画プレビューは対象外です。",
             "cycleInterval": "切り替え間隔",
-            "cycleIntervalHelp": "カードにホバーしている間、例画像を切り替える間隔です。",
-            "cycleIntervalOptions": {
-                "fast": "速い（1.5秒）",
-                "normal": "標準（2秒）",
-                "relaxed": "のんびり（3秒）"
-            }
+            "cycleIntervalHelp": "カードにホバーしている間、例画像を切り替える間隔です。"
         },
         "autoOrganizeExclusions": {
             "label": "自動整理除外設定",
@@ -1828,6 +1823,54 @@
         }
     },
     "modals": {
+        "autoOrganizePreview": {
+            "title": "自動整理のプレビュー",
+            "scopeSelected": "選択したモデル",
+            "scopeAll": "すべてのモデル",
+            "scope": "対象：{scope} · {count} 個のモデル",
+            "previewNotice": "プレビューのみです。ファイルは移動されておらず、空のフォルダも削除されていません。",
+            "emptyPreview": "このプレビューで利用できるモデルはありません。",
+            "alreadyOrganized": "すべてのモデルはすでに正しい場所にあります。",
+            "loadingTitle": "プレビューを計算しています...",
+            "loadingMessage": "ファイルは変更されません。",
+            "previewFailed": "プレビューに失敗しました",
+            "retry": "再試行",
+            "statWillMove": "移動予定",
+            "statSkipped": "スキップ",
+            "statIssues": "問題",
+            "issuesWarning": "{count} 個のモデルは失敗する見込みです。残りのモデルは引き続き処理されます。",
+            "detailsLabel": "プレビューの詳細",
+            "movesTab": "移動（{count}）",
+            "skippedTab": "スキップ（{count}）",
+            "issuesTab": "問題（{count}）",
+            "searchPlaceholder": "モデルまたはパスを検索...",
+            "from": "移動元",
+            "to": "移動先",
+            "location": "場所",
+            "organizingWith": "整理方法：",
+            "flatStructureRule": "フラット構造（ライブラリルート）",
+            "emptyMoves": "移動が必要なモデルはありません。",
+            "emptySkipped": "スキップされるモデルはありません。",
+            "emptyIssues": "確認する問題はありません。",
+            "emptySearch": "検索に一致する結果はありません。",
+            "replanNote": "実行時は最新のライブラリ状態から再計算されるため、実際の結果はこのプレビューと異なる場合があります。",
+            "copyReport": "レポートをコピー",
+            "refresh": "プレビューを更新",
+            "apply": "整理（{count}）",
+            "noMoves": "適用する移動はありません",
+            "pageStatus": "{total} 件中 {from}–{to} 件",
+            "reasons": {
+                "already_organized": "整理済み",
+                "no_file_path": "ファイルパスなし",
+                "outside_roots": "ライブラリルート外",
+                "missing_metadata": "メタデータなし",
+                "path_too_long": "移動先パスが長すぎる",
+                "target_exists": "移動先が既に存在",
+                "planned_collision": "移動計画の衝突",
+                "move_failed": "移動失敗",
+                "error": "エラー"
+            }
+        },
         "exclude": {
             "confirm": "除外"
         },
@@ -2170,7 +2213,35 @@
                 "aboutThisVersion": "このバージョンについて",
                 "baseModelSearchPlaceholder": "ベースモデルを検索...",
                 "baseModelSuggested": "おすすめ",
-                "baseModelNoMatch": "該当するベースモデルがありません"
+                "baseModelNoMatch": "該当するベースモデルがありません",
+                "creator": "作成者",
+                "creatorAdd": "作成者を追加",
+                "creatorEdit": "作成者を編集",
+                "creatorSearchPlaceholder": "作成者を検索するか、新しい名前を入力...",
+                "creatorLibraryHeader": "ライブラリ内の作成者",
+                "creatorMatchingHeader": "一致する作成者",
+                "creatorLibraryCount": "ライブラリ内 {count} 件",
+                "creatorCurrent": "現在：{name}",
+                "creatorCreate": "「{name}」を作成",
+                "creatorCreateAnnounce": "Enter キーを押して「{name}」を作成します。",
+                "creatorNew": "新しい作成者",
+                "creatorNoMatch": "「{name}」に一致する既存の作成者はありません",
+                "creatorEmptyLibrary": "ライブラリにはまだ作成者がいません。名前を入力して最初の作成者を追加してください。",
+                "creatorModelCount": "{count} 個のモデル",
+                "creatorModelCountOne": "{count} 個のモデル",
+                "creatorMatchCount": "{count} 件の一致",
+                "creatorMatchCountOne": "{count} 件の一致",
+                "creatorShowing": "{shown}/{total} 件を表示 —— 入力を続けて絞り込む",
+                "creatorRemove": "作成者を削除",
+                "creatorManual": "手動",
+                "creatorManualHint": "手動で追加されました。メタデータの更新では上書きされません。",
+                "creatorSaved": "作成者を更新しました",
+                "creatorRemoved": "作成者を削除しました",
+                "creatorSaveFailed": "作成者を更新できませんでした。もう一度お試しください。",
+                "creatorLoadFailed": "作成者を読み込めませんでした。新しい名前を入力することはできます。",
+                "creatorTooLong": "作成者名が長すぎます（最大 64 文字）",
+                "creatorLoading": "作成者を読み込み中...",
+                "creatorKeyboardHint": "↑↓ 移動 · ↵ 選択 · esc キャンセル"
             },
             "notes": {
                 "saved": "メモが正常に保存されました",
@@ -2218,6 +2289,7 @@
             "description": {
                 "noDescription": "モデルの説明がありません",
                 "failedToLoad": "モデルの説明の読み込みに失敗しました",
+                "offline": "説明はモデルファイルと一緒に保存されており、そのファイルはオフラインのディスク上にあります。ディスクを再接続して読み込んでください。",
                 "editTitle": "モデルの説明を編集",
                 "validation": {
                     "cannotBeEmpty": "説明を空にすることはできません"
@@ -2249,6 +2321,10 @@
                 "noDerivatives": "共有マージ不可",
                 "noReLicense": "同じ権限が必要",
                 "restrictionsLabel": "ライセンス制限"
+            },
+            "notices": {
+                "offline": "このモデルを保存しているディスクがオフラインです。キャッシュされた情報を表示しています——再接続するまで、ファイル操作と編集は利用できません。",
+                "partial": "モデルのメタデータファイルを読み込めませんでした。キャッシュされた情報を表示しています——説明、サンプル画像、作成者のアバターが利用できない場合があります。"
             },
             "loading": {
                 "exampleImages": "例画像を読み込み中...",
@@ -2592,12 +2668,20 @@
         "title": "ヘルプ & チュートリアル",
         "tabs": {
             "gettingStarted": "はじめに",
-            "updateVlogs": "更新Vlog",
+            "updates": "[TODO: Translate] Updates",
             "documentation": "ドキュメント",
             "shortcuts": "ショートカット"
         },
         "gettingStarted": {
             "title": "LoRA Managerを始める",
+            "stepsTitle": "[TODO: Translate] First steps",
+            "steps": {
+                "configure": "[TODO: Translate] Configure your model folders and add a CivitAI API key if you plan to download models.",
+                "find": "[TODO: Translate] Find a model by browsing folders or searching names, tags, and trigger words.",
+                "send": "[TODO: Translate] Use Send to ComfyUI or copy LoRA syntax into a compatible LoRA Manager node.",
+                "refresh": "[TODO: Translate] Use Refresh after changing files outside LoRA Manager; rebuild the cache only for cache inconsistencies."
+            },
+            "readGuide": "[TODO: Translate] Open the Getting Started guide",
             "replayTutorial": "チュートリアルをもう一度再生"
         },
         "shortcuts": {
@@ -2622,7 +2706,6 @@
                 "closeModal": "モーダル / パネルを閉じる",
                 "openShortcuts": "このショートカットパネルを開く",
                 "refresh": "モデルリストを更新",
-                "fetchMetadata": "CivitAIからメタデータを取得（モデルページのみ）",
                 "downloadModel": "モデルをダウンロード（モデルページのみ）",
                 "toggleBulkMode": "一括モードを切り替え",
                 "selectAll": "表示中のモデルをすべて選択",
@@ -2644,17 +2727,26 @@
             "title": "最新の更新",
             "watchOnYouTube": "YouTubeで視聴",
             "playlistTitle": "LoRA Manager更新プレイリスト",
-            "playlistDescription": "最新の機能と改善を紹介するすべての更新動画を視聴できます。"
+            "playlistDescription": "最新の機能と改善を紹介するすべての更新動画を視聴できます。",
+            "releaseNotes": "[TODO: Translate] Read release notes on GitHub"
         },
         "documentation": {
             "title": "ドキュメント",
-            "general": "一般",
+            "startSupport": "[TODO: Translate] Start & Support",
+            "workingWithAssets": "[TODO: Translate] Working with Assets",
+            "integrationConfiguration": "[TODO: Translate] Integration & Configuration",
+            "gettingStarted": "[TODO: Translate] Getting Started",
+            "faq": "[TODO: Translate] FAQ",
             "troubleshooting": "トラブルシューティング",
-            "modelManagement": "モデル管理",
+            "modelLibrary": "[TODO: Translate] Model Library",
+            "downloadsOrganization": "[TODO: Translate] Downloading and Organizing Models",
             "recipes": "レシピ",
-            "settings": "設定&構成",
-            "extensions": "拡張機能",
-            "newBadge": "新着"
+            "workflowLibrary": "[TODO: Translate] Workflow Library",
+            "comfyuiIntegration": "[TODO: Translate] ComfyUI Integration",
+            "configuration": "[TODO: Translate] Configuration",
+            "loraSyntax": "[TODO: Translate] LoRA Syntax and Duplicate Filenames",
+            "browserExtension": "[TODO: Translate] LM Civitai Extension",
+            "browseAll": "[TODO: Translate] Browse all documentation"
         },
         "newContentBadge": "新着"
     },

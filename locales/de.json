@@ -478,12 +478,7 @@
             "cycleOnHover": "Beispielbilder bei Hover durchblättern",
             "cycleOnHoverHelp": "Beim Hovern über das Vorschaubild einer Karte werden die Beispielbilder durchgeblättert. Das Hovern über die Kopf- oder Fußzeile der Karte startet das Durchblättern nicht, sodass Aktions-Schaltflächen und Tooltips nutzbar bleiben. Das ausgewählte Vorschaubild selbst bleibt unverändert. Video-Vorschauen sind nicht betroffen.",
             "cycleInterval": "Wechselintervall",
-            "cycleIntervalHelp": "Zeit zwischen dem Wechsel der Beispielbilder beim Hovern über eine Karte.",
-            "cycleIntervalOptions": {
-                "fast": "Schnell (1,5 s)",
-                "normal": "Normal (2 s)",
-                "relaxed": "Gemächlich (3 s)"
-            }
+            "cycleIntervalHelp": "Zeit zwischen dem Wechsel der Beispielbilder beim Hovern über eine Karte."
         },
         "autoOrganizeExclusions": {
             "label": "Auto-Organisierungs-Ausnahmen",
@@ -1828,6 +1823,54 @@
         }
     },
     "modals": {
+        "autoOrganizePreview": {
+            "title": "Vorschau der automatischen Organisation",
+            "scopeSelected": "Ausgewählte Modelle",
+            "scopeAll": "Alle Modelle",
+            "scope": "Umfang: {scope} · {count} Modelle",
+            "previewNotice": "Nur Vorschau. Es wurden keine Dateien verschoben und keine Ordner bereinigt.",
+            "emptyPreview": "Für diese Vorschau sind keine Modelle verfügbar.",
+            "alreadyOrganized": "Alle Modelle befinden sich bereits am richtigen Ort.",
+            "loadingTitle": "Vorschau wird berechnet...",
+            "loadingMessage": "Es werden keine Dateien geändert.",
+            "previewFailed": "Vorschau fehlgeschlagen",
+            "retry": "Wiederholen",
+            "statWillMove": "Zu verschieben",
+            "statSkipped": "Übersprungen",
+            "statIssues": "Probleme",
+            "issuesWarning": "Bei {count} Modell(en) wird ein Fehler erwartet; die übrigen Modelle werden trotzdem verarbeitet.",
+            "detailsLabel": "Vorschaudetails",
+            "movesTab": "Verschiebungen ({count})",
+            "skippedTab": "Übersprungen ({count})",
+            "issuesTab": "Probleme ({count})",
+            "searchPlaceholder": "Modell oder Pfad suchen...",
+            "from": "Von",
+            "to": "Nach",
+            "location": "Speicherort",
+            "organizingWith": "Organisiert mit:",
+            "flatStructureRule": "Flache Struktur (Bibliotheks-Stammverzeichnis)",
+            "emptyMoves": "Keine Modelle müssen verschoben werden.",
+            "emptySkipped": "Es werden keine Modelle übersprungen.",
+            "emptyIssues": "Keine Probleme zu prüfen.",
+            "emptySearch": "Keine Ergebnisse entsprechen Ihrer Suche.",
+            "replanNote": "Bei der Ausführung wird anhand des aktuellen Bibliothekszustands neu berechnet, daher können die tatsächlichen Ergebnisse von dieser Vorschau abweichen.",
+            "copyReport": "Bericht kopieren",
+            "refresh": "Vorschau aktualisieren",
+            "apply": "Organisieren ({count})",
+            "noMoves": "Keine Verschiebungen zum Anwenden",
+            "pageStatus": "{from}–{to} von {total}",
+            "reasons": {
+                "already_organized": "Bereits organisiert",
+                "no_file_path": "Kein Dateipfad",
+                "outside_roots": "Außerhalb der Bibliotheks-Stammverzeichnisse",
+                "missing_metadata": "Metadaten fehlen",
+                "path_too_long": "Zielpfad zu lang",
+                "target_exists": "Ziel existiert bereits",
+                "planned_collision": "Kollision geplanter Verschiebungen",
+                "move_failed": "Verschieben fehlgeschlagen",
+                "error": "Fehler"
+            }
+        },
         "exclude": {
             "confirm": "Ausschließen"
         },
@@ -2170,7 +2213,35 @@
                 "aboutThisVersion": "Über diese Version",
                 "baseModelSearchPlaceholder": "Basismodell suchen...",
                 "baseModelSuggested": "Vorschlag",
-                "baseModelNoMatch": "Keine passenden Basismodelle"
+                "baseModelNoMatch": "Keine passenden Basismodelle",
+                "creator": "Ersteller",
+                "creatorAdd": "Ersteller hinzufügen",
+                "creatorEdit": "Ersteller bearbeiten",
+                "creatorSearchPlaceholder": "Ersteller suchen oder einen neuen Namen eingeben...",
+                "creatorLibraryHeader": "Ersteller in Ihrer Bibliothek",
+                "creatorMatchingHeader": "Passende Ersteller",
+                "creatorLibraryCount": "{count} in der Bibliothek",
+                "creatorCurrent": "Aktuell: {name}",
+                "creatorCreate": "„{name}“ erstellen",
+                "creatorCreateAnnounce": "Drücken Sie Enter, um {name} zu erstellen.",
+                "creatorNew": "Neuer Ersteller",
+                "creatorNoMatch": "Kein vorhandener Ersteller entspricht „{name}“",
+                "creatorEmptyLibrary": "Noch keine Ersteller in Ihrer Bibliothek. Geben Sie einen Namen ein, um den ersten hinzuzufügen.",
+                "creatorModelCount": "{count} Modelle",
+                "creatorModelCountOne": "{count} Modell",
+                "creatorMatchCount": "{count} Treffer",
+                "creatorMatchCountOne": "{count} Treffer",
+                "creatorShowing": "{shown} von {total} werden angezeigt — weiter tippen zum Eingrenzen",
+                "creatorRemove": "Ersteller entfernen",
+                "creatorManual": "Manuell",
+                "creatorManualHint": "Manuell hinzugefügt. Eine Metadaten-Aktualisierung überschreibt ihn nicht.",
+                "creatorSaved": "Ersteller aktualisiert",
+                "creatorRemoved": "Ersteller entfernt",
+                "creatorSaveFailed": "Ersteller konnte nicht aktualisiert werden. Versuchen Sie es erneut.",
+                "creatorLoadFailed": "Ersteller konnten nicht geladen werden. Sie können trotzdem einen neuen Namen eingeben.",
+                "creatorTooLong": "Der Erstellername ist zu lang (max. 64 Zeichen)",
+                "creatorLoading": "Ersteller werden geladen...",
+                "creatorKeyboardHint": "↑↓ navigieren · ↵ auswählen · esc abbrechen"
             },
             "notes": {
                 "saved": "Notizen erfolgreich gespeichert",
@@ -2218,6 +2289,7 @@
             "description": {
                 "noDescription": "Keine Modellbeschreibung verfügbar",
                 "failedToLoad": "Fehler beim Laden der Modellbeschreibung",
+                "offline": "Die Beschreibung wird zusammen mit der Modelldatei gespeichert, die sich auf einem Offline-Datenträger befindet. Verbinden Sie den Datenträger erneut, um sie zu lesen.",
                 "editTitle": "Modellbeschreibung bearbeiten",
                 "validation": {
                     "cannotBeEmpty": "Beschreibung darf nicht leer sein"
@@ -2249,6 +2321,10 @@
                 "noDerivatives": "Keine gemeinsamen Zusammenführungen",
                 "noReLicense": "Gleiche Berechtigungen erforderlich",
                 "restrictionsLabel": "Lizenzbeschränkungen"
+            },
+            "notices": {
+                "offline": "Der Datenträger mit diesem Modell ist offline. Es werden zwischengespeicherte Informationen angezeigt — Dateiaktionen und Bearbeitungen bleiben bis zur erneuten Verbindung nicht verfügbar.",
+                "partial": "Die Metadatendatei des Modells konnte nicht gelesen werden. Es werden zwischengespeicherte Informationen angezeigt — Beschreibung, Beispielbilder und der Avatar des Erstellers sind möglicherweise nicht verfügbar."
             },
             "loading": {
                 "exampleImages": "Beispielbilder werden geladen...",
@@ -2592,12 +2668,20 @@
         "title": "Hilfe & Tutorials",
         "tabs": {
             "gettingStarted": "Erste Schritte",
-            "updateVlogs": "Update-Vlogs",
+            "updates": "[TODO: Translate] Updates",
             "documentation": "Dokumentation",
             "shortcuts": "Tastenkürzel"
         },
         "gettingStarted": {
             "title": "Erste Schritte mit LoRA Manager",
+            "stepsTitle": "[TODO: Translate] First steps",
+            "steps": {
+                "configure": "[TODO: Translate] Configure your model folders and add a CivitAI API key if you plan to download models.",
+                "find": "[TODO: Translate] Find a model by browsing folders or searching names, tags, and trigger words.",
+                "send": "[TODO: Translate] Use Send to ComfyUI or copy LoRA syntax into a compatible LoRA Manager node.",
+                "refresh": "[TODO: Translate] Use Refresh after changing files outside LoRA Manager; rebuild the cache only for cache inconsistencies."
+            },
+            "readGuide": "[TODO: Translate] Open the Getting Started guide",
             "replayTutorial": "Tutorial erneut abspielen"
         },
         "shortcuts": {
@@ -2622,7 +2706,6 @@
                 "closeModal": "Dialog / Panel schließen",
                 "openShortcuts": "Dieses Tastenkürzel-Panel öffnen",
                 "refresh": "Modellliste aktualisieren",
-                "fetchMetadata": "Metadaten von CivitAI abrufen (nur Modellseiten)",
                 "downloadModel": "Ein Modell herunterladen (nur Modellseiten)",
                 "toggleBulkMode": "Massenmodus umschalten",
                 "selectAll": "Alle sichtbaren Modelle auswählen",
@@ -2644,17 +2727,26 @@
             "title": "Neueste Updates",
             "watchOnYouTube": "Auf YouTube ansehen",
             "playlistTitle": "LoRA Manager-Update-Playlist",
-            "playlistDescription": "Sehen Sie alle Update-Videos mit den neuesten Funktionen und Verbesserungen."
+            "playlistDescription": "Sehen Sie alle Update-Videos mit den neuesten Funktionen und Verbesserungen.",
+            "releaseNotes": "[TODO: Translate] Read release notes on GitHub"
         },
         "documentation": {
             "title": "Dokumentation",
-            "general": "Allgemein",
+            "startSupport": "[TODO: Translate] Start & Support",
+            "workingWithAssets": "[TODO: Translate] Working with Assets",
+            "integrationConfiguration": "[TODO: Translate] Integration & Configuration",
+            "gettingStarted": "[TODO: Translate] Getting Started",
+            "faq": "[TODO: Translate] FAQ",
             "troubleshooting": "Fehlerbehebung",
-            "modelManagement": "Modellverwaltung",
+            "modelLibrary": "[TODO: Translate] Model Library",
+            "downloadsOrganization": "[TODO: Translate] Downloading and Organizing Models",
             "recipes": "Rezepte",
-            "settings": "Einstellungen & Konfiguration",
-            "extensions": "Erweiterungen",
-            "newBadge": "NEU"
+            "workflowLibrary": "[TODO: Translate] Workflow Library",
+            "comfyuiIntegration": "[TODO: Translate] ComfyUI Integration",
+            "configuration": "[TODO: Translate] Configuration",
+            "loraSyntax": "[TODO: Translate] LoRA Syntax and Duplicate Filenames",
+            "browserExtension": "[TODO: Translate] LM Civitai Extension",
+            "browseAll": "[TODO: Translate] Browse all documentation"
         },
         "newContentBadge": "NEU"
     },

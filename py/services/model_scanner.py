@@ -1052,7 +1052,11 @@ class ModelScanner:
         if isinstance(creator, Mapping):
             username = creator.get('username')
             if username:
-                slim['creator'] = {'username': username}
+                creator_payload = {'username': username}
+                image = creator.get('image')
+                if isinstance(image, str) and image:
+                    creator_payload['image'] = image
+                slim['creator'] = creator_payload
 
         trained_words = civitai.get('trainedWords')
         if trained_words:
@@ -2825,6 +2829,27 @@ class ModelScanner:
     def get_model_roots(self) -> List[str]:
         """Get model root directories"""
         raise NotImplementedError("Subclasses must implement get_model_roots")
+
+    def is_file_path_available(self, file_path: str) -> bool:
+        """Return whether *file_path* sits under a currently reachable root.
+
+        Pure in-memory check: the live root list was filled when the library
+        was admitted, so a switched-off drive answers ``False`` without a
+        ``stat()`` that can block for seconds on a dead network share. A drive
+        plugged in after startup is admitted by :meth:`refresh_model_roots`
+        (run by the refresh menu and by scans), so this follows the same
+        "reachable" definition as the refresh scope list.
+        """
+        if not file_path:
+            return False
+        candidate = normalize_root_identity(file_path)
+        if not candidate:
+            return False
+        for root in self.get_model_roots():
+            prefix = _normalized_root_prefix(root)
+            if prefix and candidate.startswith(prefix):
+                return True
+        return False
 
     async def get_all_folders(self) -> List[str]:
         """Return every known directory under the model roots.

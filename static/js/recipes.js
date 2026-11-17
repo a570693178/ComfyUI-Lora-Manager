@@ -27,8 +27,8 @@ class RecipePageControls {
 
     /**
      * Register keyboard shortcuts for the actions toolbar.
-     * Only R (refresh) is wired on recipes: the page has no fetch/download
-     * buttons, and the shared handler skips missing buttons on its own.
+     * Only R (refresh) is wired on recipes: the page has no download button,
+     * and the shared handler skips missing buttons on its own.
      */
     registerKeyboardShortcuts() {
         registerActionShortcuts();
@@ -106,6 +106,36 @@ class RecipeManager {
 
         // Initialize common page features
         appCore.initializePageFeatures();
+
+        // Deep link from the canvas picker: /loras/recipes#recipe=<id>
+        this._openRecipeFromHash();
+        if (!this._hashListenerAdded) {
+            this._hashListenerAdded = true;
+            window.addEventListener('hashchange', () => this._openRecipeFromHash());
+        }
+    }
+
+    _recipeIdFromHash() {
+        const hash = window.location.hash.startsWith('#')
+            ? window.location.hash.slice(1)
+            : '';
+        if (!hash) return '';
+        return new URLSearchParams(hash).get('recipe') || '';
+    }
+
+    async _openRecipeFromHash() {
+        const recipeId = this._recipeIdFromHash();
+        if (!recipeId || recipeId === this._openedRecipeHash) return;
+        try {
+            const response = await fetch(`/api/lm/recipe/${encodeURIComponent(recipeId)}`);
+            if (!response.ok) return;
+            const recipe = await response.json();
+            if (!recipe?.id) return;
+            this._openedRecipeHash = recipeId;
+            this.showRecipeDetails(recipe);
+        } catch (error) {
+            console.error('Failed to open recipe from the URL hash:', error);
+        }
     }
 
     async _initSidebar() {

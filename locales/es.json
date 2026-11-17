@@ -478,12 +478,7 @@
             "cycleOnHover": "Cambiar imágenes de ejemplo al pasar el ratón",
             "cycleOnHoverHelp": "Al pasar el ratón sobre la imagen de vista previa de una tarjeta, sus imágenes de ejemplo se muestran una tras otra. Pasar el ratón sobre el encabezado o el pie de la tarjeta no inicia el ciclo, por lo que los botones de acción y los tooltips siguen utilizables. La imagen de vista previa seleccionada no cambia. Las vistas previas de video no se ven afectadas.",
             "cycleInterval": "Intervalo de cambio",
-            "cycleIntervalHelp": "Tiempo entre cada cambio de imagen de ejemplo mientras se pasa el ratón sobre una tarjeta.",
-            "cycleIntervalOptions": {
-                "fast": "Rápido (1,5 s)",
-                "normal": "Normal (2 s)",
-                "relaxed": "Pausado (3 s)"
-            }
+            "cycleIntervalHelp": "Tiempo entre cada cambio de imagen de ejemplo mientras se pasa el ratón sobre una tarjeta."
         },
         "autoOrganizeExclusions": {
             "label": "Exclusiones de auto-organización",
@@ -1828,6 +1823,54 @@
         }
     },
     "modals": {
+        "autoOrganizePreview": {
+            "title": "Vista previa de la auto-organización",
+            "scopeSelected": "Modelos seleccionados",
+            "scopeAll": "Todos los modelos",
+            "scope": "Alcance: {scope} · {count} modelos",
+            "previewNotice": "Solo vista previa. No se ha movido ningún archivo ni se ha limpiado ningún directorio.",
+            "emptyPreview": "No hay modelos disponibles para esta vista previa.",
+            "alreadyOrganized": "Todos los modelos ya están en la ubicación correcta.",
+            "loadingTitle": "Calculando la vista previa...",
+            "loadingMessage": "No se está modificando ningún archivo.",
+            "previewFailed": "Error en la vista previa",
+            "retry": "Reintentar",
+            "statWillMove": "Por mover",
+            "statSkipped": "Omitidos",
+            "statIssues": "Problemas",
+            "issuesWarning": "Se espera que {count} modelo(s) fallen; el resto de los modelos se procesarán igualmente.",
+            "detailsLabel": "Detalles de la vista previa",
+            "movesTab": "Movimientos ({count})",
+            "skippedTab": "Omitidos ({count})",
+            "issuesTab": "Problemas ({count})",
+            "searchPlaceholder": "Buscar modelo o ruta...",
+            "from": "De",
+            "to": "A",
+            "location": "Ubicación",
+            "organizingWith": "Organizando con:",
+            "flatStructureRule": "Estructura plana (raíz de la biblioteca)",
+            "emptyMoves": "No hay modelos que mover.",
+            "emptySkipped": "No se omitirá ningún modelo.",
+            "emptyIssues": "No hay problemas que revisar.",
+            "emptySearch": "Ningún resultado coincide con tu búsqueda.",
+            "replanNote": "La ejecución se vuelve a calcular a partir del estado más reciente de la biblioteca, por lo que los resultados reales pueden diferir de esta vista previa.",
+            "copyReport": "Copiar informe",
+            "refresh": "Actualizar vista previa",
+            "apply": "Organizar ({count})",
+            "noMoves": "No hay movimientos que aplicar",
+            "pageStatus": "{from}–{to} de {total}",
+            "reasons": {
+                "already_organized": "Ya organizado",
+                "no_file_path": "Sin ruta de archivo",
+                "outside_roots": "Fuera de las raíces de la biblioteca",
+                "missing_metadata": "Faltan metadatos",
+                "path_too_long": "Ruta de destino demasiado larga",
+                "target_exists": "El destino ya existe",
+                "planned_collision": "Colisión de movimientos previstos",
+                "move_failed": "Error al mover",
+                "error": "Error"
+            }
+        },
         "exclude": {
             "confirm": "Excluir"
         },
@@ -2170,7 +2213,35 @@
                 "aboutThisVersion": "Acerca de esta versión",
                 "baseModelSearchPlaceholder": "Buscar modelo base...",
                 "baseModelSuggested": "Sugerido",
-                "baseModelNoMatch": "No hay modelos base que coincidan"
+                "baseModelNoMatch": "No hay modelos base que coincidan",
+                "creator": "Creador",
+                "creatorAdd": "Añadir creador",
+                "creatorEdit": "Editar creador",
+                "creatorSearchPlaceholder": "Buscar creadores o escribir un nombre nuevo...",
+                "creatorLibraryHeader": "Creadores de tu biblioteca",
+                "creatorMatchingHeader": "Creadores coincidentes",
+                "creatorLibraryCount": "{count} en la biblioteca",
+                "creatorCurrent": "Actual: {name}",
+                "creatorCreate": "Crear «{name}»",
+                "creatorCreateAnnounce": "Pulsa Intro para crear {name}.",
+                "creatorNew": "Nuevo creador",
+                "creatorNoMatch": "Ningún creador existente coincide con «{name}»",
+                "creatorEmptyLibrary": "Aún no hay creadores en tu biblioteca. Escribe un nombre para añadir el primero.",
+                "creatorModelCount": "{count} modelos",
+                "creatorModelCountOne": "{count} modelo",
+                "creatorMatchCount": "{count} coincidencias",
+                "creatorMatchCountOne": "{count} coincidencia",
+                "creatorShowing": "Mostrando {shown} de {total} — sigue escribiendo para filtrar",
+                "creatorRemove": "Eliminar creador",
+                "creatorManual": "Manual",
+                "creatorManualHint": "Añadido manualmente. La actualización de metadatos no lo sobrescribirá.",
+                "creatorSaved": "Creador actualizado",
+                "creatorRemoved": "Creador eliminado",
+                "creatorSaveFailed": "No se pudo actualizar el creador. Inténtalo de nuevo.",
+                "creatorLoadFailed": "No se pudieron cargar los creadores. Aún puedes escribir un nombre nuevo.",
+                "creatorTooLong": "El nombre del creador es demasiado largo (máx. 64 caracteres)",
+                "creatorLoading": "Cargando creadores...",
+                "creatorKeyboardHint": "↑↓ navegar · ↵ seleccionar · esc cancelar"
             },
             "notes": {
                 "saved": "Notas guardadas exitosamente",
@@ -2218,6 +2289,7 @@
             "description": {
                 "noDescription": "No hay descripción del modelo disponible",
                 "failedToLoad": "Error al cargar la descripción del modelo",
+                "offline": "La descripción se guarda junto con el archivo de modelo, que está en un disco sin conexión. Vuelve a conectar el disco para leerla.",
                 "editTitle": "Editar descripción del modelo",
                 "validation": {
                     "cannotBeEmpty": "La descripción no puede estar vacía"
@@ -2249,6 +2321,10 @@
                 "noDerivatives": "No se permiten fusiones",
                 "noReLicense": "Se requieren mismos permisos",
                 "restrictionsLabel": "Restricciones de licencia"
+            },
+            "notices": {
+                "offline": "El disco que contiene este modelo está sin conexión. Se muestra información en caché — las acciones de archivo y las ediciones no estarán disponibles hasta que se vuelva a conectar.",
+                "partial": "No se pudo leer el archivo de metadatos del modelo. Se muestra información en caché — es posible que la descripción, las imágenes de ejemplo y el avatar del creador no estén disponibles."
             },
             "loading": {
                 "exampleImages": "Cargando imágenes de ejemplo...",
@@ -2592,12 +2668,20 @@
         "title": "Ayuda y tutoriales",
         "tabs": {
             "gettingStarted": "Comenzando",
-            "updateVlogs": "Vlogs de actualización",
+            "updates": "[TODO: Translate] Updates",
             "documentation": "Documentación",
             "shortcuts": "Atajos"
         },
         "gettingStarted": {
             "title": "Comenzando con el gestor de LoRA",
+            "stepsTitle": "[TODO: Translate] First steps",
+            "steps": {
+                "configure": "[TODO: Translate] Configure your model folders and add a CivitAI API key if you plan to download models.",
+                "find": "[TODO: Translate] Find a model by browsing folders or searching names, tags, and trigger words.",
+                "send": "[TODO: Translate] Use Send to ComfyUI or copy LoRA syntax into a compatible LoRA Manager node.",
+                "refresh": "[TODO: Translate] Use Refresh after changing files outside LoRA Manager; rebuild the cache only for cache inconsistencies."
+            },
+            "readGuide": "[TODO: Translate] Open the Getting Started guide",
             "replayTutorial": "Repetir tutorial"
         },
         "shortcuts": {
@@ -2622,7 +2706,6 @@
                 "closeModal": "Cerrar modal / panel",
                 "openShortcuts": "Abrir este panel de atajos",
                 "refresh": "Actualizar la lista de modelos",
-                "fetchMetadata": "Obtener metadatos de CivitAI (solo páginas de modelos)",
                 "downloadModel": "Descargar un modelo (solo páginas de modelos)",
                 "toggleBulkMode": "Activar/desactivar el modo por lotes",
                 "selectAll": "Seleccionar todos los modelos visibles",
@@ -2644,17 +2727,26 @@
             "title": "Últimas actualizaciones",
             "watchOnYouTube": "Ver en YouTube",
             "playlistTitle": "Lista de reproducción de actualizaciones del gestor de LoRA",
-            "playlistDescription": "Ve todos los videos de actualización mostrando las últimas características y mejoras."
+            "playlistDescription": "Ve todos los videos de actualización mostrando las últimas características y mejoras.",
+            "releaseNotes": "[TODO: Translate] Read release notes on GitHub"
         },
         "documentation": {
             "title": "Documentación",
-            "general": "General",
+            "startSupport": "[TODO: Translate] Start & Support",
+            "workingWithAssets": "[TODO: Translate] Working with Assets",
+            "integrationConfiguration": "[TODO: Translate] Integration & Configuration",
+            "gettingStarted": "[TODO: Translate] Getting Started",
+            "faq": "[TODO: Translate] FAQ",
             "troubleshooting": "Solución de problemas",
-            "modelManagement": "Gestión de modelos",
+            "modelLibrary": "[TODO: Translate] Model Library",
+            "downloadsOrganization": "[TODO: Translate] Downloading and Organizing Models",
             "recipes": "Recetas",
-            "settings": "Configuración",
-            "extensions": "Extensiones",
-            "newBadge": "NUEVO"
+            "workflowLibrary": "[TODO: Translate] Workflow Library",
+            "comfyuiIntegration": "[TODO: Translate] ComfyUI Integration",
+            "configuration": "[TODO: Translate] Configuration",
+            "loraSyntax": "[TODO: Translate] LoRA Syntax and Duplicate Filenames",
+            "browserExtension": "[TODO: Translate] LM Civitai Extension",
+            "browseAll": "[TODO: Translate] Browse all documentation"
         },
         "newContentBadge": "NUEVO"
     },

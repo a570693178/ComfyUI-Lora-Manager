@@ -58,6 +58,71 @@ async def test_search_relative_paths_supports_multiple_tokens():
 
 
 @pytest.mark.asyncio
+async def test_search_relative_paths_accepts_pasted_filename_with_extension():
+    """A filename copied from the file manager includes the extension."""
+    scanner = FakeScanner(
+        [
+            {"file_path": "/models/flux/detail-model.safetensors"},
+            {"file_path": "/models/flux/other-model.safetensors"},
+        ],
+        ["/models"],
+    )
+    service = DummyService("stub", scanner, BaseModelMetadata)
+
+    matching = await service.search_relative_paths("detail-model.safetensors")
+
+    assert matching == [f"flux{os.sep}detail-model.safetensors"]
+
+
+@pytest.mark.asyncio
+async def test_search_relative_paths_strips_extension_from_each_token():
+    scanner = FakeScanner(
+        [
+            {"file_path": "/models/[Anima Base] Style-Crisisbeat.safetensors"},
+            {"file_path": "/models/[Anima Base] Other.safetensors"},
+        ],
+        ["/models"],
+    )
+    service = DummyService("stub", scanner, BaseModelMetadata)
+
+    matching = await service.search_relative_paths(
+        "[Anima Base] Style-Crisisbeat.safetensors"
+    )
+
+    assert matching == [f"[Anima Base] Style-Crisisbeat.safetensors"]
+
+
+@pytest.mark.asyncio
+async def test_search_relative_paths_strips_extension_from_exclude_tokens():
+    scanner = FakeScanner(
+        [
+            {"file_path": "/models/flux/detail.safetensors"},
+            {"file_path": "/models/flux/detail-old.ckpt"},
+        ],
+        ["/models"],
+    )
+    service = DummyService("stub", scanner, BaseModelMetadata)
+
+    matching = await service.search_relative_paths("detail -old.ckpt")
+
+    assert matching == [f"flux{os.sep}detail.safetensors"]
+
+
+@pytest.mark.asyncio
+async def test_search_relative_paths_extension_only_query_matches_nothing():
+    scanner = FakeScanner(
+        [
+            {"file_path": "/models/flux/detail.safetensors"},
+            {"file_path": "/models/flux/other.safetensors"},
+        ],
+        ["/models"],
+    )
+    service = DummyService("stub", scanner, BaseModelMetadata)
+
+    assert await service.search_relative_paths(".safetensors") == []
+
+
+@pytest.mark.asyncio
 async def test_search_relative_paths_groups_by_folder_alphabetically():
     """Same-folder entries cluster together; folders sort alphabetically."""
     scanner = FakeScanner(
@@ -555,3 +620,65 @@ async def test_title_matching_honours_exclude_tokens():
         )
         == []
     )
+
+
+@pytest.mark.asyncio
+async def test_active_filtered_models_reuse_the_manager_page_filters():
+    from py.services.active_filters_store import ActiveFiltersStore
+
+    ActiveFiltersStore.reset_instance()
+    try:
+        ActiveFiltersStore.get_instance().set_filters(
+            "lora",
+            {
+                "activeFolder": "characters",
+                "recursiveSearch": True,
+                "filters": {"baseModel": ["Flux"]},
+            },
+        )
+        scanner = FakeScanner(
+            [
+                {
+                    "file_name": "astral.safetensors",
+                    "folder": "characters",
+                    "base_model": "Flux",
+                },
+                {
+                    "file_name": "legacy.safetensors",
+                    "folder": "characters",
+                    "base_model": "SD 1.5",
+                },
+                {
+                    "file_name": "styles.safetensors",
+                    "folder": "styles",
+                    "base_model": "Flux",
+                },
+            ],
+            ["/models"],
+        )
+        service = DummyService("lora", scanner, BaseModelMetadata)
+
+        models = await service.get_active_filtered_models()
+
+        assert [model["file_name"] for model in models] == ["astral.safetensors"]
+    finally:
+        ActiveFiltersStore.reset_instance()
+
+
+@pytest.mark.asyncio
+async def test_active_filtered_models_without_stored_state_returns_everything():
+    from py.services.active_filters_store import ActiveFiltersStore
+
+    ActiveFiltersStore.reset_instance()
+    scanner = FakeScanner(
+        [
+            {"file_name": "one.safetensors", "folder": "a", "base_model": "Flux"},
+            {"file_name": "two.safetensors", "folder": "b", "base_model": "SD 1.5"},
+        ],
+        ["/models"],
+    )
+    service = DummyService("lora", scanner, BaseModelMetadata)
+
+    models = await service.get_active_filtered_models()
+
+    assert [model["file_name"] for model in models] == ["one.safetensors", "two.safetensors"]

@@ -1,5 +1,12 @@
 import { app } from "../../scripts/app.js";
 import { lmUrl } from "./base_path.js";
+import { openComfyUISettingsDialog } from "./comfy_settings_dialog.js";
+import {
+    applyLmAccent,
+    LM_THEME_ACCENT_DEFAULT,
+    LM_THEME_ACCENT_SETTING_ID,
+    renderLmAccentSetting,
+} from "./lm_theme.js";
 
 // ============================================================================
 // Setting IDs and Defaults
@@ -528,6 +535,16 @@ app.registerExtension({
     name: "LoraManager.Settings",
     settings: [
         {
+            id: LM_THEME_ACCENT_SETTING_ID,
+            name: "Widget accent color",
+            // Custom renderer: preset swatches plus a free colour picker.
+            type: renderLmAccentSetting,
+            defaultValue: LM_THEME_ACCENT_DEFAULT,
+            tooltip: "Highlight color for LoRA Manager nodes, their popovers and the LoRA quick panel (selection, focus ring, badges, accent labels). Surfaces and text always follow the ComfyUI palette, so only the accent is adjustable here; a mid-tone color reads best both as a fill and as a background tint. This does not affect the LoRA Manager browser page.",
+            category: ["LoRA Manager", "Appearance", "Widget accent color"],
+            onChange: (value) => applyLmAccent(value),
+        },
+        {
             id: TRIGGER_WORD_WHEEL_SENSITIVITY_ID,
             name: "Trigger Word Wheel Sensitivity",
             type: "slider",
@@ -690,38 +707,6 @@ app.registerExtension({
             return false;
         };
 
-        const selectLoraManagerSettings = async (maxWaitMs = 2000) => {
-            const startTime = Date.now();
-            while (Date.now() - startTime < maxWaitMs) {
-                const navItem = document.querySelector(
-                    '[data-testid="settings-dialog"] [data-nav-id="LoRA Manager"], [data-testid="settings-dialog"] [data-nav-id$="/LoRA Manager"]'
-                );
-                if (navItem) {
-                    navItem.click();
-                    return;
-                }
-                await new Promise((resolve) => setTimeout(resolve, 50));
-            }
-        };
-
-        const openSettingsDialog = async () => {
-            try {
-                if (await waitForCommandStore()) {
-                    await app.extensionManager.command.execute("Comfy.ShowSettingsDialog");
-                    await selectLoraManagerSettings();
-                    return;
-                }
-                if (typeof app?.ui?.settings?.show === "function") {
-                    app.ui.settings.show();
-                    await selectLoraManagerSettings();
-                    return;
-                }
-                console.warn("LoRA Manager: Could not access the ComfyUI settings dialog.");
-            } catch (error) {
-                console.warn("LoRA Manager: Failed to open the ComfyUI settings dialog.", error);
-            }
-        };
-
         const patchCommand = async () => {
             const storeReady = await waitForCommandStore();
             if (!storeReady) {
@@ -764,7 +749,7 @@ app.registerExtension({
             if (event.origin !== window.location.origin || event.data?.type !== OPEN_COMFYUI_SETTINGS_MESSAGE) {
                 return;
             }
-            void openSettingsDialog();
+            void openComfyUISettingsDialog();
         });
 
         const tabId = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
@@ -795,7 +780,7 @@ app.registerExtension({
                             window.focus();
                         } catch (_) {
                         }
-                        void openSettingsDialog();
+                        void openComfyUISettingsDialog();
                     }
                 });
             } catch (error) {
@@ -807,7 +792,7 @@ app.registerExtension({
         if (currentUrl.searchParams.get(OPEN_COMFYUI_SETTINGS_QUERY) === "1") {
             currentUrl.searchParams.delete(OPEN_COMFYUI_SETTINGS_QUERY);
             window.history.replaceState(window.history.state, "", `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`);
-            void openSettingsDialog();
+            void openComfyUISettingsDialog();
         }
 
         patchCommand();

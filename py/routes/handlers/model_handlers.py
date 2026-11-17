@@ -24,7 +24,7 @@ from ...services.connectivity_guard import (
     OFFLINE_FRIENDLY_MESSAGE,
     is_expected_offline_error,
 )
-from ...services.metadata_sync_service import MetadataSyncService
+from ...services.metadata_sync_service import MetadataSyncService, normalize_creator_updates
 from ...services.model_file_service import (
     ModelMoveService,
     normalize_relative_folder,
@@ -978,6 +978,13 @@ class ModelManagementHandler:
                 )
 
             metadata_updates = {k: v for k, v in data.items() if k != "file_path"}
+            try:
+                metadata_updates = normalize_creator_updates(metadata_updates)
+            except ValueError as exc:
+                return web.json_response(
+                    {"success": False, "error": str(exc)},
+                    status=400,
+                )
 
             updated_metadata = await self._metadata_sync.save_metadata_updates(
                 file_path=file_path,
@@ -1778,9 +1785,24 @@ class ModelQueryHandler:
             file_path = request.query.get("file_path")
             if not file_path:
                 return web.Response(text="File path is required", status=400)
-            metadata = await self._service.get_model_metadata(file_path)
+            metadata, partial, offline = await self._service.get_model_metadata_with_fallback(
+                file_path
+            )
             if metadata is not None:
-                return web.json_response({"success": True, "metadata": metadata})
+                return web.json_response(
+                    {
+                        "success": True,
+                        "metadata": metadata,
+                        # ``partial``: rebuilt from the cache because the
+                        # .metadata.json could not be read (offline drive,
+                        # unmounted share, missing/corrupt sidecar).
+                        # ``offline``: the model path is not under a reachable
+                        # root, so file actions will fail even when the sidecar
+                        # itself is readable (centralized sidecar storage).
+                        "partial": partial,
+                        "offline": offline,
+                    }
+                )
             return web.json_response(
                 {
                     "success": False,
@@ -2015,8 +2037,12 @@ class ModelQueryHandler:
             return web.json_response({"success": False, "error": str(exc)}, status=500)
 
 
-def _is_truthy(value: Optional[str]) -> bool:
-    """Parse an optional boolean query-string flag."""
+def _is_truthy(value: Any) -> bool:
+    """Parse an optional boolean flag from a query string or JSON body.
+
+    Strict: only ``True``/``1`` and the strings ``1``/``true``/``yes``/``on``
+    count, so ``"false"`` or ``0`` stay false.
+    """
     return str(value or "").strip().lower() in {"1", "true", "yes", "on"}
 
 
@@ -2902,7 +2928,7 @@ class ModelMoveHandler:
                 return web.json_response(
                     {"success": False, "error": "Folder path is required"}, status=400
                 )
-            dry_run = bool(data.get("dry_run"))
+            dry_run = _is_truthy(data.get("dry_run"))
             result = await self._move_service.delete_folder(
                 folder_path, dry_run=dry_run
             )
@@ -3045,14 +3071,24 @@ class ModelAutoOrganizeHandler:
         self._logger = logger
 
     async def auto_organize_models(self, request: web.Request) -> web.Response:
+        # ``dry_run`` may come from the query string or the POST body; either
+        # one set to a true value makes the request a preview. ``file_paths``
+        # scopes a preview and may come from either side too: a POST body, or
+        # repeated ``file_paths`` query params for GET-only clients. A body
+        # value wins when both are present.
+        dry_run = False
         try:
-            file_paths = None
+            file_paths = [
+                path for path in request.query.getall("file_paths", None) or [] if path
+            ] or None
             exclusion_patterns = None
             settings_manager = get_settings_manager()
+            dry_run = _is_truthy(request.query.get("dry_run"))
             if request.method == "POST":
                 try:
                     data = await request.json()
-                    file_paths = data.get("file_paths")
+                    file_paths = data.get("file_paths") or file_paths
+                    dry_run = dry_run or _is_truthy(data.get("dry_run"))
                     if "exclusion_patterns" in data:
                         exclusion_patterns = (
                             settings_manager.normalize_auto_organize_exclusions(
@@ -3064,10 +3100,14 @@ class ModelAutoOrganizeHandler:
 
             result = await self._use_case.execute(
                 file_paths=file_paths,
-                progress_callback=self._progress_callback,
+                # A dry run is a plain request/response preview: no progress
+                # toast, and nothing changed on disk to broadcast.
+                progress_callback=None if dry_run else self._progress_callback,
                 exclusion_patterns=exclusion_patterns,
+                dry_run=dry_run,
             )
-            _broadcast_models_changed()
+            if not dry_run:
+                _broadcast_models_changed()
             return web.json_response(result.to_dict())
         except AutoOrganizeInProgressError:
             return web.json_response(
@@ -3079,16 +3119,18 @@ class ModelAutoOrganizeHandler:
             )
         except Exception as exc:
             self._logger.error("Error in auto_organize_models: %s", exc, exc_info=True)
-            try:
-                await self._progress_callback.on_progress(
-                    {
-                        "type": "auto_organize_progress",
-                        "status": "error",
-                        "error": str(exc),
-                    }
-                )
-            except Exception:  # pragma: no cover - defensive reporting
-                pass
+            # A dry run never reports progress, so its failure must not either.
+            if not dry_run:
+                try:
+                    await self._progress_callback.on_progress(
+                        {
+                            "type": "auto_organize_progress",
+                            "status": "error",
+                            "error": str(exc),
+                        }
+                    )
+                except Exception:  # pragma: no cover - defensive reporting
+                    pass
             return web.json_response({"success": False, "error": str(exc)}, status=500)
 
     async def get_auto_organize_progress(self, request: web.Request) -> web.Response:

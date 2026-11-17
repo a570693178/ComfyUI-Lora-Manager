@@ -19,10 +19,13 @@ from .model_query import (
     SettingsProvider,
     normalize_sub_type,
     resolve_sub_type,
+    strip_model_file_extension,
 )
 from .settings_manager import get_settings_manager
 from .model_sources import source_group_key
-from ..utils.civitai_utils import build_civitai_model_page_url
+from ..utils.civitai_utils import build_civitai_model_page_url, decode_license_flags
+from ..utils.root_paths import normalize_root_identity
+from ..utils.sidecar_paths import is_centralized
 
 logger = logging.getLogger(__name__)
 
@@ -134,20 +137,57 @@ class BaseModelService(ABC):
             # base models are effectively different groups — the dedup key
             # needs to include base_model so the version count and VLM flow
             # stay consistent (card shows correct count for its base model).
-            ufs = self.settings.get("version_grouping", "same_base")
-            group_by_base = ufs == "same_base"
+            group_by_base = self._resolve_version_grouping() == "same_base"
 
-            dedup_map = {}  # (modelId [,base_model]) -> (item, version_or_modified)
-            version_counter = {}  # same-key -> count
-            standalone = []
+            # Group-aware filters must see every local version: a card stands
+            # for the whole model, so a base-model or search match on a version
+            # hidden behind the newest one must keep the card — and that
+            # matching version should be the one shown. Narrow the candidates
+            # for the representative slot, but keep counting every version so
+            # the "N versions" badge keeps the model's total.
+            # Only the filters evaluated here are group-aware; the remaining
+            # criteria (folder, tags, favorites, license, ...) still run against
+            # the chosen representative in the pipeline below.
+            # ``hash_filters`` bypass the common filter pipeline below, so only
+            # narrow when those filters will actually be applied.
+            # See issue #1210.
+            base_model_filter = (
+                set(base_models)
+                if base_models and not hash_filters
+                else set()
+            )
+            candidates = sorted_data
+            if base_model_filter:
+                candidates = [
+                    item
+                    for item in candidates
+                    if item.get("base_model") in base_model_filter
+                ]
+            if search and not hash_filters:
+                candidates = self.search_strategy.apply(
+                    candidates,
+                    search,
+                    self.search_strategy.normalize_options(search_options),
+                    fuzzy_search,
+                )
+
+            version_counter = {}  # group key -> version count (all versions)
+            grouped_items = 0
             for item in sorted_data:
-                mid = self._extract_group_key(item)
-                if mid is None:
+                key = self._group_key(item, group_by_base)
+                if key is None:
+                    continue
+                grouped_items += 1
+                version_counter[key] = version_counter.get(key, 0) + 1
+            dedup_lost = grouped_items - len(version_counter)
+
+            dedup_map = {}  # group key -> (representative, version_or_modified)
+            standalone = []
+            for item in candidates:
+                key = self._group_key(item, group_by_base)
+                if key is None:
                     standalone.append(item)
                     continue
-                key = (mid, item.get("base_model") or "") if group_by_base else mid
-                # Count all versions per key
-                version_counter[key] = version_counter.get(key, 0) + 1
                 # Prefer CivitAI version_id; fall back to modified timestamp
                 vid = self._extract_version_id(item)
                 if vid is None:
@@ -160,7 +200,6 @@ class BaseModelService(ABC):
                 item = dict(item)
                 item["version_count"] = version_counter[key]
                 dedup_map[key] = (item, vid)
-            dedup_lost = len(sorted_data) - (len(dedup_map) + len(standalone))
             sorted_data = [entry[0] for entry in dedup_map.values()] + standalone
 
         # Re-sort by version_count (grouped: after dedup; non-grouped: group internally, sort, expand)
@@ -179,17 +218,15 @@ class BaseModelService(ABC):
             else:
                 # Non-grouped mode: group internally, sort groups by count, expand
                 # Respect the version_grouping setting (same logic as grouped dedup)
-                ufs = self.settings.get("version_grouping", "same_base")
-                group_by_base = ufs == "same_base"
+                group_by_base = self._resolve_version_grouping() == "same_base"
 
                 model_groups: Dict[Any, List[Dict[str, Any]]] = {}
                 ungrouped_standalone: List[Dict[str, Any]] = []
                 for item in sorted_data:
-                    mid = self._extract_group_key(item)
-                    if mid is None:
+                    key = self._group_key(item, group_by_base)
+                    if key is None:
                         ungrouped_standalone.append(item)
                         continue
-                    key = (mid, item.get("base_model") or "") if group_by_base else mid
                     model_groups.setdefault(key, []).append(item)
                 # Sort versions within each group by version id (descending);
                 # fall back to modified timestamp for non-CivitAI sources.
@@ -594,6 +631,17 @@ class BaseModelService(ABC):
 
         return filtered_data
 
+    async def annotate_update_flags(
+        self,
+        items: List[Dict[str, Any]],
+    ) -> List[Dict[str, Any]]:
+        """Attach ``update_available`` to a one-off set of response items.
+
+        Paginated listing paths call the private implementation directly; the
+        details endpoint uses this wrapper for a single model.
+        """
+        return await self._annotate_update_flags(items)
+
     async def _annotate_update_flags(
         self,
         items: List[Dict[str, Any]],
@@ -631,12 +679,7 @@ class BaseModelService(ABC):
         if not ordered_ids:
             return annotated
 
-        strategy_value = self.settings.get("version_grouping")
-        if isinstance(strategy_value, str) and strategy_value.strip():
-            strategy = strategy_value.strip().lower()
-        else:
-            strategy = "same_base"
-        same_base_mode = strategy == "same_base"
+        same_base_mode = self._resolve_version_grouping() == "same_base"
 
         # Check user setting for hiding early access updates
         hide_early_access = False
@@ -818,6 +861,18 @@ class BaseModelService(ABC):
             return mid
         return BaseModelService._extract_source_group_key(item)
 
+    def _group_key(self, item: Dict[str, Any], group_by_base: bool) -> Any:
+        """Return the version-group key for *item*, or ``None`` when ungrouped.
+
+        With ``group_by_base`` the base model is part of the identity, so
+        versions for different base models are distinct cards; otherwise the
+        model identity alone decides the group.
+        """
+        mid = self._extract_group_key(item)
+        if mid is None:
+            return None
+        return (mid, item.get("base_model") or "") if group_by_base else mid
+
     @staticmethod
     def _extract_model_id(item: Dict[str, Any]) -> Optional[int]:
         civitai = item.get("civitai") if isinstance(item, dict) else None
@@ -872,6 +927,20 @@ class BaseModelService(ABC):
             except Exception:
                 return None
         return candidate.lower() if candidate else None
+
+    def _resolve_version_grouping(self) -> str:
+        """Return the normalized ``version_grouping`` strategy.
+
+        The value is stored as-is in ``settings.json``, so legacy or hand-edited
+        entries can carry surrounding whitespace or a different case. List
+        grouping, the ``versions_count`` sort and the update-badge scope must
+        all interpret the strategy the same way, hence one normalize helper.
+        Anything that is not a usable string falls back to ``same_base``.
+        """
+        value = self.settings.get("version_grouping", "same_base")
+        if isinstance(value, str) and value.strip():
+            return value.strip().lower()
+        return "same_base"
 
     def _build_highest_local_versions_by_base(self, record) -> Dict[str, int]:
         """Return the highest local version id known for each normalized base model."""
@@ -1281,7 +1350,10 @@ class BaseModelService(ABC):
             return {}
 
         fields = (
-            ["id", "modelId", "name", "trainedWords"]
+            # ``creator`` travels with the lightweight payload so the model modal
+            # can still show who published the model when the on-disk metadata
+            # (the only full-payload source) lives on an offline drive.
+            ["id", "modelId", "name", "creator", "trainedWords"]
             if minimal
             else [
                 "id",
@@ -1544,6 +1616,119 @@ class BaseModelService(ABC):
 
         return self.filter_civitai_data(metadata.to_dict().get("civitai", {}))
 
+    async def get_model_metadata_with_fallback(
+        self, file_path: str
+    ) -> tuple[Optional[Dict[str, Any]], bool, bool]:
+        """Load model metadata, degrading to cached values when the disk is gone.
+
+        Returns ``(metadata, partial, offline)``:
+
+        * ``metadata`` — the on-disk CivitAI payload, or a payload rebuilt from
+          the in-memory/SQLite cache when ``.metadata.json`` cannot be read.
+        * ``partial`` — ``True`` when the payload came from the cache, i.e. it
+          only carries what the lightweight cache entry retains.
+        * ``offline`` — ``True`` when the file does not sit under a currently
+          reachable model root (switched-off drive, unmounted share).
+
+        A model whose drive is offline is deliberately *not* treated as deleted:
+        the scanner keeps its cache entry, so the modal can still show the
+        creator, version name, trigger words, license permissions and ids.
+        """
+        offline = self._is_model_path_offline(file_path)
+        if offline and not is_centralized():
+            # Alongside storage keeps the sidecar next to the model, so an
+            # unreachable model path means an unreachable sidecar. Skip the
+            # stat() that can block for seconds on a dead network share and go
+            # straight to the cache: once the drive is reconnected the refresh
+            # menu / a scan admits the root and this reads the sidecar again.
+            metadata = None
+        else:
+            # Centralized storage can still serve the real payload while the
+            # model drive is off — the sidecar lives on the app's own disk.
+            metadata = await self.get_model_metadata(file_path)
+        if metadata is not None:
+            return metadata, False, offline
+
+        entry = await self._find_cache_entry(file_path)
+        if entry is None:
+            return None, False, offline
+
+        # Nothing CivitAI-shaped was ever cached for this model (e.g. a plain
+        # HuggingFace download): reporting an empty partial payload would only
+        # raise an "incomplete metadata" notice for a model that never had any,
+        # so keep the 404 the modal already handles.
+        cached_civitai = entry.get("civitai")
+        if not isinstance(cached_civitai, dict) or not cached_civitai:
+            return None, False, offline
+
+        return self._cached_civitai_payload(entry), True, offline
+
+    def _is_model_path_offline(self, file_path: str) -> bool:
+        """Return ``True`` when *file_path* is outside every reachable root.
+
+        In-memory check only: the live root list is what the scanner admitted,
+        so a switched-off drive answers without a ``stat()`` that can block for
+        seconds on a dead network share.
+        """
+        check = getattr(self.scanner, "is_file_path_available", None)
+        if not callable(check):
+            return False
+        try:
+            return not check(file_path)
+        except Exception:  # pragma: no cover - defensive guard
+            return False
+
+    async def _find_cache_entry(self, file_path: str) -> Optional[Dict[str, Any]]:
+        """Return the cached list entry for *file_path*, if there is one."""
+        if not file_path:
+            return None
+        try:
+            cache = await self.scanner.get_cached_data()
+        except Exception:  # pragma: no cover - defensive guard
+            return None
+
+        candidate = str(file_path).replace("\\", "/")
+        raw_data = getattr(cache, "raw_data", None) or []
+        for entry in raw_data:
+            if isinstance(entry, dict) and entry.get("file_path") == candidate:
+                return entry
+
+        # The cache stores forward-slashed business paths; fold spelling,
+        # separators and (on Windows) case before giving up.
+        target = normalize_root_identity(file_path)
+        if not target:
+            return None
+        for entry in raw_data:
+            if not isinstance(entry, dict):
+                continue
+            if normalize_root_identity(entry.get("file_path", "")) == target:
+                return entry
+        return None
+
+    def _cached_civitai_payload(self, entry: Dict[str, Any]) -> Dict[str, Any]:
+        """Rebuild a CivitAI payload from the lightweight cache entry.
+
+        The cache keeps only the fields the grid needs, plus the license
+        permissions as a bitfield. Decoding that bitfield restores the
+        ``civitai.model`` section the modal renders its license icons from;
+        everything the cache never stored (description, example images, creator
+        avatar) stays absent rather than being invented.
+        """
+        civitai = entry.get("civitai")
+        payload: Dict[str, Any] = dict(civitai) if isinstance(civitai, dict) else {}
+
+        model_section = payload.get("model")
+        if isinstance(model_section, dict):
+            merged = dict(model_section)
+            merged.update(decode_license_flags(entry.get("license_flags")))
+            payload["model"] = merged
+
+        base_model = entry.get("base_model")
+        if base_model and not payload.get("baseModel"):
+            payload["baseModel"] = base_model
+
+        return self.filter_civitai_data(payload)
+
     async def get_model_description(self, file_path: str) -> Optional[str]:
         """Return the stored modelDescription field for a model."""
         metadata, should_skip = await MetadataManager.load_metadata(
@@ -1555,7 +1740,12 @@ class BaseModelService(ABC):
 
     @staticmethod
     def _parse_search_tokens(search_term: str) -> tuple[List[str], List[str]]:
-        """Split a search string into include and exclude tokens."""
+        """Split a search string into include and exclude tokens.
+
+        Tokens are extension-free: paths are compared without their extension,
+        so a filename pasted from the file manager (``foo.safetensors``) must
+        be normalized the same way before matching.
+        """
         include_terms: List[str] = []
         exclude_terms: List[str] = []
 
@@ -1565,9 +1755,13 @@ class BaseModelService(ABC):
                 continue
 
             if term.startswith("-") and len(term) > 1:
-                exclude_terms.append(term[1:].lower())
+                term = strip_model_file_extension(term[1:])
+                if term:
+                    exclude_terms.append(term.lower())
             else:
-                include_terms.append(term.lower())
+                term = strip_model_file_extension(term)
+                if term:
+                    include_terms.append(term.lower())
 
         return include_terms, exclude_terms
 
@@ -1645,6 +1839,77 @@ class BaseModelService(ABC):
             relative_path, include_terms
         )
 
+    async def _apply_model_filters(
+        self,
+        data: List[Dict[str, Any]],
+        *,
+        folder: Optional[str] = None,
+        folder_include: Optional[list[str]] = None,
+        folder_exclude: Optional[list[str]] = None,
+        base_models: Optional[list[str]] = None,
+        model_types: Optional[list[str]] = None,
+        tags: Optional[dict[str, str]] = None,
+        auto_tags: Optional[dict[str, str]] = None,
+        tag_logic: str = "any",
+        credit_required: Optional[bool] = None,
+        allow_selling_generated_content: Optional[bool] = None,
+        recursive: bool = True,
+    ) -> List[Dict[str, Any]]:
+        """Apply the list-endpoint filter pipeline to raw cache entries.
+
+        Shared by the autocomplete search and the LoRA folder index so the
+        ComfyUI side filters exactly like the manager page does.
+        """
+        # Auto-tags are not stored in the scanner cache — they are computed
+        # on the fly. Pre-compute them only when an auto-tag filter is
+        # active to avoid mutating cache entries unnecessarily.
+        if auto_tags:
+            from .auto_tag_service import extract_auto_tags
+
+            for item in data:
+                if not item.get("auto_tags"):
+                    item["auto_tags"] = extract_auto_tags(item)
+
+        criteria = FilterCriteria(
+            folder=folder,
+            folder_include=folder_include,
+            folder_exclude=folder_exclude,
+            base_models=base_models,
+            model_types=model_types,
+            tags=tags,
+            auto_tags=auto_tags,
+            search_options={"recursive": recursive},
+            tag_logic=tag_logic,
+        )
+        filtered = self.filter_set.apply(data, criteria)
+        if credit_required is not None:
+            filtered = await self._apply_credit_required_filter(
+                filtered, credit_required
+            )
+        if allow_selling_generated_content is not None:
+            filtered = await self._apply_allow_selling_filter(
+                filtered, allow_selling_generated_content
+            )
+        return filtered
+
+    async def get_active_filtered_models(self) -> List[Dict[str, Any]]:
+        """Return cache entries narrowed by the manager page's active filters.
+
+        The manager page mirrors its filter state to the backend, so the
+        folder index can be built from the same subset the page lists without
+        trusting any client-side storage.
+        """
+        from .active_filters_store import (
+            ActiveFiltersStore,
+            active_filters_to_query_kwargs,
+        )
+
+        cache = await self.scanner.get_cached_data()
+        stored = ActiveFiltersStore.get_instance().get_filters(self.model_type)
+        return await self._apply_model_filters(
+            cache.raw_data, **active_filters_to_query_kwargs(stored)
+        )
+
     async def search_relative_paths(
         self,
         search_term: str,
@@ -1713,17 +1978,8 @@ class BaseModelService(ABC):
             ]
         )
         if has_filters:
-            # Auto-tags are not stored in the scanner cache — they are computed
-            # on the fly. Pre-compute them only when an auto-tag filter is
-            # active to avoid mutating cache entries unnecessarily.
-            if auto_tags:
-                from .auto_tag_service import extract_auto_tags
-
-                for item in data:
-                    if not item.get("auto_tags"):
-                        item["auto_tags"] = extract_auto_tags(item)
-
-            criteria = FilterCriteria(
+            data = await self._apply_model_filters(
+                data,
                 folder=folder,
                 folder_include=folder_include,
                 folder_exclude=folder_exclude,
@@ -1731,18 +1987,11 @@ class BaseModelService(ABC):
                 model_types=model_types,
                 tags=tags,
                 auto_tags=auto_tags,
-                search_options={"recursive": recursive},
                 tag_logic=tag_logic,
+                credit_required=credit_required,
+                allow_selling_generated_content=allow_selling_generated_content,
+                recursive=recursive,
             )
-            data = self.filter_set.apply(data, criteria)
-            if credit_required is not None:
-                data = await self._apply_credit_required_filter(
-                    data, credit_required
-                )
-            if allow_selling_generated_content is not None:
-                data = await self._apply_allow_selling_filter(
-                    data, allow_selling_generated_content
-                )
 
         path_matches: List[Dict[str, str]] = []
         title_only_matches: List[Dict[str, str]] = []

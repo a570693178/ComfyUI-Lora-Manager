@@ -543,10 +543,19 @@ export class BaseModelApiClient {
         const etaTracker = createScanEtaTracker();
         let ws = null;
         let lastProgressStage = null;
+        let lastProgressValue = 0;
 
         const handleScanProgress = (data) => {
-            if (typeof data.progress === 'number') {
-                state.loadingManager.setProgress(data.progress);
+            const hasProgress = Number.isFinite(data.progress);
+            if (hasProgress && data.status === 'processing') {
+                state.loadingManager.setIndeterminate(false);
+            }
+            if (hasProgress) {
+                const progress = Math.min(100, Math.max(0, data.progress));
+                lastProgressValue = Math.max(lastProgressValue, progress);
+                state.loadingManager.setProgress(lastProgressValue, {
+                    showPercent: data.status === 'processing',
+                });
             }
             // The per-file rate of one stage says nothing about the next one:
             // the walk phase counts files while the new-file pass processes
@@ -560,6 +569,7 @@ export class BaseModelApiClient {
                 { total: data.total },
                 data.stage || ''
             );
+            let etaText = '';
             if (data.status === 'processing' && data.stage === 'reconcile_scan') {
                 // Walk phase: the real file count is only known once the walk
                 // finishes, so report the files checked so far and the roots
@@ -578,26 +588,21 @@ export class BaseModelApiClient {
                     statusText += roots.length
                         ? ` ${roots.join(', ')} (${filesText})`
                         : ` (${filesText})`;
-                    const etaText = etaTracker.update(data.processed, data.total);
-                    if (etaText) {
-                        statusText += ` | ${etaText}`;
-                    }
+                    etaText = etaTracker.update(data.processed, data.total) || '';
                 }
             } else if (data.status === 'processing' && data.total > 0) {
                 statusText += ` (${data.processed}/${data.total})`;
                 if (data.current_name) {
                     statusText += ` ${data.current_name}`;
                 }
-                const etaText = etaTracker.update(data.processed, data.total);
-                if (etaText) {
-                    statusText += ` | ${etaText}`;
-                }
+                etaText = etaTracker.update(data.processed, data.total) || '';
             }
-            state.loadingManager.setStatus(statusText);
+            state.loadingManager.setStatus(statusText, etaText);
         };
 
         try {
             state.loadingManager.show(initialMessage, 0);
+            state.loadingManager.setIndeterminate(true);
             state.loadingManager.showCancelButton(() => {
                 this.cancelTask();
                 abortController.abort();
@@ -2334,6 +2339,20 @@ export class BaseModelApiClient {
     }
 
     async fetchModelMetadata(filePath) {
+        const result = await this.fetchModelMetadataWithStatus(filePath);
+        return result.metadata;
+    }
+
+    /**
+     * Fetch the full CivitAI metadata together with its provenance.
+     *
+     * The backend degrades to the cached payload when `.metadata.json` cannot
+     * be read (offline drive, unmounted share, missing sidecar), so callers
+     * that render a full view need to know whether what they got is complete:
+     *
+     * @returns {Promise<{metadata: Object, partial: boolean, offline: boolean}>}
+     */
+    async fetchModelMetadataWithStatus(filePath) {
         try {
             const params = new URLSearchParams({ file_path: filePath });
             const response = await fetch(`${this.apiConfig.endpoints.metadata}?${params}`);
@@ -2345,7 +2364,11 @@ export class BaseModelApiClient {
             const data = await response.json();
 
             if (data.success) {
-                return data.metadata;
+                return {
+                    metadata: data.metadata || {},
+                    partial: Boolean(data.partial),
+                    offline: Boolean(data.offline),
+                };
             } else {
                 throw new Error(data.error || `No metadata found for ${this.apiConfig.config.singularName}`);
             }
@@ -2375,6 +2398,39 @@ export class BaseModelApiClient {
             console.error(`Error fetching ${this.apiConfig.config.singularName} description:`, error);
             throw error;
         }
+    }
+
+    buildAutoOrganizeRequestBody(filePaths = null, dryRun = false) {
+        const requestBody = { dry_run: dryRun };
+        const exclusionPatterns = (state.global.settings.auto_organize_exclusions || [])
+            .filter(pattern => typeof pattern === 'string' && pattern.trim())
+            .map(pattern => pattern.trim());
+
+        if (filePaths) {
+            requestBody.file_paths = filePaths;
+        }
+        if (exclusionPatterns.length > 0) {
+            requestBody.exclusion_patterns = exclusionPatterns;
+        }
+        return requestBody;
+    }
+
+    /**
+     * Preview auto-organize without opening a progress socket or changing files.
+     * @param {Array} filePaths - Optional array of file paths to preview.
+     * @returns {Promise<Object>} The complete dry-run plan and summary.
+     */
+    async previewAutoOrganizeModels(filePaths = null) {
+        const response = await fetch(this.apiConfig.endpoints.autoOrganize, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(this.buildAutoOrganizeRequestBody(filePaths, true)),
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            throw new Error(result.error || 'Failed to preview auto-organize operation');
+        }
+        return result;
     }
 
     /**
@@ -2460,22 +2516,10 @@ export class BaseModelApiClient {
 
                 // Start the auto-organize operation
                 const endpoint = this.apiConfig.endpoints.autoOrganize;
-                const exclusionPatterns = (state.global.settings.auto_organize_exclusions || [])
-                    .filter(pattern => typeof pattern === 'string' && pattern.trim())
-                    .map(pattern => pattern.trim());
-
-                const requestBody = {};
-                if (filePaths) {
-                    requestBody.file_paths = filePaths;
-                }
-                if (exclusionPatterns.length > 0) {
-                    requestBody.exclusion_patterns = exclusionPatterns;
-                }
-
                 const requestOptions = {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(requestBody),
+                    body: JSON.stringify(this.buildAutoOrganizeRequestBody(filePaths)),
                 };
 
                 const response = await fetch(endpoint, requestOptions);

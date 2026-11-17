@@ -479,12 +479,7 @@
       "cycleOnHover": "Cycle Example Images on Hover",
       "cycleOnHoverHelp": "When hovering a card's preview image, cycle through its example images. Hovering the card header or footer does not start cycling, so action buttons and tooltips stay usable. The selected preview image itself stays unchanged. Video previews are not affected.",
       "cycleInterval": "Cycle Interval",
-      "cycleIntervalHelp": "Time between example image switches while hovering a card.",
-      "cycleIntervalOptions": {
-        "fast": "Fast (1.5s)",
-        "normal": "Normal (2s)",
-        "relaxed": "Relaxed (3s)"
-      }
+      "cycleIntervalHelp": "Time between example image switches while hovering a card."
     },
     "autoOrganizeExclusions": {
       "label": "Auto-organize exclusions",
@@ -1837,6 +1832,54 @@
     }
   },
   "modals": {
+    "autoOrganizePreview": {
+      "title": "Preview Auto-Organize",
+      "scopeSelected": "Selected models",
+      "scopeAll": "All models",
+      "scope": "Scope: {scope} · {count} models",
+      "previewNotice": "Preview only. No files have been moved and no directories have been cleaned.",
+      "emptyPreview": "No models are available for this preview.",
+      "alreadyOrganized": "All models are already in the correct location.",
+      "loadingTitle": "Calculating preview...",
+      "loadingMessage": "No files are being changed.",
+      "previewFailed": "Preview failed",
+      "retry": "Retry",
+      "statWillMove": "Will move",
+      "statSkipped": "Skipped",
+      "statIssues": "Issues",
+      "issuesWarning": "{count} model(s) are expected to fail; the remaining models will still be processed.",
+      "detailsLabel": "Preview details",
+      "movesTab": "Moves ({count})",
+      "skippedTab": "Skipped ({count})",
+      "issuesTab": "Issues ({count})",
+      "searchPlaceholder": "Search model or path...",
+      "from": "From",
+      "to": "To",
+      "location": "Location",
+      "organizingWith": "Organizing with:",
+      "flatStructureRule": "Flat structure (library root)",
+      "emptyMoves": "No models need to be moved.",
+      "emptySkipped": "No models will be skipped.",
+      "emptyIssues": "No issues to review.",
+      "emptySearch": "No results match your search.",
+      "replanNote": "Execution recalculates from the latest library state, so actual results may differ from this preview.",
+      "copyReport": "Copy Report",
+      "refresh": "Refresh Preview",
+      "apply": "Organize ({count})",
+      "noMoves": "No Moves to Apply",
+      "pageStatus": "{from}–{to} of {total}",
+      "reasons": {
+        "already_organized": "Already organized",
+        "no_file_path": "No file path",
+        "outside_roots": "Outside library roots",
+        "missing_metadata": "Missing metadata",
+        "path_too_long": "Target path too long",
+        "target_exists": "Target already exists",
+        "planned_collision": "Planned move collision",
+        "move_failed": "Move failed",
+        "error": "Error"
+      }
+    },
     "exclude": {
       "confirm": "Exclude"
     },
@@ -2192,7 +2235,35 @@
         "aboutThisVersion": "About this version",
         "baseModelSearchPlaceholder": "Search base model…",
         "baseModelSuggested": "Suggested",
-        "baseModelNoMatch": "No matching base models"
+        "baseModelNoMatch": "No matching base models",
+        "creator": "Creator",
+        "creatorAdd": "Add creator",
+        "creatorEdit": "Edit creator",
+        "creatorSearchPlaceholder": "Search creators or type a new name...",
+        "creatorLibraryHeader": "Creators in your library",
+        "creatorMatchingHeader": "Matching creators",
+        "creatorLibraryCount": "{count} in library",
+        "creatorCurrent": "Current: {name}",
+        "creatorCreate": "Create “{name}”",
+        "creatorCreateAnnounce": "Press Enter to create {name}.",
+        "creatorNew": "New creator",
+        "creatorNoMatch": "No existing creator matches “{name}”",
+        "creatorEmptyLibrary": "No creators in your library yet. Type a name to add the first one.",
+        "creatorModelCount": "{count} models",
+        "creatorModelCountOne": "{count} model",
+        "creatorMatchCount": "{count} matches",
+        "creatorMatchCountOne": "{count} match",
+        "creatorShowing": "Showing {shown} of {total} — keep typing",
+        "creatorRemove": "Remove creator",
+        "creatorManual": "Manual",
+        "creatorManualHint": "Added manually. Metadata refresh won't overwrite it.",
+        "creatorSaved": "Creator updated",
+        "creatorRemoved": "Creator removed",
+        "creatorSaveFailed": "Couldn't update creator. Try again.",
+        "creatorLoadFailed": "Couldn't load creators. You can still type a new name.",
+        "creatorTooLong": "Creator name is too long (max 64 characters)",
+        "creatorLoading": "Loading creators...",
+        "creatorKeyboardHint": "↑↓ navigate · ↵ select · esc cancel"
       },
       "notes": {
         "saved": "Notes saved successfully",
@@ -2240,6 +2311,7 @@
       "description": {
         "noDescription": "No model description available",
         "failedToLoad": "Failed to load model description",
+        "offline": "The description is stored with the model file, which is on an offline disk. Reconnect the disk to read it.",
         "editTitle": "Edit model description",
         "validation": {
           "cannotBeEmpty": "Description cannot be empty"
@@ -2271,6 +2343,10 @@
         "noDerivatives": "No sharing merges",
         "noReLicense": "Same permissions required",
         "restrictionsLabel": "License restrictions"
+      },
+      "notices": {
+        "offline": "The disk holding this model is offline. Showing cached information — file actions and edits stay unavailable until it is reconnected.",
+        "partial": "The model metadata file could not be read. Showing cached information — description, examples and creator avatar may be unavailable."
       },
       "loading": {
         "exampleImages": "Loading example images...",
@@ -2614,12 +2690,20 @@
     "title": "Help & Tutorials",
     "tabs": {
       "gettingStarted": "Getting Started",
-      "updateVlogs": "Update Vlogs",
+      "updates": "Updates",
       "documentation": "Documentation",
       "shortcuts": "Shortcuts"
     },
     "gettingStarted": {
       "title": "Getting Started with LoRA Manager",
+      "stepsTitle": "First steps",
+      "steps": {
+        "configure": "Configure your model folders and add a CivitAI API key if you plan to download models.",
+        "find": "Find a model by browsing folders or searching names, tags, and trigger words.",
+        "send": "Use Send to ComfyUI or copy LoRA syntax into a compatible LoRA Manager node.",
+        "refresh": "Use Refresh after changing files outside LoRA Manager; rebuild the cache only for cache inconsistencies."
+      },
+      "readGuide": "Open the Getting Started guide",
       "replayTutorial": "Replay Tutorial"
     },
     "shortcuts": {
@@ -2644,7 +2728,6 @@
         "closeModal": "Close modal / panel",
         "openShortcuts": "Open this shortcuts panel",
         "refresh": "Refresh model list",
-        "fetchMetadata": "Fetch metadata from CivitAI (model pages only)",
         "downloadModel": "Download a model (model pages only)",
         "toggleBulkMode": "Toggle bulk mode",
         "selectAll": "Select all visible models",
@@ -2666,17 +2749,26 @@
       "title": "Latest Updates",
       "watchOnYouTube": "Watch on YouTube",
       "playlistTitle": "LoRA Manager Updates Playlist",
-      "playlistDescription": "Watch all update videos showcasing the latest features and improvements."
+      "playlistDescription": "Watch all update videos showcasing the latest features and improvements.",
+      "releaseNotes": "Read release notes on GitHub"
     },
     "documentation": {
       "title": "Documentation",
-      "general": "General",
+      "startSupport": "Start & Support",
+      "workingWithAssets": "Working with Assets",
+      "integrationConfiguration": "Integration & Configuration",
+      "gettingStarted": "Getting Started",
+      "faq": "FAQ",
       "troubleshooting": "Troubleshooting",
-      "modelManagement": "Model Management",
+      "modelLibrary": "Model Library",
+      "downloadsOrganization": "Downloading and Organizing Models",
       "recipes": "Recipes",
-      "settings": "Settings & Configuration",
-      "extensions": "Extensions",
-      "newBadge": "NEW"
+      "workflowLibrary": "Workflow Library",
+      "comfyuiIntegration": "ComfyUI Integration",
+      "configuration": "Configuration",
+      "loraSyntax": "LoRA Syntax and Duplicate Filenames",
+      "browserExtension": "LM Civitai Extension",
+      "browseAll": "Browse all documentation"
     },
     "newContentBadge": "New"
   },

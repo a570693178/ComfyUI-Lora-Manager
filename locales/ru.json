@@ -478,12 +478,7 @@
             "cycleOnHover": "Переключать примеры изображений при наведении",
             "cycleOnHoverHelp": "При наведении на изображение превью карточки по очереди показываются её примеры изображений. Наведение на верхнюю или нижнюю панель карточки не запускает смену, поэтому кнопки действий и подсказки остаются доступными. Выбранное изображение превью остаётся неизменным. На превью видео это не влияет.",
             "cycleInterval": "Интервал переключения",
-            "cycleIntervalHelp": "Время между сменой примеров изображений при наведении на карточку.",
-            "cycleIntervalOptions": {
-                "fast": "Быстрый (1,5 секунды)",
-                "normal": "Обычный (2 секунды)",
-                "relaxed": "Неспешный (3 секунды)"
-            }
+            "cycleIntervalHelp": "Время между сменой примеров изображений при наведении на карточку."
         },
         "autoOrganizeExclusions": {
             "label": "Исключения автосортировки",
@@ -1828,6 +1823,54 @@
         }
     },
     "modals": {
+        "autoOrganizePreview": {
+            "title": "Предпросмотр автоорганизации",
+            "scopeSelected": "Выбранные модели",
+            "scopeAll": "Все модели",
+            "scope": "Область: {scope} · {count} модел(ей)",
+            "previewNotice": "Только предпросмотр. Ни один файл не был перемещён, и ни одна папка не была очищена.",
+            "emptyPreview": "Для этого предпросмотра нет доступных моделей.",
+            "alreadyOrganized": "Все модели уже находятся в нужном расположении.",
+            "loadingTitle": "Расчёт предпросмотра...",
+            "loadingMessage": "Файлы не изменяются.",
+            "previewFailed": "Не удалось создать предпросмотр",
+            "retry": "Повторить",
+            "statWillMove": "Будет перемещено",
+            "statSkipped": "Пропущено",
+            "statIssues": "Проблемы",
+            "issuesWarning": "Ожидается, что {count} модел(ей) завершатся ошибкой; остальные модели всё равно будут обработаны.",
+            "detailsLabel": "Подробности предпросмотра",
+            "movesTab": "Перемещения ({count})",
+            "skippedTab": "Пропущено ({count})",
+            "issuesTab": "Проблемы ({count})",
+            "searchPlaceholder": "Поиск модели или пути...",
+            "from": "Откуда",
+            "to": "Куда",
+            "location": "Расположение",
+            "organizingWith": "Организация по:",
+            "flatStructureRule": "Плоская структура (корень библиотеки)",
+            "emptyMoves": "Нет моделей для перемещения.",
+            "emptySkipped": "Ни одна модель не будет пропущена.",
+            "emptyIssues": "Нет проблем для проверки.",
+            "emptySearch": "Нет результатов, соответствующих запросу.",
+            "replanNote": "При выполнении расчёт заново выполняется по актуальному состоянию библиотеки, поэтому фактические результаты могут отличаться от этого предпросмотра.",
+            "copyReport": "Скопировать отчёт",
+            "refresh": "Обновить предпросмотр",
+            "apply": "Организовать ({count})",
+            "noMoves": "Нет перемещений для применения",
+            "pageStatus": "{from}–{to} из {total}",
+            "reasons": {
+                "already_organized": "Уже организовано",
+                "no_file_path": "Нет пути к файлу",
+                "outside_roots": "Вне корней библиотеки",
+                "missing_metadata": "Нет метаданных",
+                "path_too_long": "Слишком длинный целевой путь",
+                "target_exists": "Целевой путь уже существует",
+                "planned_collision": "Конфликт запланированных перемещений",
+                "move_failed": "Перемещение не удалось",
+                "error": "Ошибка"
+            }
+        },
         "exclude": {
             "confirm": "Исключить"
         },
@@ -2170,7 +2213,35 @@
                 "aboutThisVersion": "Об этой версии",
                 "baseModelSearchPlaceholder": "Поиск базовой модели...",
                 "baseModelSuggested": "Предполагаемые",
-                "baseModelNoMatch": "Нет подходящих базовых моделей"
+                "baseModelNoMatch": "Нет подходящих базовых моделей",
+                "creator": "Автор",
+                "creatorAdd": "Добавить автора",
+                "creatorEdit": "Изменить автора",
+                "creatorSearchPlaceholder": "Ищите авторов или введите новое имя...",
+                "creatorLibraryHeader": "Авторы в вашей библиотеке",
+                "creatorMatchingHeader": "Подходящие авторы",
+                "creatorLibraryCount": "{count} в библиотеке",
+                "creatorCurrent": "Текущий: {name}",
+                "creatorCreate": "Создать «{name}»",
+                "creatorCreateAnnounce": "Нажмите Enter, чтобы создать {name}.",
+                "creatorNew": "Новый автор",
+                "creatorNoMatch": "Среди существующих авторов нет совпадения с «{name}»",
+                "creatorEmptyLibrary": "В вашей библиотеке пока нет авторов. Введите имя, чтобы добавить первого.",
+                "creatorModelCount": "{count} модел(ей)",
+                "creatorModelCountOne": "{count} модель",
+                "creatorMatchCount": "{count} совпадений",
+                "creatorMatchCountOne": "{count} совпадение",
+                "creatorShowing": "Показано {shown} из {total} — продолжайте вводить для уточнения",
+                "creatorRemove": "Удалить автора",
+                "creatorManual": "Вручную",
+                "creatorManualHint": "Добавлено вручную. Обновление метаданных не перезапишет значение.",
+                "creatorSaved": "Автор обновлён",
+                "creatorRemoved": "Автор удалён",
+                "creatorSaveFailed": "Не удалось обновить автора. Повторите попытку.",
+                "creatorLoadFailed": "Не удалось загрузить авторов. Вы всё равно можете ввести новое имя.",
+                "creatorTooLong": "Имя автора слишком длинное (не более 64 символов)",
+                "creatorLoading": "Загрузка авторов...",
+                "creatorKeyboardHint": "↑↓ навигация · ↵ выбор · esc отмена"
             },
             "notes": {
                 "saved": "Заметки успешно сохранены",
@@ -2218,6 +2289,7 @@
             "description": {
                 "noDescription": "Описание модели недоступно",
                 "failedToLoad": "Не удалось загрузить описание модели",
+                "offline": "Описание хранится вместе с файлом модели, который находится на недоступном диске. Подключите диск снова, чтобы прочитать его.",
                 "editTitle": "Редактировать описание модели",
                 "validation": {
                     "cannotBeEmpty": "Описание не может быть пустым"
@@ -2249,6 +2321,10 @@
                 "noDerivatives": "Запрет на совместное использование производных работ",
                 "noReLicense": "Требуются те же права",
                 "restrictionsLabel": "Лицензионные ограничения"
+            },
+            "notices": {
+                "offline": "Диск с этой моделью недоступен. Показаны кэшированные данные — операции с файлами и редактирование недоступны до повторного подключения.",
+                "partial": "Не удалось прочитать файл метаданных модели. Показаны кэшированные данные — описание, примеры изображений и аватар автора могут быть недоступны."
             },
             "loading": {
                 "exampleImages": "Загрузка примеров изображений...",
@@ -2592,12 +2668,20 @@
         "title": "Справка и учебные материалы",
         "tabs": {
             "gettingStarted": "Начало работы",
-            "updateVlogs": "Видео обновлений",
+            "updates": "[TODO: Translate] Updates",
             "documentation": "Документация",
             "shortcuts": "Горячие клавиши"
         },
         "gettingStarted": {
             "title": "Начало работы с LoRA Manager",
+            "stepsTitle": "[TODO: Translate] First steps",
+            "steps": {
+                "configure": "[TODO: Translate] Configure your model folders and add a CivitAI API key if you plan to download models.",
+                "find": "[TODO: Translate] Find a model by browsing folders or searching names, tags, and trigger words.",
+                "send": "[TODO: Translate] Use Send to ComfyUI or copy LoRA syntax into a compatible LoRA Manager node.",
+                "refresh": "[TODO: Translate] Use Refresh after changing files outside LoRA Manager; rebuild the cache only for cache inconsistencies."
+            },
+            "readGuide": "[TODO: Translate] Open the Getting Started guide",
             "replayTutorial": "Повторить обучение"
         },
         "shortcuts": {
@@ -2622,7 +2706,6 @@
                 "closeModal": "Закрыть модальное окно / панель",
                 "openShortcuts": "Открыть эту панель горячих клавиш",
                 "refresh": "Обновить список моделей",
-                "fetchMetadata": "Получить метаданные с CivitAI (только на страницах моделей)",
                 "downloadModel": "Загрузить модель (только на страницах моделей)",
                 "toggleBulkMode": "Переключить массовый режим",
                 "selectAll": "Выбрать все видимые модели",
@@ -2644,17 +2727,26 @@
             "title": "Последние обновления",
             "watchOnYouTube": "Смотреть на YouTube",
             "playlistTitle": "Плейлист обновлений LoRA Manager",
-            "playlistDescription": "Смотрите все видео обновлений, демонстрирующие новейшие функции и улучшения."
+            "playlistDescription": "Смотрите все видео обновлений, демонстрирующие новейшие функции и улучшения.",
+            "releaseNotes": "[TODO: Translate] Read release notes on GitHub"
         },
         "documentation": {
             "title": "Документация",
-            "general": "Общие",
+            "startSupport": "[TODO: Translate] Start & Support",
+            "workingWithAssets": "[TODO: Translate] Working with Assets",
+            "integrationConfiguration": "[TODO: Translate] Integration & Configuration",
+            "gettingStarted": "[TODO: Translate] Getting Started",
+            "faq": "[TODO: Translate] FAQ",
             "troubleshooting": "Устранение неполадок",
-            "modelManagement": "Управление моделями",
+            "modelLibrary": "[TODO: Translate] Model Library",
+            "downloadsOrganization": "[TODO: Translate] Downloading and Organizing Models",
             "recipes": "Рецепты",
-            "settings": "Настройки и конфигурация",
-            "extensions": "Расширения",
-            "newBadge": "НОВОЕ"
+            "workflowLibrary": "[TODO: Translate] Workflow Library",
+            "comfyuiIntegration": "[TODO: Translate] ComfyUI Integration",
+            "configuration": "[TODO: Translate] Configuration",
+            "loraSyntax": "[TODO: Translate] LoRA Syntax and Duplicate Filenames",
+            "browserExtension": "[TODO: Translate] LM Civitai Extension",
+            "browseAll": "[TODO: Translate] Browse all documentation"
         },
         "newContentBadge": "НОВОЕ"
     },

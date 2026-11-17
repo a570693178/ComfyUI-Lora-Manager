@@ -1,205 +1,43 @@
 import { api } from "../../scripts/api.js";
 import { ensureLmStyles } from "./lm_styles_loader.js";
-import { lmUrl } from "./base_path.js";
 import { isVideoPreviewUrl } from "./mediaTypes.js";
+import {
+  buildLicenseIconData,
+  buildNewLicenseIconData,
+  createLicenseIconElement,
+  createNewLicenseIconElement,
+  getUseNewLicenseIcons,
+  parseLicenseFlags,
+} from "./license_icons.js";
 
-const LICENSE_ICON_PATH = lmUrl("/loras_static/images/tabler/");
-const LICENSE_FLAG_BITS = {
-  allowNoCredit: 1 << 0,
-  allowOnImages: 1 << 1,
-  allowOnCivitai: 1 << 2,
-  allowRental: 1 << 3,
-  allowSellingModels: 1 << 4,
-  allowDerivatives: 1 << 5,
-  allowRelicense: 1 << 6,
-};
-
-// ── Set 1 (classic) icon definitions ──
-
-const LICENSE_ICON_COPY = {
-  credit: "Creator credit required",
-  image: "No selling generated content",
-  rentcivit: "No Civitai generation",
-  rent: "No generation services",
-  sell: "No selling models",
-  derivatives: "No sharing merges",
-  relicense: "Same permissions required",
-};
-
-const COMMERCIAL_ICON_CONFIG = [
-  { bit: LICENSE_FLAG_BITS.allowOnImages, icon: "photo-off.svg", label: LICENSE_ICON_COPY.image },
-  { bit: LICENSE_FLAG_BITS.allowOnCivitai, icon: "brush-off.svg", label: LICENSE_ICON_COPY.rentcivit },
-  { bit: LICENSE_FLAG_BITS.allowRental, icon: "world-off.svg", label: LICENSE_ICON_COPY.rent },
-  { bit: LICENSE_FLAG_BITS.allowSellingModels, icon: "shopping-cart-off.svg", label: LICENSE_ICON_COPY.sell },
-];
-
-// ── Set 2 (new CivitAI-style) icon definitions ──
-
-const LNI = LICENSE_ICON_PATH; // alias for brevity
-
-const NEW_LICENSE_ICON_COPY = {
-  commercial: { allowed: "Commercial use allowed", denied: "No commercial use" },
-  genServices: { allowed: "Generation services allowed", denied: "No generation services" },
-  credit: { allowed: "No credit required", denied: "Creator credit required" },
-  derivatives: { allowed: "Merges allowed", denied: "No merges allowed" },
-  relicense: { allowed: "Different permissions allowed on merges", denied: "Same permissions required on merges" },
-};
-
-const NEW_ICON_CONFIG = [
-  {
-    bitCombo: [LICENSE_FLAG_BITS.allowOnImages, LICENSE_FLAG_BITS.allowSellingModels],
-    icon: "currency-dollar.svg",
-    labelKey: "commercial",
-    allowedFn: (flags) => (flags & LICENSE_FLAG_BITS.allowOnImages) !== 0 || (flags & LICENSE_FLAG_BITS.allowSellingModels) !== 0,
-  },
-  {
-    bitCombo: [LICENSE_FLAG_BITS.allowOnCivitai, LICENSE_FLAG_BITS.allowRental],
-    icon: "brush.svg",
-    labelKey: "genServices",
-    allowedFn: (flags) => (flags & LICENSE_FLAG_BITS.allowOnCivitai) !== 0 || (flags & LICENSE_FLAG_BITS.allowRental) !== 0,
-  },
-  {
-    bitCombo: [LICENSE_FLAG_BITS.allowNoCredit],
-    icon: "user.svg",
-    labelKey: "credit",
-    allowedFn: (flags) => (flags & LICENSE_FLAG_BITS.allowNoCredit) !== 0,
-  },
-  {
-    bitCombo: [LICENSE_FLAG_BITS.allowDerivatives],
-    icon: "git-merge.svg",
-    labelKey: "derivatives",
-    allowedFn: (flags) => (flags & LICENSE_FLAG_BITS.allowDerivatives) !== 0,
-  },
-  {
-    bitCombo: [LICENSE_FLAG_BITS.allowRelicense],
-    icon: "license.svg",
-    labelKey: "relicense",
-    allowedFn: (flags) => (flags & LICENSE_FLAG_BITS.allowRelicense) !== 0,
-  },
-];
-
-function parseLicenseFlags(value) {
-  if (typeof value === "number") {
-    return Number.isFinite(value) ? value : null;
+/**
+ * Fetch a model's preview URL and license metadata.
+ *
+ * Returns `null` when the model has no preview: a missing preview is normal
+ * (e.g. a LoRA only added to the target node, or a file without a sidecar
+ * image), so callers can stay quiet instead of reporting an error.
+ *
+ * @param {string} modelType - backend model prefix (`loras`, `checkpoints`, …)
+ * @param {string} modelName - file name or library-relative path
+ */
+export async function fetchModelPreviewData(modelType, modelName) {
+  const response = await api.fetchApi(
+    `/lm/${modelType}/preview-url?name=${encodeURIComponent(modelName)}&license_flags=true`,
+    { method: "GET" }
+  );
+  if (!response.ok) {
+    return null;
   }
-  if (typeof value === "string" && value.trim() !== "") {
-    const parsed = Number.parseInt(value, 10);
-    return Number.isNaN(parsed) ? null : parsed;
+  const data = await response.json().catch(() => null);
+  if (!data || !data.success || !data.preview_url) {
+    return null;
   }
-  return null;
-}
-
-function buildLicenseIconData(licenseFlags) {
-  if (licenseFlags == null) {
-    return [];
-  }
-
-  const icons = [];
-
-  if ((licenseFlags & LICENSE_FLAG_BITS.allowNoCredit) === 0) {
-    icons.push({ icon: "user-check.svg", label: LICENSE_ICON_COPY.credit });
-  }
-
-  COMMERCIAL_ICON_CONFIG.forEach((config) => {
-    if ((licenseFlags & config.bit) === 0) {
-      icons.push({ icon: config.icon, label: config.label });
-    }
-  });
-
-  if ((licenseFlags & LICENSE_FLAG_BITS.allowDerivatives) === 0) {
-    icons.push({ icon: "exchange-off.svg", label: LICENSE_ICON_COPY.derivatives });
-  }
-
-  if ((licenseFlags & LICENSE_FLAG_BITS.allowRelicense) === 0) {
-    icons.push({ icon: "rotate-2.svg", label: LICENSE_ICON_COPY.relicense });
-  }
-
-  return icons;
-}
-
-function createLicenseIconElement({ icon, label }) {
-  const element = document.createElement("span");
-  element.className = "lm-tooltip__license-icon";
-  element.setAttribute("role", "img");
-  element.setAttribute("aria-label", label);
-  element.title = label;
-  element.style.setProperty("--license-icon-image", `url('${LICENSE_ICON_PATH}${icon}')`);
-  return element;
-}
-
-// ── Set 2 (new style) helpers ──
-
-function buildNewLicenseIconData(licenseFlags) {
-  if (licenseFlags == null) {
-    return [];
-  }
-
-  return NEW_ICON_CONFIG.map((config) => {
-    const allowed = config.allowedFn(licenseFlags);
-    const label = allowed
-      ? NEW_LICENSE_ICON_COPY[config.labelKey].allowed
-      : NEW_LICENSE_ICON_COPY[config.labelKey].denied;
-    return {
-      icon: config.icon,
-      label,
-      allowed,
-    };
-  });
-}
-
-function createNewLicenseIconElement({ icon, label, allowed }) {
-  const element = document.createElement("span");
-  element.className = `lm-tooltip__license-icon-new ${allowed ? "allowed" : "denied"}`;
-  element.setAttribute("role", "img");
-  element.setAttribute("aria-label", label);
-  element.title = label;
-  element.style.setProperty("--license-icon-image", `url('${LICENSE_ICON_PATH}${icon}')`);
-  return element;
-}
-
-const LICENSE_ICON_STORAGE_KEY = "lm_license_icon_new_style";
-
-// Module-level cache: null = not yet initialized
-let _useNewIconsCached = null;
-
-// Fetch the setting from the LoRA Manager backend API via the proper
-// ComfyUI api helper (handles base URL, credentials, etc.).
-// Stores the result in both the in-memory cache and localStorage so the
-// value survives page reloads even before the API responds.
-async function _fetchLicenseIconSetting() {
-  try {
-    const response = await api.fetchApi("/lm/settings");
-    if (response.ok) {
-      const data = await response.json();
-      const value = data.use_new_license_icons !== false;
-      _useNewIconsCached = value;
-      try { localStorage.setItem(LICENSE_ICON_STORAGE_KEY, String(value)); } catch (_) {}
-    }
-  } catch (_) {
-    // API not available; cached/localStorage fallback stays in place
-  }
-}
-
-function getUseNewLicenseIcons() {
-  // 1) In-memory cache hit
-  if (_useNewIconsCached !== null) {
-    return _useNewIconsCached;
-  }
-
-  // 2) localStorage — survives page reloads
-  try {
-    const stored = localStorage.getItem(LICENSE_ICON_STORAGE_KEY);
-    if (stored !== null) {
-      _useNewIconsCached = stored === "true";
-      // Refresh from API in background for next time
-      _fetchLicenseIconSetting();
-      return _useNewIconsCached;
-    }
-  } catch (_) {}
-
-  // 3) First-ever run: kick off API fetch, default to new style
-  _fetchLicenseIconSetting();
-  return true;
+  return {
+    previewUrl: data.preview_url,
+    displayName: data.display_name,
+    licenseFlags: parseLicenseFlags(data.license_flags),
+    useNewLicenseIcons: data.use_new_license_icons,
+  };
 }
 
 /**
@@ -211,7 +49,17 @@ export class PreviewTooltip {
       modelType = "loras",
       previewUrlResolver,
       displayNameFormatter,
+      // Extra class on the tooltip element. Callers may need to lift it above
+      // their own layer (e.g. a floating panel), which is a styling concern.
+      className = "",
+      // Optional () => DOMRect bounding the area the tooltip may occupy.
+      // Callers that live in a split pane can keep the preview off the
+      // neighbouring pane (e.g. a detail column with its own actions).
+      positionBoundary,
     } = options;
+
+    this.positionBoundary =
+      typeof positionBoundary === "function" ? positionBoundary : null;
 
     this.modelType = modelType;
     this.previewUrlResolver =
@@ -227,14 +75,19 @@ export class PreviewTooltip {
 
     // Pre-fetch license icon style from LM backend so the tooltip
     // respects the standalone settings toggle as early as possible.
-    _fetchLicenseIconSetting();
+    void getUseNewLicenseIcons();
 
     this.element = document.createElement("div");
-    this.element.className = "lm-tooltip";
+    this.element.className = className
+      ? `lm-tooltip ${className}`
+      : "lm-tooltip";
     document.body.appendChild(this.element);
     this.hideTimeout = null;
     this.isFromAutocomplete = false;
     this.currentModelName = null;
+    // Bumped by hide()/cleanup() so an in-flight show() that resolves after
+    // the pointer left does not pop the tooltip back up.
+    this.requestSequence = 0;
 
     this.globalClickHandler = (event) => {
       if (!event.target.closest(".comfy-autocomplete-dropdown")) {
@@ -248,30 +101,15 @@ export class PreviewTooltip {
   }
 
   async defaultPreviewUrlResolver(modelName) {
-    const response = await api.fetchApi(
-      `/lm/${this.modelType}/preview-url?name=${encodeURIComponent(modelName)}&license_flags=true`,
-      { method: "GET" }
-    );
-    if (!response.ok) {
-      throw new Error("Failed to fetch preview URL");
-    }
-    const data = await response.json();
-    if (!data.success || !data.preview_url) {
-      throw new Error("No preview available");
-    }
-    return {
-      previewUrl: data.preview_url,
-      displayName: data.display_name ?? modelName,
-      licenseFlags: parseLicenseFlags(data.license_flags),
-      useNewLicenseIcons: data.use_new_license_icons,
-    };
+    return fetchModelPreviewData(this.modelType, modelName);
   }
 
   async resolvePreviewData(modelName) {
     const raw = await this.previewUrlResolver(modelName);
-    if (!raw) {
-      throw new Error("No preview data returned");
-    }
+    // A resolver may report "nothing to preview" (missing file, recipe
+    // without a preview) by returning null; that is a normal no-op, not an
+    // error worth logging.
+    if (!raw) return null;
     if (typeof raw === "string") {
       return {
         previewUrl: raw,
@@ -280,9 +118,7 @@ export class PreviewTooltip {
     }
 
     const { previewUrl, displayName, licenseFlags, useNewLicenseIcons } = raw;
-    if (!previewUrl) {
-      throw new Error("No preview URL available");
-    }
+    if (!previewUrl) return null;
     return {
       previewUrl,
       displayName:
@@ -307,14 +143,27 @@ export class PreviewTooltip {
         this.element.style.display === "block" &&
         this.currentModelName === modelName
       ) {
+        // Re-entering the trigger cancels hide()'s fade-out; restore the
+        // opacity it set. Bump the sequence so a show() for another row that
+        // is still resolving cannot replace this one when it lands.
+        this.requestSequence += 1;
+        this.currentModelName = modelName;
+        this.element.style.opacity = "1";
         this.position(x, y);
         return;
       }
 
+      const requestSequence = ++this.requestSequence;
       this.currentModelName = modelName;
-      const { previewUrl, displayName, licenseFlags, useNewLicenseIcons } = await this.resolvePreviewData(
-        modelName
-      );
+      const preview = await this.resolvePreviewData(modelName);
+      if (requestSequence !== this.requestSequence) return;
+      if (!preview) {
+        // Nothing to show for this item: drop any tooltip left from the
+        // previous one instead of leaving it attached to the new name.
+        this.hide();
+        return;
+      }
+      const { previewUrl, displayName, licenseFlags, useNewLicenseIcons } = preview;
 
       while (this.element.firstChild) {
         this.element.removeChild(this.element.firstChild);
@@ -371,8 +220,10 @@ export class PreviewTooltip {
 
       mediaElement.src = previewUrl;
       await waitForLoad();
+      if (requestSequence !== this.requestSequence) return;
 
       requestAnimationFrame(() => {
+        if (requestSequence !== this.requestSequence) return;
         this.position(x, y);
         this.element.style.transition = "opacity 0.15s ease";
         this.element.style.opacity = "1";
@@ -382,20 +233,42 @@ export class PreviewTooltip {
     }
   }
 
+  /** Resolve the caller's allowed area, if any, into a usable rect. */
+  resolvePositionBoundary() {
+    if (!this.positionBoundary) return null;
+    try {
+      const rect = this.positionBoundary();
+      return rect && rect.width > 0 ? rect : null;
+    } catch {
+      return null;
+    }
+  }
+
   position(x, y) {
     const rect = this.element.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
+    const boundary = this.resolvePositionBoundary();
+    const gap = 10;
 
-    let left = x + 10;
-    let top = y + 10;
+    let left = x + gap;
+    let top = y + gap;
 
-    if (left + rect.width > viewportWidth) {
-      left = x - rect.width - 10;
+    // Prefer the right of the anchor, but flip left as soon as that would
+    // cross the caller's pane (or the viewport). Inside the quick picker the
+    // pane ends where the detail column starts, so the preview stays on the
+    // list side instead of covering the selected item's info and actions.
+    const rightEdge = boundary ? boundary.right : viewportWidth;
+    if (left + rect.width + (boundary ? gap : 0) > rightEdge) {
+      left = x - rect.width - gap;
     }
 
     if (top + rect.height > viewportHeight) {
-      top = y - rect.height - 10;
+      top = y - rect.height - gap;
+    }
+
+    if (boundary) {
+      left = Math.max(boundary.left + gap, left);
     }
 
     left = Math.max(10, Math.min(left, viewportWidth - rect.width - 10));
@@ -408,6 +281,10 @@ export class PreviewTooltip {
   }
 
   hide() {
+    // Invalidate an in-flight show() as well: without this, leaving the
+    // trigger before the preview URL resolved would let show() complete and
+    // pop the tooltip up after the pointer is gone.
+    this.requestSequence += 1;
     if (this.element.style.display === "block") {
       this.element.style.opacity = "0";
       this.hideTimeout = setTimeout(() => {
@@ -447,6 +324,7 @@ export class PreviewTooltip {
   }
 
   cleanup() {
+    this.requestSequence += 1;
     if (this.hideTimeout) {
       clearTimeout(this.hideTimeout);
     }

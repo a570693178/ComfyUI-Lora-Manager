@@ -305,6 +305,13 @@ Locales: `en`, `zh-CN`, `zh-TW`, `ja`, `ko`, `fr`, `de`, `es`, `ru`, `he` (RTL).
 > are now translated, keeping each locale's pace words and unit notation; 1.5 uses the
 > locale's decimal separator (1,5 in de/es/fr/ru, 1.5 elsewhere).
 >
+> **Status (2026-11, card preview cycling, interval slider):** the interval select was
+> replaced by a range slider (0.5–3s, 0.5s steps). Its value label is formatted with
+> `Intl.NumberFormat` (`style: "unit", unit: "second", unitDisplay: "narrow"`), so each
+> locale keeps its own unit notation automatically and the whole `cycleIntervalOptions.*`
+> group was deleted from `en.json` and all 9 locales — there are no replacement keys to
+> translate.
+>
 > **Status (2026-11, card preview cycling, hover-zone revision):** cycling now arms only
 > from the bare preview area — hovering the card header or footer never starts it — and
 > the activation delay dropped from 1.5s to 0.8s. `settings.cardPreview.cycleOnHoverHelp`
@@ -328,6 +335,15 @@ Locales: `en`, `zh-CN`, `zh-TW`, `ja`, `ko`, `fr`, `de`, `es`, `ru`, `he` (RTL).
 > "canonical" / "usable tags" jargon was dropped. All 9 locales are translated
 > (terminology in §2, "Unsorted fallback folder feature"), so no
 > `[TODO: Translate]` placeholder remains.
+
+> **Status (2026-11, auto-organize preview):** the bulk auto-organize flow gained a dry-run
+> preview dialog (`modals.autoOrganizePreview.*`, 44 keys: the scope line, three stat cards,
+> the Moves / Skipped / Issues tabs with search and pagination, the organization-rule line,
+> and the nine skip-reason chips). It shipped as `[TODO: Translate]` in all 9 locales and is
+> now translated in the same pass (renderings in §2, "Auto-organize preview feature"). Two
+> source strings were fixed while translating: `loadingTitle` and `searchPlaceholder` used
+> U+2026 `…`, which violates R7, so `en.json` now uses ASCII `...` (the call-site fallbacks in
+> `AutoOrganizePreviewModal.js` moved with it). No `[TODO: Translate]` placeholder remains.
 
 ---
 
@@ -1000,17 +1016,17 @@ the *root*, never a property of the models inside it, which stay in the library.
 The manual Refresh dialog renders its status line from `common.scanProgress.*`. During the
 reconcile walk the backend does not know the real file count yet (counting *is* the walk), so
 the client shows the roots being walked plus a running count instead of a `processed/total`
-ratio: `Checking for changes... G:, Y: (12,345 files) | ~3 min remaining`. The bar covers
-0-50 % for the walk and 50-99 % for the new-file pass.
+ratio: `Checking for changes... G:, Y: (12,345 files)`. The ETA appears on a separate line
+below the bar. The bar covers 0-50 % for the walk and 50-99 % for the new-file pass.
 
 | Term | Rendering |
 |---|---|
 | `walkFiles` ("{count} files") | zh-CN {count} 个文件 · zh-TW {count} 個檔案 · ja {count} 件のファイル · ko 파일 {count}개 · fr {count} fichiers · de {count} Dateien · es {count} archivos · ru {count} файл(ов) · he {count} קבצים |
 
-`walkFiles` is a **fragment, not a sentence**: the root labels, the `(` `)`, the ` | ` before
-the ETA and the ETA text itself all come from `static/js/api/baseModelApi.js`, so no locale
-carries punctuation here (the ASCII parentheses match the sibling `stages.process_models`
-count, `(5/10)`). `{count}` is substituted with an already-formatted number
+`walkFiles` is a **fragment, not a sentence**: the root labels and the `(` `)` come from
+`static/js/api/baseModelApi.js`, so no locale carries punctuation here (the ASCII parentheses
+match the sibling `stages.process_models` count, `(5/10)`). The separate ETA element uses the
+existing localized ETA strings without adding a separator. `{count}` is substituted with an already-formatted number
 (`toLocaleString()`), so no locale adds its own digit grouping. "files" means the **model
 files the walk looked at**, not every file on disk — the noun mirrors each locale's
 `stages.count_models` rendering, and `ru` uses the `файл(ов)` form because the count ticks
@@ -1141,6 +1157,48 @@ word (`Verwaltung` / `gestion` / `gestión` / `управление` / `ניהו
   `workflows.bulk.noSelection` ("No workflows selected"). The Recipes page mirrors this with
   `recipes.filter.title` ("Filter Recipes") and `recipes.bulk.noSelection`, following the §4
   Recipe noun per locale (配方 / 配方 / レシピ / 레시피 / Recipe / Rezept / receta / рецепт / מתכון).
+
+### Auto-organize preview feature (dry-run dialog)
+
+The bulk auto-organize flow can preview a run before anything moves: a scope line
+(`{scope} · {count} models`), Will move / Skipped / Issues stat cards, one tab per list (Moves,
+Skipped, Issues) with search and `{from}–{to} of {total}` pagination, the organization rule
+(path template or flat structure) and a footnote saying execution re-plans from the library's
+current state. The dialog borrows its vocabulary instead of introducing new nouns: "Skipped"
+from `modals.sidecarMigrationResult.statSkipped`, "Copy Report" from
+`modals.rematchSummary.copyReport`, "Location" from `modals.model.metadata.location`, "Flat
+Structure" from `settings.downloadPathTemplates.templateOptions.flatStructure`, and
+auto-organize from `settings.sections.autoOrganize` / `loras.bulkOperations.autoOrganizeProgress`.
+
+| Term | Rendering |
+|---|---|
+| `statWillMove` ("Will move") | zh-CN 待移动 · zh-TW 待移動 · ja 移動予定 · ko 이동 예정 · fr À déplacer · de Zu verschieben · es Por mover · ru Будет перемещено · he יועברו |
+| `statIssues` ("Issues") | zh-CN 问题 · zh-TW 問題 · ja 問題 · ko 문제 · fr Problèmes · de Probleme · es Problemas · ru Проблемы · he בעיות |
+| `movesTab` ("Moves") | zh-CN 移动 · zh-TW 移動 · ja 移動 · ko 이동 · fr Déplacements · de Verschiebungen · es Movimientos · ru Перемещения · he העברות |
+| "planned move collision" (reason chip) | zh-CN 计划移动冲突 · zh-TW 計畫移動衝突 · ja 移動計画の衝突 · ko 이동 계획 충돌 · fr Collision de déplacements prévus · de Kollision geplanter Verschiebungen · es Colisión de movimientos previstos · ru Конфликт запланированных перемещений · he התנגשות בהעברות מתוכננות |
+| "outside library roots" (reason chip) | zh-CN 库根目录之外 · zh-TW 模型庫根目錄之外 · ja ライブラリルート外 · ko 라이브러리 루트 밖 · fr En dehors des racines de la bibliothèque · de Außerhalb der Bibliotheks-Stammverzeichnisse · es Fuera de las raíces de la biblioteca · ru Вне корней библиотеки · he מחוץ לשורשי הספרייה |
+
+- The nine `reasons.*` chips are **fragments, not sentences**: they sit next to the model name
+  in a small badge, so no locale adds a trailing period and each keeps the source's short
+  phrasing (`already_organized` reuses the locale's own "organized" verb).
+- `pageStatus` keeps the source's en dash (`{from}–{to} of {total}`) but the locale's own "N of
+  M" shape: zh `第 {from}–{to} 项，共 {total} 项`, zh-TW `第 … 項，共 … 項`,
+  ja `{total} 件中 {from}–{to} 件`, ko `전체 {total}개 중 {from}–{to}번째`, fr `… sur …`,
+  de `… von …`, es `… de …`, ru `… из …`, he `… מתוך …`.
+- `scope` keeps the middle dot `·` verbatim; its label is the locale's word for the range of
+  affected models (zh-CN 范围 · zh-TW 範圍 · ja 対象 · ko 범위 · fr Périmètre · de Umfang ·
+  es Alcance · ru Область · he היקף), and the two values it can receive are the locale's
+  "selected models" / "all models" (`scopeSelected` / `scopeAll`, mirroring
+  `modals.rematchSummary.scope_bulk` / `.scope_global`).
+- "library root" composes each locale's existing library + root nouns (zh-CN 库根目录 ·
+  zh-TW 模型庫根目錄 · ja ライブラリルート · ko 라이브러리 루트 · fr racine de la bibliothèque ·
+  de Bibliotheks-Stammverzeichnis · es raíz de la biblioteca · ru корень библиотеки ·
+  he שורש הספרייה). German keeps the hyphenated `Stammverzeichnis` compound used by
+  `sidebar.modelRoot`; do not substitute a bare "Wurzel".
+- `apply` is the locale's plain organize verb plus the count (zh 整理 · ja 整理 · ko 정리 ·
+  fr Organiser · de Organisieren · es Organizar · ru Организовать · he ארגן); the disabled
+  `noMoves` label negates the same verb. `copyReport` and `retry` stay byte-identical to their
+  sibling keys in `modals.rematchSummary` / `initialization.error`.
 
 ---
 

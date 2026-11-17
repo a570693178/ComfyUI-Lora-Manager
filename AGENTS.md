@@ -231,6 +231,14 @@ The system runs in two modes:
 - Widget registration: `app.registerExtension()` and `getCustomWidgets` hooks; `node.addDOMWidget(...)` embeds HTML in LiteGraph nodes
 - See `docs/dom_widget_dev_guide.md` for the DOMWidget development guide
 
+### Documentation
+
+- `README.md` is the project landing page and quick-start summary, not the full user manual.
+- The GitHub Wiki (`willmiao/ComfyUI-Lora-Manager.wiki`) is the canonical source for complete user guides, FAQs, and troubleshooting. Its `Home.md` and `_Sidebar.md` form the shared navigation.
+- `docs/` contains versioned technical references, node integration contracts, architecture notes, development plans, and `docs/development.md` for test commands.
+- The in-app Help modal and contextual Settings links point to canonical Wiki guides instead of duplicating detailed instructions.
+- When moving or renaming a Wiki page, update README links, `templates/components/modals/help_modal.html`, contextual Settings links, and Wiki navigation together. Check links against a local Wiki clone when available.
+
 ## Testing
 
 ### Backend (pytest)
@@ -246,11 +254,30 @@ The system runs in two modes:
 
 ### UI Verification (manual default)
 
-UI/layout changes are verified by the user by eye — do NOT spin up a sandbox,
-standalone server, or browser automation to "prove" a visual fix. Ask the user to
-look instead. The full browser E2E ceremony (server + Chrome DevTools MCP +
-screenshots) is slow, token-heavy, and fragile; reserve it for genuine
-server+browser integration bugs, and only when the user explicitly agrees.
+Split the question before reaching for a browser: the two kinds of verification
+have different costs and different evidence.
+
+1. **Look and feel** — alignment, density, spacing, whether it reads right — is
+   the user's call. Ask them to look. Do not spin up a sandbox, standalone
+   server, or browser automation to argue an aesthetic judgement; the full E2E
+   ceremony (server + Chrome DevTools MCP + screenshots) is slow, token-heavy,
+   and cannot settle a subjective question.
+2. **Integration facts** — whether a ComfyUI extension surface actually takes
+   effect (a function-typed setting really renders, a new token family resolves,
+   a new hook fires, a documented contract holds) — may be checked headlessly by
+   the agent, once, when reading the source cannot settle it (e.g. three layers
+   of Vue indirection between a setting and the control that renders it).
+
+Headless checks are allowed only under these rules:
+
+- Read-only, or fully reversible. Never write user state: `settings.json`,
+  userdata, workflows, model files, caches. Driving the running instance in a way
+  that persists a setting changes the user's environment; that is not a test, and
+  any such change must be restored and called out.
+- Prefer a static harness or a sandboxed instance over the instance the user is
+  currently running.
+- Report what was *verified* (and how) separately from what was *inferred* from
+  source. A passing check never stands in for an aesthetic judgement.
 
 If a cross-layer issue ever needs a live server, the sandboxed helpers live in
 `scripts/e2e/` (`start_server.py`, `wait_for_server.py`). Non-negotiable rules:
