@@ -1088,6 +1088,11 @@
             "checkUpdates": "Comprobar actualizaciones para la selección",
             "moveAll": "Mover todos a carpeta",
             "autoOrganize": "Auto-organizar seleccionados",
+            "applyFilenameTemplate": "Aplicar la plantilla de nombres de archivo a la selección",
+            "filenameTemplateScope": {
+                "selected": "la selección",
+                "folder": "esta carpeta"
+            },
             "skipMetadataRefresh": "Omitir actualización de metadatos para seleccionados",
             "resumeMetadataRefresh": "Reanudar actualización de metadatos para seleccionados",
             "setFavorite": "Marcar como favorito",
@@ -1139,6 +1144,7 @@
             "copyRecipeSyntax": "Copiar sintaxis de receta",
             "sendToWorkflowAppend": "Enviar al workflow (Añadir)",
             "sendToWorkflowReplace": "Enviar al workflow (Reemplazar)",
+            "sendImageToWorkflow": "Enviar imagen al flujo de trabajo",
             "openExamples": "Abrir carpeta de ejemplos",
             "downloadExamples": "Descargar imágenes de ejemplo",
             "downloadMissingExamples": "Descargar faltantes",
@@ -1406,6 +1412,9 @@
             "sendRecipe": {
                 "missingId": "No se puede enviar la receta: Falta ID de receta",
                 "failed": "Error al enviar receta al workflow"
+            },
+            "sendImage": {
+                "missingImage": "No se puede enviar la imagen: esta receta no tiene imagen de vista previa"
             },
             "viewLoras": {
                 "missingId": "No se pueden ver LoRAs: Falta ID de receta",
@@ -1709,6 +1718,11 @@
         "scanFolder": "Escanear esta carpeta",
         "scanFolderResult": {
             "missing": "Esta carpeta ya no existe en el disco. Actualiza la barra lateral e inténtalo de nuevo."
+        },
+        "applyFilenameTemplate": "Aplicar la plantilla de nombres de archivo a esta carpeta",
+        "applyFilenameTemplateResult": {
+            "missing": "Esta carpeta ya no existe en el disco. Actualiza la barra lateral e inténtalo de nuevo.",
+            "unsupported": "Las plantillas de nombres de archivo no están disponibles en esta página."
         }
     },
     "statistics": {
@@ -2013,6 +2027,16 @@
         "filenameTemplateConfirm": {
             "titleApply": "¿Aplicar la plantilla de nombres de archivo a la biblioteca?",
             "titleRevert": "¿Restaurar los nombres de archivo originales?",
+            "titleApplySelected": "¿Renombrar los archivos seleccionados?",
+            "titleApplyFolder": "¿Renombrar los archivos de esta carpeta?",
+            "titleRevertSelected": "¿Restaurar los nombres de archivo originales de la selección?",
+            "titleRevertFolder": "¿Restaurar los nombres de archivo originales en esta carpeta?",
+            "messageApplySelected": "De los {total} archivos seleccionados, {success} se renombrarán según la plantilla de nombres de archivo. {skipped} ya coinciden o se omiten; {failures} no se pueden renombrar. Esto cambia la ruta relativa que ve ComfyUI; cada modelo conserva su nombre de archivo original en los metadatos.",
+            "messageApplyFolder": "De los {total} archivos de esta carpeta (y sus subcarpetas), {success} se renombrarán según la plantilla de nombres de archivo. {skipped} ya coinciden o se omiten; {failures} no se pueden renombrar. Esto cambia la ruta relativa que ve ComfyUI; cada modelo conserva su nombre de archivo original en los metadatos.",
+            "messageRevertSelected": "No hay una plantilla de nombres de archivo configurada, así que se restaurarán los nombres originales registrados. De los {total} archivos seleccionados, {success} recuperarán su nombre original; {skipped} no tienen original registrado o ya coinciden; {failures} no se pueden renombrar.",
+            "messageRevertFolder": "No hay una plantilla de nombres de archivo configurada, así que se restaurarán los nombres originales registrados. De los {total} archivos de esta carpeta (y sus subcarpetas), {success} recuperarán su nombre original; {skipped} no tienen original registrado o ya coinciden; {failures} no se pueden renombrar.",
+            "renameCountButton": "Renombrar {count} archivos",
+            "restoreCountButton": "Restaurar {count} nombres de archivo",
             "revertButton": "Restaurar nombres de archivo originales"
         },
         "sidecarMigrationConfirm": {
@@ -2357,7 +2381,8 @@
                 "nsfwX": "Contenido clasificación X",
                 "nsfwXxx": "Contenido clasificación XXX",
                 "layoutGallery": "Vista de galería",
-                "layoutList": "Vista de lista"
+                "layoutList": "Vista de lista",
+                "sendImage": "Enviar imagen al flujo de trabajo"
             },
             "versions": {
                 "heading": "Versiones del modelo",
@@ -2637,6 +2662,12 @@
             "embeddingFailed": "Error al añadir el embedding",
             "promptSent": "Prompt enviado al workflow",
             "promptFailed": "Error al enviar el prompt",
+            "imageSourceMissing": "No se proporcionó ninguna fuente de imagen",
+            "noImageTargets": "No hay destinos de imagen compatibles en el flujo de trabajo.\nHaz clic derecho en un nodo Load Image de ComfyUI → Mark as → Send Image Target",
+            "imageSent": "Imagen enviada al flujo de trabajo",
+            "imageSendFailed": "No se pudo enviar la imagen al flujo de trabajo: {message}",
+            "imageSending": "Enviando la imagen al flujo de trabajo...",
+            "imageDownloading": "Descargando la imagen y enviándola al flujo de trabajo...",
             "nodeTypeExcluded": "Tipo de nodo \"{type}\" excluido de los destinos de envío"
         },
         "nodeSelector": {
@@ -2644,8 +2675,10 @@
             "lora": "LoRA",
             "embedding": "Embedding",
             "prompt": "Prompt",
+            "image": "Imagen",
             "replace": "Reemplazar",
             "append": "Añadir",
+            "send": "Enviar",
             "selectTargetNode": "Seleccionar nodo de destino",
             "sendToAll": "Enviar a todos",
             "excludeNodeType": "No volver a sugerir este tipo de nodo"
@@ -2668,20 +2701,20 @@
         "title": "Ayuda y tutoriales",
         "tabs": {
             "gettingStarted": "Comenzando",
-            "updates": "[TODO: Translate] Updates",
+            "updates": "Actualizaciones",
             "documentation": "Documentación",
             "shortcuts": "Atajos"
         },
         "gettingStarted": {
             "title": "Comenzando con el gestor de LoRA",
-            "stepsTitle": "[TODO: Translate] First steps",
+            "stepsTitle": "Primeros pasos",
             "steps": {
-                "configure": "[TODO: Translate] Configure your model folders and add a CivitAI API key if you plan to download models.",
-                "find": "[TODO: Translate] Find a model by browsing folders or searching names, tags, and trigger words.",
-                "send": "[TODO: Translate] Use Send to ComfyUI or copy LoRA syntax into a compatible LoRA Manager node.",
-                "refresh": "[TODO: Translate] Use Refresh after changing files outside LoRA Manager; rebuild the cache only for cache inconsistencies."
+                "configure": "Configura tus carpetas de modelos y añade una clave API de CivitAI si tienes previsto descargar modelos.",
+                "find": "Encuentra un modelo explorando carpetas o buscando por nombre, etiquetas y palabras de activación.",
+                "send": "Usa «Enviar a ComfyUI» o copia la sintaxis de LoRA en un nodo de LoRA Manager compatible.",
+                "refresh": "Usa Actualizar después de cambiar archivos fuera de LoRA Manager; reconstruye la caché solo si hay inconsistencias."
             },
-            "readGuide": "[TODO: Translate] Open the Getting Started guide",
+            "readGuide": "Abrir la guía de inicio",
             "replayTutorial": "Repetir tutorial"
         },
         "shortcuts": {
@@ -2728,25 +2761,25 @@
             "watchOnYouTube": "Ver en YouTube",
             "playlistTitle": "Lista de reproducción de actualizaciones del gestor de LoRA",
             "playlistDescription": "Ve todos los videos de actualización mostrando las últimas características y mejoras.",
-            "releaseNotes": "[TODO: Translate] Read release notes on GitHub"
+            "releaseNotes": "Leer las notas de la versión en GitHub"
         },
         "documentation": {
             "title": "Documentación",
-            "startSupport": "[TODO: Translate] Start & Support",
-            "workingWithAssets": "[TODO: Translate] Working with Assets",
-            "integrationConfiguration": "[TODO: Translate] Integration & Configuration",
-            "gettingStarted": "[TODO: Translate] Getting Started",
-            "faq": "[TODO: Translate] FAQ",
+            "startSupport": "Inicio y soporte",
+            "workingWithAssets": "Trabajar con recursos",
+            "integrationConfiguration": "Integración y configuración",
+            "gettingStarted": "Comenzando",
+            "faq": "Preguntas frecuentes",
             "troubleshooting": "Solución de problemas",
-            "modelLibrary": "[TODO: Translate] Model Library",
-            "downloadsOrganization": "[TODO: Translate] Downloading and Organizing Models",
+            "modelLibrary": "Biblioteca de modelos",
+            "downloadsOrganization": "Descargar y organizar modelos",
             "recipes": "Recetas",
-            "workflowLibrary": "[TODO: Translate] Workflow Library",
-            "comfyuiIntegration": "[TODO: Translate] ComfyUI Integration",
-            "configuration": "[TODO: Translate] Configuration",
-            "loraSyntax": "[TODO: Translate] LoRA Syntax and Duplicate Filenames",
-            "browserExtension": "[TODO: Translate] LM Civitai Extension",
-            "browseAll": "[TODO: Translate] Browse all documentation"
+            "workflowLibrary": "Biblioteca de flujos de trabajo",
+            "comfyuiIntegration": "Integración con ComfyUI",
+            "configuration": "Configuración",
+            "loraSyntax": "Sintaxis de LoRA y nombres de archivo duplicados",
+            "browserExtension": "Extensión LM Civitai",
+            "browseAll": "Explorar toda la documentación"
         },
         "newContentBadge": "NUEVO"
     },
@@ -2876,6 +2909,8 @@
             "autoOrganizeProgressUnavailable": "Auto-organización completada con {success} movidos, {failures} fallidos de un total de {total} modelos; el progreso en vivo no estuvo disponible",
             "autoOrganizeFailed": "Auto-organización fallida: {error}",
             "filenameTemplateSuccess": "Plantilla de nombres de archivo aplicada exitosamente para {count} {type}",
+            "filenameTemplateScopedSuccess": "{count} archivos renombrados",
+            "filenameTemplateNothingToRename": "No hay archivos que renombrar: los archivos afectados ya coinciden o no tienen un nombre original registrado",
             "filenameTemplatePartialSuccess": "Plantilla de nombres de archivo aplicada con {success} renombrados, {failures} fallidos de un total de {total} modelos",
             "filenameTemplateFailed": "Aplicación de la plantilla de nombres de archivo fallida: {error}",
             "noModelsSelected": "No hay modelos seleccionados"

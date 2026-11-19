@@ -1,5 +1,5 @@
 import { app } from "../../scripts/app.js";
-import { createToggle, createArrowButton, createDragHandle, updateEntrySelection, createExpandButton, updateExpandButtonState, createLockButton, updateLockButtonState, createAddLoraButton, createStrengthDragHandle } from "./loras_widget_components.js";
+import { createToggle, createArrowButton, createDragHandle, updateEntrySelection, createExpandButton, updateExpandButtonState, createLockButton, updateLockButtonState, createAddLoraButton, createStrengthDragHandle, createSweepButton, updateSweepButtonState } from "./loras_widget_components.js";
 import { openLoraQuickPanel } from "./lora_quick_panel.js";
 import { 
   parseLoraValue, 
@@ -12,8 +12,10 @@ import {
   getLoraDisplayName,
   applyStrengthRangeCue,
   isLoraNameAvailable,
+  normalizeLoraNameKey,
   onLibraryChanged
 } from "./loras_widget_utils.js";
+import { findLoraIndex } from "./lora_selection.js";
 import { initDrag, createContextMenu, initHeaderDrag, initReorderDrag, handleKeyboardNavigation } from "./loras_widget_events.js";
 import { forwardMiddleMouseToCanvas, forwardWheelToCanvas, enableListWheelScroll, updateDownstreamLoaders } from "./utils.js";
 import { applySelectionHighlight } from "./trigger_word_highlight.js";
@@ -22,6 +24,52 @@ import { PreviewTooltip } from "./preview_tooltip.js";
 import { ensureLmStyles } from "./lm_styles_loader.js";
 import { getStrengthStepPreference, getNodeLoraNameDisplayPreference, onNodeLoraNameDisplayChanged } from "./settings.js";
 import { openLoraInfoCard, closeLoraInfoCardFor } from "./lora_info_card.js";
+
+// CSS-escape a LoRA name for use in a [data-lora-name="..."] selector. Module
+// scope so both the row rendering and the transient row feedback can use it.
+const escapeLoraName = (loraName) => {
+  const css =
+    (typeof window !== "undefined" && window.CSS) ||
+    (typeof globalThis !== "undefined" && globalThis.CSS);
+  if (css && typeof css.escape === "function") {
+    return css.escape(loraName);
+  }
+  return loraName.replace(/"|\\/g, "\\$&");
+};
+
+// Transient row feedback for a LoRA added or enabled from another surface
+// (prompt autocomplete pick, quick picker). Purely visual: `selectedLora`,
+// widget values and every callback stay untouched, so "selected" keeps meaning
+// "the user is inspecting this row". The cue is removed by a timer, not by the
+// next selection.
+const FLASH_ROW_ADDED_CLASS = "lm-lora-entry--flash-added";
+const FLASH_ROW_ENABLED_CLASS = "lm-lora-entry--flash-enabled";
+const FLASH_ROW_DURATION_MS = { added: 1200, enabled: 900 };
+// Breathing room kept between a flashed row and the list edge when scrolling.
+const FLASH_ROW_SCROLL_PADDING_PX = 4;
+
+/**
+ * How far the list itself has to scroll to bring `row` fully into view, in
+ * pixels (negative when the row sits above the viewport). Returns 0 when the
+ * row is already visible, or when there is no layout to measure yet (jsdom).
+ *
+ * Only the list's own scroll container moves; the page and the canvas are
+ * never scrolled, so a pick cannot pan the graph.
+ */
+const measureRowScroll = (container, row) => {
+  const containerRect = container.getBoundingClientRect();
+  const rowRect = row.getBoundingClientRect();
+  if (!containerRect.height || !rowRect.height) {
+    return 0;
+  }
+  if (rowRect.top < containerRect.top + FLASH_ROW_SCROLL_PADDING_PX) {
+    return rowRect.top - containerRect.top - FLASH_ROW_SCROLL_PADDING_PX;
+  }
+  if (rowRect.bottom > containerRect.bottom - FLASH_ROW_SCROLL_PADDING_PX) {
+    return rowRect.bottom - containerRect.bottom + FLASH_ROW_SCROLL_PADDING_PX;
+  }
+  return 0;
+};
 
 export function addLorasWidget(node, name, opts, callback) {
   ensureLmStyles();
@@ -262,16 +310,6 @@ export function addLorasWidget(node, name, opts, callback) {
       return queueFocusEntry(targetEntry);
     };
 
-    const escapeLoraName = (loraName) => {
-      const css =
-        (typeof window !== "undefined" && window.CSS) ||
-        (typeof globalThis !== "undefined" && globalThis.CSS);
-      if (css && typeof css.escape === "function") {
-        return css.escape(loraName);
-      }
-      return loraName.replace(/"|\\/g, "\\$&");
-    };
-
     // Create header
     const header = document.createElement("div");
     header.className = "lm-loras-header";
@@ -317,6 +355,33 @@ export function addLorasWidget(node, name, opts, callback) {
       headerActions.appendChild(strengthDragHandle);
       initHeaderDrag(strengthDragHandle, widget, renderLoras);
     }
+
+    // Sweep: drop the rows that are switched off and keep the rest, strengths
+    // and order untouched. Missing `active` counts as off, matching the row
+    // toggle, the header counter and the Python nodes. Assigning the widget
+    // value rebuilds this header through setValue(), so the button state is
+    // fresh after every toggle and needs no hover re-read.
+    const countOffLoras = () =>
+      parseLoraValue(widget.value).filter((lora) => !lora.active).length;
+    const sweepButton = createSweepButton(() => {
+      const lorasData = parseLoraValue(widget.value);
+      const kept = lorasData.filter((lora) => lora.active);
+      if (kept.length === lorasData.length) {
+        return;
+      }
+      previewTooltip.hide();
+      // One explicit undo transaction. The global change tracker captures on
+      // mouseup, before the click that changes the value, so without this the
+      // sweep would only enter the undo stack on a later interaction.
+      app.canvas?.emitBeforeChange?.();
+      try {
+        updateWidgetValue(formatLoraValue(kept));
+      } finally {
+        app.canvas?.emitAfterChange?.();
+      }
+    });
+    updateSweepButtonState(sweepButton, countOffLoras());
+    headerActions.appendChild(sweepButton);
 
     headerActions.appendChild(createAddLoraButton(() => {
       previewTooltip.hide();
@@ -932,7 +997,75 @@ export function addLorasWidget(node, name, opts, callback) {
     }
   });
 
+  let flashRowTimer = null;
+
+  /**
+   * Confirm that a LoRA row was added or enabled by a surface outside the list
+   * (the prompt autocomplete or the quick picker): flash the row and bring it
+   * into view inside the list.
+   *
+   * This is pure visual feedback. It never touches `selectedLora`, never emits
+   * the selection callback and never writes the widget value, so adding a LoRA
+   * cannot steal the row the user is inspecting. The cue fades out on a timer.
+   *
+   * @param {string} loraName - Relative path or bare name of the entry.
+   * @param {"added"|"enabled"} [kind] - What happened to the row.
+   * @returns {boolean} True when a row was found and flashed.
+   */
+  widget.flashLoraEntry = (loraName, kind = "added") => {
+    const key = normalizeLoraNameKey(loraName);
+    if (!key || !container.isConnected) {
+      return false;
+    }
+
+    // Resolve the entry the way the list does (bare-name fallback included):
+    // an appended row may be stored under a normalized name that differs from
+    // the picked path.
+    const index = findLoraIndex(currentLorasData, key);
+    const entryName = index >= 0 ? currentLorasData[index]?.name : "";
+    const row = entryName
+      ? container.querySelector(
+          `.lm-lora-entry[data-lora-name="${escapeLoraName(entryName)}"]`
+        )
+      : null;
+    if (!row) {
+      return false;
+    }
+
+    // One cue at a time: a second pick restarts the flash rather than leaving
+    // two rows glowing.
+    container
+      .querySelectorAll(`.${FLASH_ROW_ADDED_CLASS}, .${FLASH_ROW_ENABLED_CLASS}`)
+      .forEach((entry) =>
+        entry.classList.remove(FLASH_ROW_ADDED_CLASS, FLASH_ROW_ENABLED_CLASS)
+      );
+    if (flashRowTimer !== null) {
+      clearTimeout(flashRowTimer);
+      flashRowTimer = null;
+    }
+
+    row.classList.add(kind === "enabled" ? FLASH_ROW_ENABLED_CLASS : FLASH_ROW_ADDED_CLASS);
+
+    const scrollOffset = measureRowScroll(container, row);
+    if (scrollOffset !== 0) {
+      container.scrollTop += scrollOffset;
+    }
+
+    const duration = FLASH_ROW_DURATION_MS[kind] ?? FLASH_ROW_DURATION_MS.added;
+    flashRowTimer = setTimeout(() => {
+      flashRowTimer = null;
+      if (row.isConnected) {
+        row.classList.remove(FLASH_ROW_ADDED_CLASS, FLASH_ROW_ENABLED_CLASS);
+      }
+    }, duration);
+    return true;
+  };
+
   widget.onRemove = () => {
+    if (flashRowTimer !== null) {
+      clearTimeout(flashRowTimer);
+      flashRowTimer = null;
+    }
     closeLoraInfoCardFor(widget);
     unsubscribeLibraryChange();
     unsubscribeNodeLabelChange();

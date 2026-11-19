@@ -1088,6 +1088,11 @@
             "checkUpdates": "Проверить обновления для выбранных",
             "moveAll": "Переместить все в папку",
             "autoOrganize": "Автоматически организовать выбранные",
+            "applyFilenameTemplate": "Применить шаблон имён файлов к выбранным моделям",
+            "filenameTemplateScope": {
+                "selected": "выбранным моделям",
+                "folder": "этой папке"
+            },
             "skipMetadataRefresh": "Пропустить обновление метаданных для выбранных",
             "resumeMetadataRefresh": "Возобновить обновление метаданных для выбранных",
             "setFavorite": "Добавить в избранное",
@@ -1139,6 +1144,7 @@
             "copyRecipeSyntax": "Копировать синтаксис рецепта",
             "sendToWorkflowAppend": "Отправить в Workflow (Добавить)",
             "sendToWorkflowReplace": "Отправить в Workflow (Заменить)",
+            "sendImageToWorkflow": "Отправить изображение в Workflow",
             "openExamples": "Открыть папку примеров",
             "downloadExamples": "Загрузить примеры изображений",
             "downloadMissingExamples": "Скачать недостающие",
@@ -1406,6 +1412,9 @@
             "sendRecipe": {
                 "missingId": "Невозможно отправить рецепт: отсутствует ID рецепта",
                 "failed": "Не удалось отправить рецепт в workflow"
+            },
+            "sendImage": {
+                "missingImage": "Не удалось отправить изображение: у этого рецепта нет изображения предпросмотра"
             },
             "viewLoras": {
                 "missingId": "Невозможно просмотреть LoRAs: отсутствует ID рецепта",
@@ -1709,6 +1718,11 @@
         "scanFolder": "Сканировать эту папку",
         "scanFolderResult": {
             "missing": "Эта папка больше не существует на диске. Обновите боковую панель и повторите попытку."
+        },
+        "applyFilenameTemplate": "Применить шаблон имён файлов к этой папке",
+        "applyFilenameTemplateResult": {
+            "missing": "Эта папка больше не существует на диске. Обновите боковую панель и повторите попытку.",
+            "unsupported": "Шаблоны имён файлов недоступны на этой странице."
         }
     },
     "statistics": {
@@ -2013,6 +2027,16 @@
         "filenameTemplateConfirm": {
             "titleApply": "Применить шаблон имён файлов к библиотеке?",
             "titleRevert": "Восстановить исходные имена файлов?",
+            "titleApplySelected": "Переименовать выбранные файлы?",
+            "titleApplyFolder": "Переименовать файлы в этой папке?",
+            "titleRevertSelected": "Восстановить исходные имена файлов выбранных моделей?",
+            "titleRevertFolder": "Восстановить исходные имена файлов в этой папке?",
+            "messageApplySelected": "Из {total} выбранных файлов {success} будут переименованы по шаблону имён файлов. {skipped} уже соответствуют или пропускаются; {failures} переименовать нельзя. Изменится относительный путь, который видит ComfyUI; исходное имя каждого файла сохраняется в метаданных модели.",
+            "messageApplyFolder": "Из {total} файлов в этой папке (включая подпапки) {success} будут переименованы по шаблону имён файлов. {skipped} уже соответствуют или пропускаются; {failures} переименовать нельзя. Изменится относительный путь, который видит ComfyUI; исходное имя каждого файла сохраняется в метаданных модели.",
+            "messageRevertSelected": "Шаблон имён файлов не настроен, поэтому вместо него будут восстановлены записанные исходные имена. Из {total} выбранных файлов {success} вернут исходное имя; {skipped} не имеют записанного исходного имени или уже совпадают; {failures} переименовать нельзя.",
+            "messageRevertFolder": "Шаблон имён файлов не настроен, поэтому вместо него будут восстановлены записанные исходные имена. Из {total} файлов в этой папке (включая подпапки) {success} вернут исходное имя; {skipped} не имеют записанного исходного имени или уже совпадают; {failures} переименовать нельзя.",
+            "renameCountButton": "Переименовать файлы ({count})",
+            "restoreCountButton": "Восстановить имена файлов ({count})",
             "revertButton": "Восстановить исходные имена файлов"
         },
         "sidecarMigrationConfirm": {
@@ -2357,7 +2381,8 @@
                 "nsfwX": "Контент с рейтингом X",
                 "nsfwXxx": "Контент с рейтингом XXX",
                 "layoutGallery": "Галерея",
-                "layoutList": "Список"
+                "layoutList": "Список",
+                "sendImage": "Отправить изображение в Workflow"
             },
             "versions": {
                 "heading": "Версии модели",
@@ -2637,6 +2662,12 @@
             "embeddingFailed": "Не удалось добавить embedding",
             "promptSent": "Промпт отправлен в workflow",
             "promptFailed": "Не удалось отправить промпт",
+            "imageSourceMissing": "Источник изображения не указан",
+            "noImageTargets": "В Workflow нет совместимых целевых узлов для изображений.\nЩёлкните правой кнопкой мыши по узлу Load Image в ComfyUI → Mark as → Send Image Target",
+            "imageSent": "Изображение отправлено в Workflow",
+            "imageSendFailed": "Не удалось отправить изображение в Workflow: {message}",
+            "imageSending": "Отправка изображения в Workflow...",
+            "imageDownloading": "Загрузка изображения и отправка в Workflow...",
             "nodeTypeExcluded": "Тип узла \"{type}\" исключён из целей отправки"
         },
         "nodeSelector": {
@@ -2644,8 +2675,10 @@
             "lora": "LoRA",
             "embedding": "Embedding",
             "prompt": "Промпт",
+            "image": "Изображение",
             "replace": "Заменить",
             "append": "Добавить",
+            "send": "Отправить",
             "selectTargetNode": "Выберите целевой узел",
             "sendToAll": "Отправить во все",
             "excludeNodeType": "Больше не предлагать этот тип узла"
@@ -2668,20 +2701,20 @@
         "title": "Справка и учебные материалы",
         "tabs": {
             "gettingStarted": "Начало работы",
-            "updates": "[TODO: Translate] Updates",
+            "updates": "Обновления",
             "documentation": "Документация",
             "shortcuts": "Горячие клавиши"
         },
         "gettingStarted": {
             "title": "Начало работы с LoRA Manager",
-            "stepsTitle": "[TODO: Translate] First steps",
+            "stepsTitle": "Первые шаги",
             "steps": {
-                "configure": "[TODO: Translate] Configure your model folders and add a CivitAI API key if you plan to download models.",
-                "find": "[TODO: Translate] Find a model by browsing folders or searching names, tags, and trigger words.",
-                "send": "[TODO: Translate] Use Send to ComfyUI or copy LoRA syntax into a compatible LoRA Manager node.",
-                "refresh": "[TODO: Translate] Use Refresh after changing files outside LoRA Manager; rebuild the cache only for cache inconsistencies."
+                "configure": "Настройте папки моделей и добавьте ключ API CivitAI, если планируете скачивать модели.",
+                "find": "Найдите модель, просматривая папки или выполняя поиск по имени, тегам и триггерным словам.",
+                "send": "Используйте «Отправить в ComfyUI» или скопируйте синтаксис LoRA в совместимый узел LoRA Manager.",
+                "refresh": "Используйте «Обновить» после изменения файлов вне LoRA Manager; перестраивайте кэш только при несоответствиях."
             },
-            "readGuide": "[TODO: Translate] Open the Getting Started guide",
+            "readGuide": "Открыть руководство по началу работы",
             "replayTutorial": "Повторить обучение"
         },
         "shortcuts": {
@@ -2728,25 +2761,25 @@
             "watchOnYouTube": "Смотреть на YouTube",
             "playlistTitle": "Плейлист обновлений LoRA Manager",
             "playlistDescription": "Смотрите все видео обновлений, демонстрирующие новейшие функции и улучшения.",
-            "releaseNotes": "[TODO: Translate] Read release notes on GitHub"
+            "releaseNotes": "Читать примечания к выпуску на GitHub"
         },
         "documentation": {
             "title": "Документация",
-            "startSupport": "[TODO: Translate] Start & Support",
-            "workingWithAssets": "[TODO: Translate] Working with Assets",
-            "integrationConfiguration": "[TODO: Translate] Integration & Configuration",
-            "gettingStarted": "[TODO: Translate] Getting Started",
-            "faq": "[TODO: Translate] FAQ",
+            "startSupport": "Начало работы и поддержка",
+            "workingWithAssets": "Работа с ресурсами",
+            "integrationConfiguration": "Интеграция и настройка",
+            "gettingStarted": "Начало работы",
+            "faq": "FAQ",
             "troubleshooting": "Устранение неполадок",
-            "modelLibrary": "[TODO: Translate] Model Library",
-            "downloadsOrganization": "[TODO: Translate] Downloading and Organizing Models",
+            "modelLibrary": "Библиотека моделей",
+            "downloadsOrganization": "Загрузка и организация моделей",
             "recipes": "Рецепты",
-            "workflowLibrary": "[TODO: Translate] Workflow Library",
-            "comfyuiIntegration": "[TODO: Translate] ComfyUI Integration",
-            "configuration": "[TODO: Translate] Configuration",
-            "loraSyntax": "[TODO: Translate] LoRA Syntax and Duplicate Filenames",
-            "browserExtension": "[TODO: Translate] LM Civitai Extension",
-            "browseAll": "[TODO: Translate] Browse all documentation"
+            "workflowLibrary": "Библиотека Workflow",
+            "comfyuiIntegration": "Интеграция с ComfyUI",
+            "configuration": "Настройка",
+            "loraSyntax": "Синтаксис LoRA и дубликаты имён файлов",
+            "browserExtension": "Расширение LM Civitai",
+            "browseAll": "Просмотреть всю документацию"
         },
         "newContentBadge": "НОВОЕ"
     },
@@ -2876,6 +2909,8 @@
             "autoOrganizeProgressUnavailable": "Автоматическая организация завершена: перемещено {success}, не удалось {failures} из {total} моделей; прогресс в реальном времени был недоступен",
             "autoOrganizeFailed": "Ошибка автоматической организации: {error}",
             "filenameTemplateSuccess": "Шаблон имён файлов успешно применён для {count} {type}",
+            "filenameTemplateScopedSuccess": "Переименовано файлов: {count}",
+            "filenameTemplateNothingToRename": "Переименовывать нечего: файлы в выбранной области уже соответствуют шаблону или не имеют записанного исходного имени",
             "filenameTemplatePartialSuccess": "Шаблон имён файлов применён: переименовано {success}, не удалось {failures} из {total} моделей",
             "filenameTemplateFailed": "Не удалось применить шаблон имён файлов: {error}",
             "noModelsSelected": "Модели не выбраны"

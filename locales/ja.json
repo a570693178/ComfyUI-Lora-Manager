@@ -1088,6 +1088,11 @@
             "checkUpdates": "選択項目の更新を確認",
             "moveAll": "すべてをフォルダに移動",
             "autoOrganize": "自動整理を実行",
+            "applyFilenameTemplate": "選択したモデルにファイル名テンプレートを適用",
+            "filenameTemplateScope": {
+                "selected": "選択中のモデル",
+                "folder": "このフォルダ"
+            },
             "skipMetadataRefresh": "選択したモデルのメタデータ更新をスキップ",
             "resumeMetadataRefresh": "選択したモデルのメタデータ更新を再開",
             "setFavorite": "お気に入りに設定",
@@ -1139,6 +1144,7 @@
             "copyRecipeSyntax": "レシピ構文をコピー",
             "sendToWorkflowAppend": "ワークフローに送信（追加）",
             "sendToWorkflowReplace": "ワークフローに送信（置換）",
+            "sendImageToWorkflow": "画像をワークフローに送信",
             "openExamples": "例画像フォルダを開く",
             "downloadExamples": "例画像をダウンロード",
             "downloadMissingExamples": "不足分をダウンロード",
@@ -1406,6 +1412,9 @@
             "sendRecipe": {
                 "missingId": "レシピを送信できません：レシピIDがありません",
                 "failed": "レシピのワークフローへの送信に失敗しました"
+            },
+            "sendImage": {
+                "missingImage": "画像を送信できません：このレシピにはプレビュー画像がありません"
             },
             "viewLoras": {
                 "missingId": "LoRAを表示できません：レシピIDがありません",
@@ -1709,6 +1718,11 @@
         "scanFolder": "このフォルダをスキャン",
         "scanFolderResult": {
             "missing": "このフォルダはディスク上に存在しません。サイドバーを再読み込みしてからもう一度お試しください。"
+        },
+        "applyFilenameTemplate": "このフォルダにファイル名テンプレートを適用",
+        "applyFilenameTemplateResult": {
+            "missing": "このフォルダはディスク上に存在しません。サイドバーを再読み込みしてからもう一度お試しください。",
+            "unsupported": "このページではファイル名テンプレートを利用できません。"
         }
     },
     "statistics": {
@@ -2013,6 +2027,16 @@
         "filenameTemplateConfirm": {
             "titleApply": "ファイル名テンプレートをライブラリに適用しますか？",
             "titleRevert": "元のファイル名を復元しますか？",
+            "titleApplySelected": "選択したファイルをリネームしますか？",
+            "titleApplyFolder": "このフォルダ内のファイルをリネームしますか？",
+            "titleRevertSelected": "選択したファイルの元のファイル名を復元しますか？",
+            "titleRevertFolder": "このフォルダ内のファイルの元のファイル名を復元しますか？",
+            "messageApplySelected": "選択した {total} ファイルのうち {success} ファイルをファイル名テンプレートに従ってリネームします。{skipped} ファイルは既に一致しているかスキップされます。{failures} ファイルはリネームできません。ComfyUI が参照する相対パスが変わり、元のファイル名は各モデルのメタデータに保持されます。",
+            "messageApplyFolder": "このフォルダ（サブフォルダを含む）の {total} ファイルのうち {success} ファイルをファイル名テンプレートに従ってリネームします。{skipped} ファイルは既に一致しているかスキップされます。{failures} ファイルはリネームできません。ComfyUI が参照する相対パスが変わり、元のファイル名は各モデルのメタデータに保持されます。",
+            "messageRevertSelected": "ファイル名テンプレートが未設定のため、代わりに記録済みの元のファイル名を復元します。選択した {total} ファイルのうち {success} ファイルが元の名前に戻ります。{skipped} ファイルは記録がないか既に一致しています。{failures} ファイルはリネームできません。",
+            "messageRevertFolder": "ファイル名テンプレートが未設定のため、代わりに記録済みの元のファイル名を復元します。このフォルダ（サブフォルダを含む）の {total} ファイルのうち {success} ファイルが元の名前に戻ります。{skipped} ファイルは記録がないか既に一致しています。{failures} ファイルはリネームできません。",
+            "renameCountButton": "{count} ファイルをリネーム",
+            "restoreCountButton": "{count} ファイル名を復元",
             "revertButton": "元のファイル名を復元"
         },
         "sidecarMigrationConfirm": {
@@ -2357,7 +2381,8 @@
                 "nsfwX": "X指定コンテンツ",
                 "nsfwXxx": "XXX指定コンテンツ",
                 "layoutGallery": "ギャラリー表示",
-                "layoutList": "リスト表示"
+                "layoutList": "リスト表示",
+                "sendImage": "画像をワークフローに送信"
             },
             "versions": {
                 "heading": "モデルバージョン",
@@ -2637,6 +2662,12 @@
             "embeddingFailed": "Embeddingの追加に失敗しました",
             "promptSent": "プロンプトをワークフローに送信しました",
             "promptFailed": "プロンプトの送信に失敗しました",
+            "imageSourceMissing": "画像ソースが指定されていません",
+            "noImageTargets": "ワークフローに互換性のある画像ターゲットがありません。\nComfyUI で Load Image ノードを右クリック → Mark as → Send Image Target",
+            "imageSent": "画像をワークフローに送信しました",
+            "imageSendFailed": "画像をワークフローに送信できませんでした：{message}",
+            "imageSending": "画像をワークフローに送信中...",
+            "imageDownloading": "画像をダウンロードしてワークフローに送信中...",
             "nodeTypeExcluded": "ノードタイプ \"{type}\" を送信ターゲットから除外しました"
         },
         "nodeSelector": {
@@ -2644,8 +2675,10 @@
             "lora": "LoRA",
             "embedding": "Embedding",
             "prompt": "プロンプト",
+            "image": "画像",
             "replace": "置換",
             "append": "追加",
+            "send": "送信",
             "selectTargetNode": "ターゲットノードを選択",
             "sendToAll": "すべてに送信",
             "excludeNodeType": "このノードタイプを今後提案しない"
@@ -2668,20 +2701,20 @@
         "title": "ヘルプ & チュートリアル",
         "tabs": {
             "gettingStarted": "はじめに",
-            "updates": "[TODO: Translate] Updates",
+            "updates": "更新",
             "documentation": "ドキュメント",
             "shortcuts": "ショートカット"
         },
         "gettingStarted": {
             "title": "LoRA Managerを始める",
-            "stepsTitle": "[TODO: Translate] First steps",
+            "stepsTitle": "最初のステップ",
             "steps": {
-                "configure": "[TODO: Translate] Configure your model folders and add a CivitAI API key if you plan to download models.",
-                "find": "[TODO: Translate] Find a model by browsing folders or searching names, tags, and trigger words.",
-                "send": "[TODO: Translate] Use Send to ComfyUI or copy LoRA syntax into a compatible LoRA Manager node.",
-                "refresh": "[TODO: Translate] Use Refresh after changing files outside LoRA Manager; rebuild the cache only for cache inconsistencies."
+                "configure": "モデルフォルダーを設定し、モデルをダウンロードする予定がある場合は CivitAI APIキーを追加します。",
+                "find": "フォルダーを閲覧するか、名前、タグ、トリガーワードで検索してモデルを見つけます。",
+                "send": "「ComfyUIに送信」を使用するか、LoRA 構文を対応する LoRA Manager ノードにコピーします。",
+                "refresh": "LoRA Manager の外部でファイルを変更した後に「更新」を使用します。キャッシュの不整合時のみキャッシュを再構築してください。"
             },
-            "readGuide": "[TODO: Translate] Open the Getting Started guide",
+            "readGuide": "はじめにガイドを開く",
             "replayTutorial": "チュートリアルをもう一度再生"
         },
         "shortcuts": {
@@ -2728,25 +2761,25 @@
             "watchOnYouTube": "YouTubeで視聴",
             "playlistTitle": "LoRA Manager更新プレイリスト",
             "playlistDescription": "最新の機能と改善を紹介するすべての更新動画を視聴できます。",
-            "releaseNotes": "[TODO: Translate] Read release notes on GitHub"
+            "releaseNotes": "GitHub でリリースノートを読む"
         },
         "documentation": {
             "title": "ドキュメント",
-            "startSupport": "[TODO: Translate] Start & Support",
-            "workingWithAssets": "[TODO: Translate] Working with Assets",
-            "integrationConfiguration": "[TODO: Translate] Integration & Configuration",
-            "gettingStarted": "[TODO: Translate] Getting Started",
-            "faq": "[TODO: Translate] FAQ",
+            "startSupport": "はじめに & サポート",
+            "workingWithAssets": "アセットの扱い",
+            "integrationConfiguration": "統合と設定",
+            "gettingStarted": "はじめに",
+            "faq": "よくある質問",
             "troubleshooting": "トラブルシューティング",
-            "modelLibrary": "[TODO: Translate] Model Library",
-            "downloadsOrganization": "[TODO: Translate] Downloading and Organizing Models",
+            "modelLibrary": "モデルライブラリ",
+            "downloadsOrganization": "モデルのダウンロードと整理",
             "recipes": "レシピ",
-            "workflowLibrary": "[TODO: Translate] Workflow Library",
-            "comfyuiIntegration": "[TODO: Translate] ComfyUI Integration",
-            "configuration": "[TODO: Translate] Configuration",
-            "loraSyntax": "[TODO: Translate] LoRA Syntax and Duplicate Filenames",
-            "browserExtension": "[TODO: Translate] LM Civitai Extension",
-            "browseAll": "[TODO: Translate] Browse all documentation"
+            "workflowLibrary": "ワークフローライブラリ",
+            "comfyuiIntegration": "ComfyUI 統合",
+            "configuration": "設定",
+            "loraSyntax": "LoRA 構文と重複ファイル名",
+            "browserExtension": "LM Civitai 拡張機能",
+            "browseAll": "すべてのドキュメントを見る"
         },
         "newContentBadge": "新着"
     },
@@ -2876,6 +2909,8 @@
             "autoOrganizeProgressUnavailable": "自動整理が完了しました：{total} モデル中 {success} 移動、{failures} 失敗。リアルタイムの進捗は利用できませんでした",
             "autoOrganizeFailed": "自動整理に失敗しました：{error}",
             "filenameTemplateSuccess": "{count} 件の{type}にファイル名テンプレートを正常に適用しました",
+            "filenameTemplateScopedSuccess": "{count} ファイルをリネームしました",
+            "filenameTemplateNothingToRename": "リネーム対象がありません：範囲内のファイルは既に一致しているか、復元できる元のファイル名がありません",
             "filenameTemplatePartialSuccess": "ファイル名テンプレートを適用しました：{total} 件中 {success} 件をリネーム、{failures} 件失敗",
             "filenameTemplateFailed": "ファイル名テンプレートの適用に失敗しました：{error}",
             "noModelsSelected": "モデルが選択されていません"

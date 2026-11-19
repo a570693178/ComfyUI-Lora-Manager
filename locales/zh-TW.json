@@ -1088,6 +1088,11 @@
             "checkUpdates": "檢查所選更新",
             "moveAll": "全部移動到資料夾",
             "autoOrganize": "自動整理所選模型",
+            "applyFilenameTemplate": "將檔案名稱範本套用至所選模型",
+            "filenameTemplateScope": {
+                "selected": "所選模型",
+                "folder": "此資料夾"
+            },
             "skipMetadataRefresh": "跳過所選模型的元數據更新",
             "resumeMetadataRefresh": "恢復所選模型的元數據更新",
             "setFavorite": "設為收藏",
@@ -1139,6 +1144,7 @@
             "copyRecipeSyntax": "複製配方語法",
             "sendToWorkflowAppend": "傳送到工作流（附加）",
             "sendToWorkflowReplace": "傳送到工作流（取代）",
+            "sendImageToWorkflow": "傳送圖片到工作流",
             "openExamples": "開啟範例資料夾",
             "downloadExamples": "下載範例圖片",
             "downloadMissingExamples": "下載缺少的",
@@ -1406,6 +1412,9 @@
             "sendRecipe": {
                 "missingId": "無法傳送配方：缺少配方 ID",
                 "failed": "傳送配方到工作流失敗"
+            },
+            "sendImage": {
+                "missingImage": "無法傳送圖片：此配方沒有預覽圖"
             },
             "viewLoras": {
                 "missingId": "無法檢視 LoRA：缺少配方 ID",
@@ -1709,6 +1718,11 @@
         "scanFolder": "掃描此資料夾",
         "scanFolderResult": {
             "missing": "該資料夾在磁碟上已不存在，請重新整理側邊欄後再試。"
+        },
+        "applyFilenameTemplate": "將檔案名稱範本套用至此資料夾",
+        "applyFilenameTemplateResult": {
+            "missing": "該資料夾在磁碟上已不存在，請重新整理側邊欄後再試。",
+            "unsupported": "此頁面不支援檔案名稱範本。"
         }
     },
     "statistics": {
@@ -2013,6 +2027,16 @@
         "filenameTemplateConfirm": {
             "titleApply": "要將檔案名稱範本套用至模型庫嗎？",
             "titleRevert": "要還原原始檔案名稱嗎？",
+            "titleApplySelected": "要重新命名所選檔案嗎？",
+            "titleApplyFolder": "要重新命名此資料夾中的檔案嗎？",
+            "titleRevertSelected": "要還原所選檔案的原始檔案名稱嗎？",
+            "titleRevertFolder": "要還原此資料夾中的原始檔案名稱嗎？",
+            "messageApplySelected": "所選 {total} 個檔案中有 {success} 個將依檔案名稱範本重新命名。{skipped} 個已符合或會被略過；{failures} 個無法重新命名。這會變更 ComfyUI 讀取的相對路徑；原始檔案名稱會保留在每個模型的中繼資料中。",
+            "messageApplyFolder": "此資料夾（含子資料夾）中共有 {total} 個檔案，其中 {success} 個將依檔案名稱範本重新命名。{skipped} 個已符合或會被略過；{failures} 個無法重新命名。這會變更 ComfyUI 讀取的相對路徑；原始檔案名稱會保留在每個模型的中繼資料中。",
+            "messageRevertSelected": "未設定檔案名稱範本，因此將改為還原已記錄的原始檔案名稱。所選 {total} 個檔案中有 {success} 個將還原原名；{skipped} 個沒有原始記錄或已符合；{failures} 個無法重新命名。",
+            "messageRevertFolder": "未設定檔案名稱範本，因此將改為還原已記錄的原始檔案名稱。此資料夾（含子資料夾）中共有 {total} 個檔案，其中 {success} 個將還原原名；{skipped} 個沒有原始記錄或已符合；{failures} 個無法重新命名。",
+            "renameCountButton": "重新命名 {count} 個檔案",
+            "restoreCountButton": "還原 {count} 個檔案名稱",
             "revertButton": "還原原始檔案名稱"
         },
         "sidecarMigrationConfirm": {
@@ -2357,7 +2381,8 @@
                 "nsfwX": "X 級內容",
                 "nsfwXxx": "XXX 級內容",
                 "layoutGallery": "圖庫檢視",
-                "layoutList": "清單檢視"
+                "layoutList": "清單檢視",
+                "sendImage": "傳送圖片到工作流"
             },
             "versions": {
                 "heading": "模型版本",
@@ -2637,6 +2662,12 @@
             "embeddingFailed": "傳送 Embedding 到工作流失敗",
             "promptSent": "提示詞已發送到工作流",
             "promptFailed": "提示詞發送失敗",
+            "imageSourceMissing": "未提供圖片來源",
+            "noImageTargets": "工作流中沒有相容的圖片目標節點。\n在 ComfyUI 中右鍵 Load Image 節點 → Mark as → Send Image Target",
+            "imageSent": "圖片已傳送到工作流",
+            "imageSendFailed": "傳送圖片到工作流失敗：{message}",
+            "imageSending": "正在傳送圖片到工作流...",
+            "imageDownloading": "正在下載圖片並傳送到工作流...",
             "nodeTypeExcluded": "節點類型 \"{type}\" 已從傳送目標中排除"
         },
         "nodeSelector": {
@@ -2644,8 +2675,10 @@
             "lora": "LoRA",
             "embedding": "Embedding",
             "prompt": "提示詞",
+            "image": "圖片",
             "replace": "取代",
             "append": "附加",
+            "send": "傳送",
             "selectTargetNode": "選擇目標節點",
             "sendToAll": "全部傳送",
             "excludeNodeType": "不再建議此節點類型"
@@ -2668,20 +2701,20 @@
         "title": "說明與教學",
         "tabs": {
             "gettingStarted": "快速開始",
-            "updates": "[TODO: Translate] Updates",
+            "updates": "更新",
             "documentation": "文件",
             "shortcuts": "快捷鍵"
         },
         "gettingStarted": {
             "title": "LoRA 管理器快速開始",
-            "stepsTitle": "[TODO: Translate] First steps",
+            "stepsTitle": "第一步",
             "steps": {
-                "configure": "[TODO: Translate] Configure your model folders and add a CivitAI API key if you plan to download models.",
-                "find": "[TODO: Translate] Find a model by browsing folders or searching names, tags, and trigger words.",
-                "send": "[TODO: Translate] Use Send to ComfyUI or copy LoRA syntax into a compatible LoRA Manager node.",
-                "refresh": "[TODO: Translate] Use Refresh after changing files outside LoRA Manager; rebuild the cache only for cache inconsistencies."
+                "configure": "設定您的模型資料夾；如果打算下載模型，請新增 CivitAI API 金鑰。",
+                "find": "透過瀏覽資料夾或搜尋名稱、標籤和觸發詞來尋找模型。",
+                "send": "使用「傳送到 ComfyUI」，或將 LoRA 語法複製到相容的 LoRA Manager 節點。",
+                "refresh": "在 LoRA Manager 之外變更檔案後使用「重新整理」；僅在快取不一致時重建快取。"
             },
-            "readGuide": "[TODO: Translate] Open the Getting Started guide",
+            "readGuide": "開啟快速開始指南",
             "replayTutorial": "重新播放教學"
         },
         "shortcuts": {
@@ -2728,25 +2761,25 @@
             "watchOnYouTube": "在 YouTube 觀看",
             "playlistTitle": "LoRA 管理器更新影片清單",
             "playlistDescription": "觀看所有展示最新功能與改進的更新影片。",
-            "releaseNotes": "[TODO: Translate] Read release notes on GitHub"
+            "releaseNotes": "在 GitHub 上閱讀發行說明"
         },
         "documentation": {
             "title": "文件",
-            "startSupport": "[TODO: Translate] Start & Support",
-            "workingWithAssets": "[TODO: Translate] Working with Assets",
-            "integrationConfiguration": "[TODO: Translate] Integration & Configuration",
-            "gettingStarted": "[TODO: Translate] Getting Started",
-            "faq": "[TODO: Translate] FAQ",
+            "startSupport": "開始與支援",
+            "workingWithAssets": "使用資源",
+            "integrationConfiguration": "整合與設定",
+            "gettingStarted": "快速開始",
+            "faq": "常見問題",
             "troubleshooting": "疑難排解",
-            "modelLibrary": "[TODO: Translate] Model Library",
-            "downloadsOrganization": "[TODO: Translate] Downloading and Organizing Models",
+            "modelLibrary": "模型庫",
+            "downloadsOrganization": "下載與整理模型",
             "recipes": "配方",
-            "workflowLibrary": "[TODO: Translate] Workflow Library",
-            "comfyuiIntegration": "[TODO: Translate] ComfyUI Integration",
-            "configuration": "[TODO: Translate] Configuration",
-            "loraSyntax": "[TODO: Translate] LoRA Syntax and Duplicate Filenames",
-            "browserExtension": "[TODO: Translate] LM Civitai Extension",
-            "browseAll": "[TODO: Translate] Browse all documentation"
+            "workflowLibrary": "工作流庫",
+            "comfyuiIntegration": "ComfyUI 整合",
+            "configuration": "設定",
+            "loraSyntax": "LoRA 語法與重複檔名",
+            "browserExtension": "LM Civitai 擴充功能",
+            "browseAll": "瀏覽所有文件"
         },
         "newContentBadge": "新"
     },
@@ -2876,6 +2909,8 @@
             "autoOrganizeProgressUnavailable": "自動整理完成：已移動 {success} 個，{failures} 個失敗，共 {total} 個模型；即時進度不可用",
             "autoOrganizeFailed": "自動整理失敗：{error}",
             "filenameTemplateSuccess": "已成功為 {count} 個 {type} 套用檔案名稱範本",
+            "filenameTemplateScopedSuccess": "已重新命名 {count} 個檔案",
+            "filenameTemplateNothingToRename": "沒有需要重新命名的檔案：範圍內的檔案都已符合範本，或沒有可還原的原始檔案名稱",
             "filenameTemplatePartialSuccess": "檔案名稱範本套用完成：已重新命名 {success} 個，{failures} 個失敗，共 {total} 個模型",
             "filenameTemplateFailed": "套用檔案名稱範本失敗：{error}",
             "noModelsSelected": "未選擇任何模型"

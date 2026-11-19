@@ -206,7 +206,8 @@
 }
 
 .lm-lora-add-button,
-.lm-lora-strength-drag-handle {
+.lm-lora-strength-drag-handle,
+.lm-lora-sweep-button {
   width: 24px;
   height: 24px;
   display: flex;
@@ -224,14 +225,16 @@
 }
 
 .lm-lora-add-button:hover,
-.lm-lora-strength-drag-handle:hover {
+.lm-lora-strength-drag-handle:hover,
+.lm-lora-sweep-button:hover:not(:disabled) {
   color: var(--lm-fg);
   background: var(--lm-accent-soft);
   border-color: var(--lm-accent-border);
 }
 
 .lm-lora-add-button:focus-visible,
-.lm-lora-strength-drag-handle:focus-visible {
+.lm-lora-strength-drag-handle:focus-visible,
+.lm-lora-sweep-button:focus-visible {
   outline: 2px solid var(--lm-accent-border);
   outline-offset: 1px;
 }
@@ -239,6 +242,13 @@
 .lm-lora-strength-drag-handle {
   cursor: ew-resize;
   touch-action: none;
+}
+
+/* Nothing switched off to remove: the button stays in place so the header
+   keeps its geometry, dimmed and untargetable. */
+.lm-lora-sweep-button:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 .lm-lora-entry {
@@ -297,6 +307,46 @@
 
 .lm-lora-entry[data-missing="true"] .lm-lora-name {
   color: var(--lm-danger-text);
+}
+
+/* Transient "this row just changed" cue for a LoRA added or enabled from a
+   surface other than the list itself (prompt autocomplete, quick picker).
+   Purely visual: the selection state is never touched, so a flashing row is
+   not a selected row. `added` fades the new row in, `enabled` only rings the
+   row that was switched on; both fade the outline back out. The classes are
+   removed by the widget after the animation. */
+.lm-lora-entry--flash-added,
+.lm-lora-entry--flash-enabled {
+  outline: 2px solid transparent;
+  outline-offset: -1px;
+}
+
+.lm-lora-entry--flash-added {
+  animation:
+    lm-lora-row-fade-in 160ms ease-out,
+    lm-lora-row-ring 1100ms ease-out;
+}
+
+.lm-lora-entry--flash-enabled {
+  animation: lm-lora-row-ring 900ms ease-out;
+}
+
+@keyframes lm-lora-row-fade-in {
+  from { opacity: 0.35; }
+  to { opacity: 1; }
+}
+
+@keyframes lm-lora-row-ring {
+  from { outline-color: var(--lm-accent-border); }
+  to { outline-color: transparent; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lm-lora-entry--flash-added,
+  .lm-lora-entry--flash-enabled {
+    animation: none;
+    outline-color: var(--lm-accent-border);
+  }
 }
 
 .lm-lora-name {

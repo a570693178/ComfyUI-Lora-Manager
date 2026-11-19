@@ -1089,6 +1089,11 @@
       "checkUpdates": "Check Updates for Selected",
       "moveAll": "Move Selected to Folder",
       "autoOrganize": "Auto-Organize Selected",
+      "applyFilenameTemplate": "Apply Filename Template to Selected",
+      "filenameTemplateScope": {
+        "selected": "the selection",
+        "folder": "this folder"
+      },
       "skipMetadataRefresh": "Skip Metadata Refresh for Selected",
       "resumeMetadataRefresh": "Resume Metadata Refresh for Selected",
       "setFavorite": "Set as Favorite",
@@ -1140,6 +1145,7 @@
       "copyRecipeSyntax": "Copy Recipe Syntax",
       "sendToWorkflowAppend": "Send to Workflow (Append)",
       "sendToWorkflowReplace": "Send to Workflow (Replace)",
+      "sendImageToWorkflow": "Send Image to Workflow",
       "openExamples": "Open Examples Folder",
       "downloadExamples": "Download Example Images",
       "downloadMissingExamples": "Download Missing",
@@ -1407,6 +1413,9 @@
       "sendRecipe": {
         "missingId": "Cannot send recipe: Missing recipe ID",
         "failed": "Failed to send recipe to workflow"
+      },
+      "sendImage": {
+        "missingImage": "Cannot send image: This recipe has no preview image"
       },
       "viewLoras": {
         "missingId": "Cannot view LoRAs: Missing recipe ID",
@@ -1718,6 +1727,11 @@
     "scanFolder": "Scan this folder",
     "scanFolderResult": {
       "missing": "This folder no longer exists on disk. Refresh the sidebar and try again."
+    },
+    "applyFilenameTemplate": "Apply filename template to this folder",
+    "applyFilenameTemplateResult": {
+      "missing": "This folder no longer exists on disk. Refresh the sidebar and try again.",
+      "unsupported": "Filename templates are not available on this page."
     }
   },
   "statistics": {
@@ -2022,6 +2036,16 @@
     "filenameTemplateConfirm": {
       "titleApply": "Apply filename template to library?",
       "titleRevert": "Restore original filenames?",
+      "titleApplySelected": "Rename selected files?",
+      "titleApplyFolder": "Rename files in this folder?",
+      "titleRevertSelected": "Restore original filenames for the selection?",
+      "titleRevertFolder": "Restore original filenames in this folder?",
+      "messageApplySelected": "{success} of {total} selected files will be renamed according to the filename template. {skipped} already match or are skipped; {failures} cannot be renamed. This changes the relative path ComfyUI sees; each model keeps its original filename in metadata.",
+      "messageApplyFolder": "{success} of {total} files in this folder (and its subfolders) will be renamed according to the filename template. {skipped} already match or are skipped; {failures} cannot be renamed. This changes the relative path ComfyUI sees; each model keeps its original filename in metadata.",
+      "messageRevertSelected": "No filename template is configured, so this restores recorded original filenames instead. {success} of {total} selected files will get their original name back; {skipped} have no recorded original or already match; {failures} cannot be renamed.",
+      "messageRevertFolder": "No filename template is configured, so this restores recorded original filenames instead. {success} of {total} files in this folder (and its subfolders) will get their original name back; {skipped} have no recorded original or already match; {failures} cannot be renamed.",
+      "renameCountButton": "Rename {count} Files",
+      "restoreCountButton": "Restore {count} Filenames",
       "revertButton": "Restore Original Filenames"
     },
     "sidecarMigrationConfirm": {
@@ -2379,7 +2403,8 @@
         "nsfwX": "X-rated Content",
         "nsfwXxx": "XXX-rated Content",
         "layoutGallery": "Gallery view",
-        "layoutList": "List view"
+        "layoutList": "List view",
+        "sendImage": "Send image to workflow"
       },
       "versions": {
         "heading": "Model versions",
@@ -2659,6 +2684,12 @@
       "embeddingFailed": "Failed to add embedding",
       "promptSent": "Prompt sent to workflow",
       "promptFailed": "Failed to send prompt",
+      "imageSourceMissing": "No image source provided",
+      "noImageTargets": "No compatible image targets in the workflow.\nRight-click a Load Image node in ComfyUI → Mark as → Send Image Target",
+      "imageSent": "Image sent to workflow",
+      "imageSendFailed": "Failed to send image to workflow: {message}",
+      "imageSending": "Sending image to workflow...",
+      "imageDownloading": "Downloading image and sending to workflow...",
       "nodeTypeExcluded": "Node type \"{type}\" excluded from send targets"
     },
     "nodeSelector": {
@@ -2666,8 +2697,10 @@
       "lora": "LoRA",
       "embedding": "Embedding",
       "prompt": "Prompt",
+      "image": "Image",
       "replace": "Replace",
       "append": "Append",
+      "send": "Send",
       "selectTargetNode": "Select target node",
       "sendToAll": "Send to All",
       "excludeNodeType": "Never suggest this node type"
@@ -2909,6 +2942,8 @@
       "autoOrganizeProgressUnavailable": "Auto-organize completed with {success} moved, {failures} failed out of {total} models; live progress was unavailable",
       "autoOrganizeFailed": "Auto-organize failed: {error}",
       "filenameTemplateSuccess": "Filename template applied successfully for {count} {type}",
+      "filenameTemplateScopedSuccess": "Renamed {count} files",
+      "filenameTemplateNothingToRename": "Nothing to rename: every file in scope already matches, or has no recorded original filename",
       "filenameTemplatePartialSuccess": "Filename template applied with {success} renamed, {failures} failed out of {total} models",
       "filenameTemplateFailed": "Applying filename template failed: {error}",
       "noModelsSelected": "No models selected"
