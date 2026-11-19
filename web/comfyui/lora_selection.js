@@ -21,7 +21,7 @@ const STRENGTH_DECIMALS = 2;
 /**
  * Extract the LoRA tags from an A1111-style code string.
  *
- * Accepts `<lora:name:strength>` and `<lora:name:strength:clip_strength>`; the
+ * Accepts model/CLIP strengths and the optional Lora Manager `LBW=` field; the
  * pattern is the one the textarea parser uses, so anything this reads is
  * something that surface will also recognise. Names are returned normalized
  * (forward slashes, extension stripped) because that is the form stored in a
@@ -183,6 +183,7 @@ function sameLoraEntry(left, right) {
   return left?.name === right?.name
     && String(left?.strength ?? "") === String(right?.strength ?? "")
     && String(left?.clipStrength ?? "") === String(right?.clipStrength ?? "")
+    && JSON.stringify(left?.lbw ?? null) === JSON.stringify(right?.lbw ?? null)
     && Boolean(left?.active) === Boolean(right?.active);
 }
 

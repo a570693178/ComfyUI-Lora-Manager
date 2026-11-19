@@ -4,6 +4,7 @@ import re
 
 from .constants import MODELS, PROMPTS, SAMPLING, LORAS, SIZE, IMAGES, IS_SAMPLER, OVERWRITE
 from .overwrite_utils import collect_overwrite_params
+from ..nodes.utils import parse_lora_syntax
 
 
 def _store_checkpoint_metadata(metadata, node_id, model_name):
@@ -1191,14 +1192,10 @@ class LoraTextLoaderManagerExtractor(NodeMetadataExtractor):
         if "lora_syntax" in inputs:
             lora_syntax = inputs.get("lora_syntax", "")
             if lora_syntax and isinstance(lora_syntax, str):
-                pattern = r"<lora:([^:>]+):([^:>]+)(?::([^:>]+))?>"
-                matches = re.findall(pattern, lora_syntax, re.IGNORECASE)
-                for match in matches:
-                    lora_name = match[0]
-                    model_strength = float(match[1])
+                for entry in parse_lora_syntax(lora_syntax):
                     active_loras.append({
-                        "name": lora_name,
-                        "strength": round(model_strength, 2)
+                        "name": entry["name"],
+                        "strength": round(entry["model_strength"], 2)
                     })
 
         if active_loras:
