@@ -114,6 +114,7 @@ export const MODEL_SUBTYPE_DISPLAY_NAMES = {
     controlnet: "ControlNet",
     // Workflow sub-types
     workflow: "Workflow",
+    wildcard: "Wildcards",
 };
 
 // Backward compatibility alias
@@ -133,6 +134,9 @@ export const MODEL_SUBTYPE_ABBREVIATIONS = {
     clip_vision: "CV",
     controlnet: "CN",
     workflow: "WF",
+    // "WC" is widely read as "water closet" (and as a profanity shorthand in
+    // Chinese), so use an unambiguous shortening instead.
+    wildcard: "WLD",
 };
 
 export function getSubTypeAbbreviation(subType) {
@@ -361,6 +365,7 @@ export const DEFAULT_PATH_TEMPLATES = {
     // models. Local workflows rarely carry CivitAI tags, so {first_tag}
     // would mostly resolve to the "no tags" fallback folder.
     workflow: '{base_model}',
+    wildcard: '',
     // Other models (VAE/upscaler/...) default to a flat layout: their root is
     // already split per sub_type, and priority_tags has no "other" entry, so
     // {first_tag} would resolve to an arbitrary CivitAI tag.

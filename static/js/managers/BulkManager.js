@@ -17,6 +17,7 @@ import { buildFilenameTemplateConfirmation, filenameTemplateSettingKey } from '.
 import { probeExtension, delegateReimport, getCivitaiImageInfo } from '../utils/extensionReimportBridge.js';
 import { getNsfwLevelSelector } from '../components/shared/NsfwLevelSelector.js';
 import { AutoOrganizePreviewModal } from '../components/AutoOrganizePreviewModal.js';
+import { syncWildcardCardState } from '../utils/wildcardCardState.js';
 
 export class BulkManager {
     constructor() {
@@ -147,6 +148,24 @@ export class BulkManager {
                 // Metadata re-import/rematch are model-source concepts.
                 reimportMetadata: false,
                 rematchMetadata: false
+            },
+            [MODEL_TYPES.WILDCARD]: {
+                addTags: true,
+                sendToWorkflow: false,
+                copyAll: false,
+                refreshAll: true,
+                checkUpdates: true,
+                moveAll: true,
+                autoOrganize: true,
+                deleteAll: true,
+                setContentRating: true,
+                skipMetadataRefresh: true,
+                setFavorite: true,
+                unfavorite: true,
+                reimportMetadata: false,
+                rematchMetadata: false,
+                activateAll: true,
+                deactivateAll: true
             }
         };
 
@@ -204,6 +223,7 @@ export class BulkManager {
      */
     _noSelectionKey() {
         if (state.currentPageType === MODEL_TYPES.WORKFLOW) return 'workflows.bulk.noSelection';
+        if (state.currentPageType === MODEL_TYPES.WILDCARD) return 'wildcards.bulk.noSelection';
         if (state.currentPageType === 'recipes') return 'recipes.bulk.noSelection';
         return 'toast.models.noModelsSelected';
     }
@@ -733,6 +753,79 @@ export class BulkManager {
         await sendEmbeddingToWorkflow(joinedCode, exitBulkMode);
     }
 
+    async activateSelectedWildcards() {
+        return this._setSelectedWildcardsActive(true);
+    }
+
+    async deactivateSelectedWildcards() {
+        return this._setSelectedWildcardsActive(false);
+    }
+
+    async _setSelectedWildcardsActive(active) {
+        if (state.currentPageType !== MODEL_TYPES.WILDCARD) return;
+        if (state.selectedModels.size === 0) {
+            showToast(this._noSelectionKey(), {}, 'warning');
+            return;
+        }
+
+        const filePaths = Array.from(state.selectedModels);
+        const loadingMessage = translate(
+            'wildcards.bulk.updating',
+            { count: filePaths.length },
+            `Updating ${filePaths.length} wildcard resources...`,
+        );
+        state.loadingManager?.showSimpleLoading?.(loadingMessage);
+
+        try {
+            const apiClient = this.getActiveApiClient();
+            const response = active
+                ? await apiClient.bulkActivate(filePaths)
+                : await apiClient.bulkDeactivate(filePaths);
+            const results = Array.isArray(response?.results) ? response.results : [];
+            results.filter((result) => result.success).forEach((result) => {
+                syncWildcardCardState(result.file_path, result.active === true);
+            });
+
+            const successCount = Number(response?.success_count || 0);
+            const failureCount = Number(response?.failure_count || 0);
+            const firstFailure = results.find((result) => !result.success);
+            const conflictKeys = (firstFailure?.conflicts || [])
+                .slice(0, 3)
+                .map((conflict) => conflict.key)
+                .join(', ');
+            const failureMessage = conflictKeys || firstFailure?.error || 'Unknown error';
+
+            if (failureCount === 0) {
+                showToast(
+                    active ? 'wildcards.bulk.activated' : 'wildcards.bulk.deactivated',
+                    { count: successCount },
+                    'success',
+                );
+            } else if (successCount > 0) {
+                showToast(
+                    'wildcards.bulk.partial',
+                    { succeeded: successCount, failed: failureCount, message: failureMessage },
+                    'warning',
+                );
+            } else {
+                showToast(
+                    'wildcards.bulk.failed',
+                    { message: failureMessage },
+                    'error',
+                );
+            }
+
+            if (state.bulkMode) this.toggleBulkMode();
+            await resetAndReload(false);
+        } catch (error) {
+            console.error('Error updating wildcard activation:', error);
+            showToast('wildcards.bulk.failed', { message: error.message }, 'error');
+        } finally {
+            state.loadingManager?.hide?.();
+            state.loadingManager?.restoreProgressBar?.();
+        }
+    }
+
     showBulkDeleteModal() {
         if (state.selectedModels.size === 0) {
             showToast(this._noSelectionKey(), {}, 'warning');
@@ -741,10 +834,10 @@ export class BulkManager {
 
         const count = state.selectedModels.size;
         const isRecipes = state.currentPageType === 'recipes';
-        const isWorkflows = state.currentPageType === MODEL_TYPES.WORKFLOW;
+        const isWorkflows = state.currentPageType === MODEL_TYPES.WORKFLOW || state.currentPageType === MODEL_TYPES.WILDCARD;
         const keyPrefix = isRecipes
             ? 'modals.bulkDeleteRecipes'
-            : (isWorkflows ? 'workflows.modals.bulkDelete' : 'modals.bulkDelete');
+            : (state.currentPageType === MODEL_TYPES.WILDCARD ? 'wildcards.modals.bulkDelete' : (isWorkflows ? 'workflows.modals.bulkDelete' : 'modals.bulkDelete'));
 
         const titleEl = document.querySelector('#bulkDeleteModal h2');
         if (titleEl) {

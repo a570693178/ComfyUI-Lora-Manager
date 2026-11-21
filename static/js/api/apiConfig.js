@@ -11,13 +11,18 @@ export const MODEL_TYPES = {
     CHECKPOINT: 'checkpoints',
     EMBEDDING: 'embeddings',
     OTHER: 'other',
-    WORKFLOW: 'workflows'
+    WORKFLOW: 'workflows',
+    WILDCARD: 'wildcards'
 };
 
 // Base API configuration for each model type
 export const MODEL_CONFIG = {
     [MODEL_TYPES.LORA]: {
         displayName: 'LoRA',
+        // The card's top-left pill prefixes the base model with this page's
+        // sub-type. Pages that can show more than one sub-type keep it; a
+        // single-sub-type page would repeat the same constant on every card.
+        showsSubTypeBadge: true,
         singularName: 'lora',
         defaultPageSize: 100,
         supportsLetterFilter: true,
@@ -28,6 +33,7 @@ export const MODEL_CONFIG = {
     },
     [MODEL_TYPES.CHECKPOINT]: {
         displayName: 'Checkpoint',
+        showsSubTypeBadge: true,
         singularName: 'checkpoint',
         defaultPageSize: 100,
         supportsLetterFilter: false,
@@ -38,6 +44,7 @@ export const MODEL_CONFIG = {
     },
     [MODEL_TYPES.EMBEDDING]: {
         displayName: 'Embedding',
+        showsSubTypeBadge: false,
         singularName: 'embedding',
         defaultPageSize: 100,
         supportsLetterFilter: true,
@@ -48,6 +55,7 @@ export const MODEL_CONFIG = {
     },
     [MODEL_TYPES.OTHER]: {
         displayName: 'Other Model',
+        showsSubTypeBadge: true,
         singularName: 'other',
         defaultPageSize: 100,
         supportsLetterFilter: false,
@@ -58,6 +66,7 @@ export const MODEL_CONFIG = {
     },
     [MODEL_TYPES.WORKFLOW]: {
         displayName: 'Workflow',
+        showsSubTypeBadge: false,
         singularName: 'workflow',
         defaultPageSize: 100,
         supportsLetterFilter: false,
@@ -65,6 +74,17 @@ export const MODEL_CONFIG = {
         supportsMove: true,
         supportsFolderManagement: true,
         templateName: 'workflows.html'
+    },
+    [MODEL_TYPES.WILDCARD]: {
+        displayName: 'Wildcard',
+        showsSubTypeBadge: false,
+        singularName: 'wildcard',
+        defaultPageSize: 100,
+        supportsLetterFilter: false,
+        supportsBulkOperations: true,
+        supportsMove: true,
+        supportsFolderManagement: true,
+        templateName: 'wildcards.html'
     }
 };
 
@@ -192,6 +212,16 @@ export const MODEL_SPECIFIC_ENDPOINTS = {
         comfyuiState: `/api/lm/${MODEL_TYPES.WORKFLOW}/comfyui-state`,
         updateFromComfy: `/api/lm/${MODEL_TYPES.WORKFLOW}/update-from-comfy`,
         restore: `/api/lm/${MODEL_TYPES.WORKFLOW}/restore`,
+    },
+    [MODEL_TYPES.WILDCARD]: {
+        metadata: `/api/lm/${MODEL_TYPES.WILDCARD}/metadata`,
+        content: `/api/lm/${MODEL_TYPES.WILDCARD}/content`,
+        entries: `/api/lm/${MODEL_TYPES.WILDCARD}/entries`,
+        active: `/api/lm/${MODEL_TYPES.WILDCARD}/active`,
+        activate: `/api/lm/${MODEL_TYPES.WILDCARD}/activate`,
+        deactivate: `/api/lm/${MODEL_TYPES.WILDCARD}/deactivate`,
+        bulkActivate: `/api/lm/${MODEL_TYPES.WILDCARD}/bulk-activate`,
+        bulkDeactivate: `/api/lm/${MODEL_TYPES.WILDCARD}/bulk-deactivate`,
     }
 };
 

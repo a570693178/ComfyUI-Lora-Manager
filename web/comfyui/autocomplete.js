@@ -10,6 +10,9 @@ import {
     isWildcardCommand,
     isWildcardInfoItem,
 } from "./autocomplete_wildcards.js";
+import { openWildcardManager } from "./wildcard_canvas_api.js";
+import { openWildcardQuickPanel } from "./wildcard_quick_panel.js";
+import { COMMAND_IDS, getCommandShortcutLabel } from "./shortcuts.js";
 import {
     getAutocompleteAppendCommaPreference,
     getAutocompleteAutoFormatPreference,
@@ -102,8 +105,8 @@ const CATEGORY_INFO = {
     15: { label: 'Lore', slug: 'lore' },
 };
 
-// Format post count with K/M suffix
-function formatPostCount(count) {
+// Format result counts with K/M suffix
+function formatCompactCount(count) {
     if (count >= 1000000) {
         return (count / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
     } else if (count >= 1000) {
@@ -605,6 +608,7 @@ class AutoComplete {
         this.isVisible = false;
         this.currentSearchTerm = '';
         this.wildcardMeta = null;
+        this.wildcardValueCounts = new Map();
         this.previewTooltip = null;
         this.previewTooltipPromise = null;
         this.searchType = null;
@@ -936,12 +940,7 @@ class AutoComplete {
             }
         }
 
-        const allowEmptyWildcardSearch =
-            this.modelType === 'prompt' &&
-            this.searchType === 'wildcards' &&
-            searchTerm.length === 0;
-
-        if (!allowEmptyWildcardSearch && searchTerm.length < this.options.minChars) {
+        if (searchTerm.length < this.options.minChars) {
             this.hide();
             return;
         }
@@ -1027,7 +1026,7 @@ class AutoComplete {
             };
         }
 
-        const wildcardMatch = trimmedText.match(/(?:^|\s)(__[\w\s.\-+/*\\]+?__)$/);
+        const wildcardMatch = trimmedText.match(/(?:^|\s)(__.+?__)$/);
         if (wildcardMatch) {
             const wildcardText = wildcardMatch[1];
             const wildcardOffset = trimmedText.lastIndexOf(wildcardText);
@@ -1548,6 +1547,7 @@ class AutoComplete {
             // when switching from command mode to regular tag search
             this.items = [];
             this.wildcardMeta = null;
+            this.wildcardValueCounts = new Map();
 
             if (!endpoint) {
                 endpoint = `/lm/${this.modelType}/relative-paths`;
@@ -1564,10 +1564,7 @@ class AutoComplete {
             // Generate multiple query variations for better matching, but avoid
             // sending duplicate-equivalent requests that normalize to the same
             // backend search term.
-            const queriesToExecute =
-                this.searchType === 'wildcards' && term.length === 0
-                    ? ['']
-                    : this._getQueriesToExecute(term);
+            const queriesToExecute = this._getQueriesToExecute(term);
 
             if (queriesToExecute.length === 0) {
                 this.items = [];
@@ -1594,10 +1591,20 @@ class AutoComplete {
                             }
                         }
                     }
+                    const valueCounts = new Map();
+                    if (Array.isArray(data.entries)) {
+                        for (const entry of data.entries) {
+                            const count = Number(entry?.values_count);
+                            if (typeof entry?.key === 'string' && Number.isFinite(count) && count >= 0) {
+                                valueCounts.set(entry.key, count);
+                            }
+                        }
+                    }
                     return {
                         items: data.success ? (data.relative_paths || data.words || []) : [],
                         meta: data?.meta || null,
                         names,
+                        valueCounts,
                     };
                 } catch (error) {
                     console.warn(`Search query failed for "${query}":`, error);
@@ -1634,6 +1641,12 @@ class AutoComplete {
                     }
                 }
 
+                if (result?.valueCounts instanceof Map) {
+                    for (const [key, count] of result.valueCounts) {
+                        this.wildcardValueCounts.set(key, count);
+                    }
+                }
+
                 const resultArray = result?.items || [];
                 for (const item of resultArray) {
                     const itemKey = typeof item === 'object' && item.tag_name
@@ -1648,6 +1661,11 @@ class AutoComplete {
             }
 
             if (this.searchType === 'wildcards' && mergedItems.length === 0) {
+                if (!term.trim()) {
+                    this.items = [];
+                    this.hide();
+                    return;
+                }
                 const meta = this.wildcardMeta || {};
                 this.items = meta.has_wildcards
                     ? [createWildcardNoMatchesItem(term, meta)]
@@ -2141,7 +2159,7 @@ class AutoComplete {
         if (itemData.post_count > 0) {
             const countSpan = document.createElement('span');
             countSpan.className = 'lm-autocomplete-count';
-            countSpan.textContent = formatPostCount(itemData.post_count);
+            countSpan.textContent = formatCompactCount(itemData.post_count);
             metaSpan.appendChild(countSpan);
         }
 
@@ -2158,6 +2176,33 @@ class AutoComplete {
         itemEl.appendChild(metaSpan);
     }
 
+    _renderWildcardItem(itemEl, key, valuesCount, searchTerm) {
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'lm-autocomplete-name';
+        nameSpan.innerHTML = this.highlightMatch(this._escapeHtml(key), searchTerm);
+        nameSpan.style.cssText = `
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        `;
+        itemEl.appendChild(nameSpan);
+
+        if (!Number.isFinite(valuesCount)) {
+            return;
+        }
+        const metaSpan = document.createElement('span');
+        metaSpan.className = 'lm-autocomplete-meta';
+        const countSpan = document.createElement('span');
+        countSpan.className = 'lm-autocomplete-count';
+        countSpan.textContent = formatCompactCount(valuesCount);
+        const exactLabel = `${valuesCount.toLocaleString()} ${valuesCount === 1 ? 'value' : 'values'}`;
+        countSpan.title = exactLabel;
+        countSpan.setAttribute('aria-label', exactLabel);
+        metaSpan.appendChild(countSpan);
+        itemEl.appendChild(metaSpan);
+    }
+
     _renderInformationalItem(itemEl, itemData) {
         itemEl.classList.add('comfy-autocomplete-info-item');
         itemEl.style.cssText = `
@@ -2170,66 +2215,148 @@ class AutoComplete {
         const title = document.createElement('div');
         title.className = 'lm-autocomplete-info-title';
         title.textContent = itemData.title || 'Wildcards';
-        title.style.marginBottom = '6px';
         itemEl.appendChild(title);
 
         const description = document.createElement('div');
         description.className = 'lm-autocomplete-info-description';
         description.textContent = itemData.description || '';
-        description.className = 'lm-autocomplete-info-description';
         itemEl.appendChild(description);
 
-        if (itemData.type === 'wildcard_no_matches') {
-            return;
-        }
-
-        const pathBlock = document.createElement('div');
-        pathBlock.className = 'lm-autocomplete-info-path';
-        pathBlock.innerHTML = [
-            '<strong>Wildcards folder</strong>',
-            `<code>${itemData.wildcardsDir || '(unavailable)'}</code>`,
-            `<div class="lm-autocomplete-info-note">Supported formats: ${(itemData.supportedFormats || []).join(', ')}</div>`,
-        ].join('');
-        itemEl.appendChild(pathBlock);
-
-        const examples = document.createElement('div');
-        examples.className = 'lm-autocomplete-info-examples';
-        examples.innerHTML = [
-            '<strong>Examples</strong>',
-            '<div><code>animals/cat.txt</code> -> use <code>__animals/cat__</code></div>',
-            '<div><code>colors.yaml</code> with <code>palette: { warm: [red, orange] }</code> -> use <code>__palette/warm__</code></div>',
-            '<div style="margin-top: 6px;">Text files use one option per line. YAML/JSON use nested keys ending in string arrays.</div>',
-        ].join('');
-        itemEl.appendChild(examples);
-
+        const shortcut = getCommandShortcutLabel(COMMAND_IDS.quickWildcardPicker);
+        const shortcutSuffix = shortcut ? ` (${shortcut})` : '';
         const actions = document.createElement('div');
         actions.className = 'lm-autocomplete-info-actions';
 
-        const openButton = document.createElement('button');
-        openButton.type = 'button';
-        openButton.dataset.action = 'open-wildcards-folder';
-        openButton.textContent = 'Open wildcards folder';
-        openButton.className = 'lm-autocomplete-action lm-autocomplete-action--primary';
-        openButton.addEventListener('click', async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            await this._openWildcardsFolder();
-        });
-        actions.appendChild(openButton);
+        if (itemData.type === 'wildcard_no_matches') {
+            actions.appendChild(this._createInfoAction(
+                'browse-wildcards',
+                `Browse Wildcards${shortcutSuffix}`,
+                () => {
+                    this.hide();
+                    openWildcardQuickPanel();
+                },
+                true,
+            ));
+            itemEl.appendChild(actions);
+            return;
+        }
 
-        const copyButton = document.createElement('button');
-        copyButton.type = 'button';
-        copyButton.dataset.action = 'copy-wildcards-path';
-        copyButton.textContent = 'Copy path';
-        copyButton.className = 'lm-autocomplete-action lm-autocomplete-action--secondary';
-        copyButton.addEventListener('click', async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            await this._copyWildcardPath(itemData.wildcardsDir || '');
-        });
-        actions.appendChild(copyButton);
-
+        if (itemData.primaryAction === 'open-quick-panel') {
+            actions.appendChild(this._createInfoAction(
+                'browse-activate-wildcards',
+                `Browse & Activate${shortcutSuffix}`,
+                () => {
+                    this.hide();
+                    openWildcardQuickPanel();
+                },
+                true,
+            ));
+            actions.appendChild(this._createInfoAction(
+                'open-wildcards-manager',
+                'Open Manager',
+                () => {
+                    this.hide();
+                    openWildcardManager();
+                },
+            ));
+        } else {
+            actions.appendChild(this._createInfoAction(
+                'open-wildcards-manager',
+                'Open Wildcards Manager',
+                () => {
+                    this.hide();
+                    openWildcardManager();
+                },
+                true,
+            ));
+        }
         itemEl.appendChild(actions);
+
+        if (itemData.showGlobalNote) {
+            const globalNote = document.createElement('div');
+            globalNote.className = 'lm-autocomplete-info-note';
+            globalNote.textContent = 'Activation applies globally to all workflows.';
+            itemEl.appendChild(globalNote);
+        }
+
+        const usage = document.createElement('div');
+        usage.className = 'lm-autocomplete-info-usage';
+        usage.append('Then type ');
+        const command = document.createElement('code');
+        command.textContent = '/wildcard';
+        usage.appendChild(command);
+        usage.append(' to search and insert keys like ');
+        const example = document.createElement('code');
+        example.textContent = '__animals/cat__';
+        usage.appendChild(example);
+        usage.append('.');
+        itemEl.appendChild(usage);
+
+        const manualToggle = document.createElement('button');
+        manualToggle.type = 'button';
+        manualToggle.dataset.action = 'toggle-manual-wildcards';
+        manualToggle.className = 'lm-autocomplete-manual-toggle';
+        manualToggle.textContent = 'Use manual files instead';
+        manualToggle.setAttribute('aria-expanded', 'false');
+
+        const manualDetails = document.createElement('div');
+        manualDetails.className = 'lm-autocomplete-manual-details';
+        manualDetails.hidden = true;
+        manualToggle.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const expanded = manualDetails.hidden;
+            manualDetails.hidden = !expanded;
+            manualToggle.setAttribute('aria-expanded', String(expanded));
+            manualToggle.classList.toggle('is-expanded', expanded);
+        });
+
+        const pathBlock = document.createElement('div');
+        pathBlock.className = 'lm-autocomplete-info-path';
+        const pathTitle = document.createElement('strong');
+        pathTitle.textContent = 'Manual wildcards';
+        const path = document.createElement('code');
+        path.textContent = itemData.wildcardsDir || '(unavailable)';
+        path.title = itemData.wildcardsDir || '';
+        const formats = document.createElement('div');
+        formats.className = 'lm-autocomplete-info-note';
+        formats.textContent = `Supported formats: ${(itemData.supportedFormats || []).join(', ')}`;
+        pathBlock.append(pathTitle, path, formats);
+        manualDetails.appendChild(pathBlock);
+
+        const manualActions = document.createElement('div');
+        manualActions.className = 'lm-autocomplete-info-actions';
+        manualActions.appendChild(this._createInfoAction(
+            'open-wildcards-folder',
+            'Open Folder',
+            () => this._openWildcardsFolder(),
+        ));
+        manualActions.appendChild(this._createInfoAction(
+            'copy-wildcards-path',
+            'Copy Path',
+            () => this._copyWildcardPath(itemData.wildcardsDir || ''),
+        ));
+        manualDetails.appendChild(manualActions);
+
+        const manualHelp = document.createElement('div');
+        manualHelp.className = 'lm-autocomplete-info-note';
+        manualHelp.textContent = 'TXT uses one option per line. YAML/JSON use nested keys. Manual files are available without activation.';
+        manualDetails.appendChild(manualHelp);
+        itemEl.append(manualToggle, manualDetails);
+    }
+
+    _createInfoAction(action, label, onClick, primary = false) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.dataset.action = action;
+        button.textContent = label;
+        button.className = `lm-autocomplete-action lm-autocomplete-action--${primary ? 'primary' : 'secondary'}`;
+        button.addEventListener('click', async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            await onClick();
+        });
+        return button;
     }
     
     _escapeHtml(text) {
@@ -2648,6 +2775,13 @@ class AutoComplete {
             item.appendChild(cmdSpan);
             item.appendChild(labelSpan);
             item.style.gap = '12px';
+        } else if (this.searchType === 'wildcards' && typeof itemData === 'string') {
+            this._renderWildcardItem(
+                item,
+                itemData,
+                this.wildcardValueCounts.get(itemData),
+                this.currentSearchTerm,
+            );
         } else if (isEnriched) {
             this._renderEnrichedItem(item, itemData, this.currentSearchTerm);
         } else {
@@ -2822,6 +2956,7 @@ class AutoComplete {
         // when autocomplete is shown again
         this.items = [];
         this.wildcardMeta = null;
+        this.wildcardValueCounts = new Map();
         
         // Clear content container to prevent stale items from showing
         if (this.contentContainer) {
