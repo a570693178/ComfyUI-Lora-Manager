@@ -1904,7 +1904,9 @@ export class BaseModelApiClient {
 
         if (pageState.filters?.search) {
             params.append('search', pageState.filters.search);
-            params.append('fuzzy', 'true');
+            if (this.modelType === 'loras') {
+                params.append('fuzzy', 'true');
+            }
 
             if (pageState.searchOptions) {
                 params.append('search_filename', pageState.searchOptions.filename.toString());
@@ -1917,6 +1919,9 @@ export class BaseModelApiClient {
                 }
                 if (pageState.searchOptions.triggerWords !== undefined) {
                     params.append('search_trigger_words', pageState.searchOptions.triggerWords.toString());
+                }
+                if (pageState.searchOptions.wildcardKeys !== undefined) {
+                    params.append('search_wildcard_keys', pageState.searchOptions.wildcardKeys.toString());
                 }
             }
         }

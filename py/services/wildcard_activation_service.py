@@ -119,7 +119,19 @@ class WildcardActivationService:
                 # Older files predate retained activation state; they were
                 # active by definition.
                 record.setdefault("active", True)
-                valid[str(key)] = record
+                # Records are keyed by normalized paths. Re-keying on load keeps
+                # lookups working when the file was written by hand, restored
+                # from another machine, or stored with a different separator or
+                # letter case on Windows.
+                key_text = str(key)
+                if not key_text.strip():
+                    continue
+                try:
+                    valid[_path_key(key_text)] = record
+                except (OSError, ValueError):
+                    logger.warning(
+                        "Ignoring wildcard activation with an invalid path key: %r", key
+                    )
             return valid
         except FileNotFoundError:
             return {}
@@ -191,6 +203,28 @@ class WildcardActivationService:
             # one, so report the problem for the key that would actually run.
             entry["reference_problem"] = wildcard_reference_problem(effective_key)
         return result
+
+    def add_effective_keys_for_search(
+        self, resources: Iterable[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
+        """Return search copies with runtime keys, reading activation state once."""
+
+        activations = self._load()
+        results = []
+        for resource in resources:
+            record = activations.get(_path_key(resource.get("file_path", "")))
+            if not _is_active_record(record):
+                record = None
+            result = dict(resource)
+            result["entries"] = [
+                {
+                    **entry,
+                    "effective_key": self._effective_key(entry["key"], record),
+                }
+                for entry in resource.get("entries") or []
+            ]
+            results.append(result)
+        return results
 
     @staticmethod
     def _short_key_warnings(key_sets: list[set[str]]) -> list[str]:
