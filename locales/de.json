@@ -190,7 +190,9 @@
         },
         "footer": {
             "versionCount": "{count} Versionen",
-            "viewAllVersions": "Alle lokalen Versionen anzeigen"
+            "viewAllVersions": "Alle lokalen Versionen anzeigen",
+            "quantManual": "Manuell festgelegt — erneutes Verknüpfen und Scannen ändern den Wert nicht",
+            "quantResetAuto": "Auf Auto zurücksetzen"
         }
     },
     "globalContextMenu": {
@@ -1142,6 +1144,7 @@
         "contextMenu": {
             "refreshMetadata": "CivitAI-Daten aktualisieren",
             "checkUpdates": "Updates prüfen",
+            "editPrecision": "Präzision bearbeiten",
             "linkModel": "Modell verknüpfen",
             "linkCivitai": "Mit CivitAI neu verknüpfen",
             "linkModelSource": "Mit Modellquelle verknüpfen",
@@ -1400,8 +1403,6 @@
             "finding": "Suche nach doppelten Rezepten...",
             "found": "{count} Duplikat-Gruppen gefunden",
             "noGroups": "Keine Duplikat-Gruppen mit dem aktuellen Abgleichskriterium gefunden",
-            "keepLatest": "Neueste Versionen behalten",
-            "deleteSelected": "Ausgewählte löschen",
             "includePromptLabel": "Prompt beim Abgleich berücksichtigen",
             "basis": {
                 "loraCombo": "Abgeglichen nach: LoRA-Kombination",
@@ -2084,15 +2085,12 @@
             "title": "Modell ausschließen",
             "message": "Sind Sie sicher, dass Sie dieses Modell ausschließen möchten? Ausgeschlossene Modelle erscheinen nicht in Suchergebnissen oder Modelllisten."
         },
-        "deleteDuplicateRecipes": {
-            "title": "Doppelte Rezepte löschen",
-            "message": "Sind Sie sicher, dass Sie die ausgewählten doppelten Rezepte löschen möchten?",
-            "countMessage": "Rezepte werden dauerhaft gelöscht."
-        },
-        "deleteDuplicateModels": {
-            "title": "Doppelte Modelle löschen",
-            "message": "Sind Sie sicher, dass Sie die ausgewählten doppelten Modelle löschen möchten?",
-            "countMessage": "Modelle werden dauerhaft gelöscht."
+        "deleteDuplicates": {
+            "title": "Ausgewählte Duplikate löschen",
+            "message": "Sind Sie sicher, dass Sie die ausgewählten Duplikate löschen möchten?",
+            "countMessage": "Elemente werden gelöscht. Wenn eine Wiederherstellung möglich ist, wird eine Aktion „Rückgängig“ angeboten.",
+            "emptyGroupsWarning": "Dadurch werden alle Elemente in {count} Duplikat-Gruppe(n) gelöscht. In diesen Gruppen bleibt keine Kopie erhalten.",
+            "emptyGroupsConfirm": "Ich verstehe, dass in diesen Gruppen keine Kopie erhalten bleibt."
         },
         "clearCache": {
             "title": "Cache-Dateien löschen",
@@ -2279,6 +2277,7 @@
                 "editFileName": "Dateiname bearbeiten",
                 "editBaseModel": "Basismodell bearbeiten",
                 "editVersionName": "Versionsname bearbeiten",
+                "editPrecision": "Präzision bearbeiten",
                 "viewOnCivitai": "Auf CivitAI anzeigen",
                 "viewOnCivitaiText": "Auf CivitAI anzeigen",
                 "viewOnHuggingFace": "Auf Hugging Face ansehen",
@@ -2316,6 +2315,9 @@
                 "location": "Speicherort",
                 "baseModel": "Basismodell",
                 "size": "Größe",
+                "precision": "Präzision",
+                "precisionAuto": "Auto",
+                "precisionManualHint": "Manuell festgelegt — erneutes Verknüpfen und Scannen ändern den Wert nicht",
                 "hashes": "Hashes",
                 "hashPending": "Noch nicht berechnet",
                 "hashCalculating": "Wird berechnet...",
@@ -2719,9 +2721,14 @@
     },
     "duplicates": {
         "found": "{count} Duplikat-Gruppen gefunden",
+        "deleting": "Lösche {count} ausgewählte Element(e)...",
+        "keepLatest": "Neueste Versionen behalten",
+        "keepThis": "Dieses behalten",
+        "noGroups": "Keine Duplikat-Gruppen mehr vorhanden",
         "showNotification": "Duplikat-Benachrichtigung anzeigen",
         "deleteSelected": "Ausgewählte löschen",
         "exitMode": "Modus verlassen",
+        "exitDuplicates": "Duplikate beenden",
         "help": {
             "identicalHashes": "Identische Hashes bedeuten identische Modelldateien, auch wenn sie unterschiedliche Namen oder Vorschauen haben.",
             "keepOne": "Behalten Sie nur eine Version (vorzugsweise mit besseren Metadaten/Vorschauen) und löschen Sie die anderen sicher."
@@ -3115,6 +3122,8 @@
             "nameUpdateFailed": "Fehler beim Aktualisieren des Modellnamens",
             "baseModelUpdated": "Basismodell erfolgreich aktualisiert",
             "baseModelUpdateFailed": "Fehler beim Aktualisieren des Basismodells",
+            "precisionUpdated": "Präzision erfolgreich aktualisiert",
+            "precisionUpdateFailed": "Fehler beim Aktualisieren der Präzision",
             "baseModelNotSelected": "Bitte ein Basismodell auswählen",
             "bulkBaseModelUpdating": "Basismodell wird für {count} Modell(e) aktualisiert...",
             "bulkBaseModelUpdateSuccess": "Basismodell erfolgreich für {count} Modell(e) aktualisiert",

@@ -1033,9 +1033,16 @@ class ModelManagementHandler:
             from ...services.auto_tag_service import extract_auto_tags
             auto_tags = extract_auto_tags(updated_metadata)
 
-            return web.json_response(
-                {"success": True, "auto_tags": auto_tags}
-            )
+            response_payload: Dict[str, Any] = {"success": True, "auto_tags": auto_tags}
+            if "quantization" in metadata_updates:
+                # Let the client refresh the badge with the authoritative
+                # (normalized / recomputed) value instead of its own input.
+                response_payload["quantization"] = updated_metadata.get("quantization")
+                response_payload["quantization_source"] = updated_metadata.get(
+                    "quantization_source"
+                )
+
+            return web.json_response(response_payload)
         except Exception as exc:
             self._logger.error("Error saving metadata: %s", exc, exc_info=True)
             return web.Response(text=str(exc), status=500)
@@ -1519,24 +1526,22 @@ class ModelQueryHandler:
             duplicates = self._service.find_duplicate_hashes()
             result = []
             cache = await self._service.scanner.get_cached_data()
+            models_by_path = {
+                model["file_path"]: model for model in cache.raw_data
+            }
 
             for sha256, paths in duplicates.items():
                 # Collect all models in this group
                 all_models = []
                 for path in paths:
-                    model = next(
-                        (m for m in cache.raw_data if m["file_path"] == path), None
-                    )
+                    model = models_by_path.get(path)
                     if model:
                         all_models.append(model)
 
                 # Include primary if not already in paths
                 primary_path = self._service.get_path_by_hash(sha256)
                 if primary_path and primary_path not in paths:
-                    primary_model = next(
-                        (m for m in cache.raw_data if m["file_path"] == primary_path),
-                        None,
-                    )
+                    primary_model = models_by_path.get(primary_path)
                     if primary_model:
                         all_models.insert(0, primary_model)
 

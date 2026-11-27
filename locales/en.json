@@ -191,7 +191,9 @@
     "footer": {
       "versionCount": "{count} versions",
       "viewAllVersions": "View all local versions",
-      "versionRatio": "{total} versions on Civitai, {downloaded} downloaded"
+      "versionRatio": "{total} versions on Civitai, {downloaded} downloaded",
+      "quantManual": "Manually set — relinks and rescans will not change it",
+      "quantResetAuto": "Reset to Auto"
     }
   },
   "globalContextMenu": {
@@ -1143,6 +1145,7 @@
     "contextMenu": {
       "refreshMetadata": "Refresh CivitAI Data",
       "checkUpdates": "Check Updates",
+      "editPrecision": "Edit Precision",
       "linkModel": "Link Model",
       "linkCivitai": "Link to CivitAI",
       "linkModelSource": "Link to Model Source",
@@ -1401,8 +1404,6 @@
       "finding": "Scanning for duplicate recipes...",
       "found": "Found {count} duplicate groups",
       "noGroups": "No duplicate groups found with the current matching basis",
-      "keepLatest": "Keep Latest Versions",
-      "deleteSelected": "Delete Selected",
       "includePromptLabel": "Include prompt in matching",
       "basis": {
         "loraCombo": "Matched by: LoRA combination",
@@ -2093,15 +2094,12 @@
       "title": "Exclude Model",
       "message": "Are you sure you want to exclude this model? Excluded models won't appear in searches or model lists."
     },
-    "deleteDuplicateRecipes": {
-      "title": "Delete Duplicate Recipes",
-      "message": "Are you sure you want to delete the selected duplicate recipes?",
-      "countMessage": "recipes will be permanently deleted."
-    },
-    "deleteDuplicateModels": {
-      "title": "Delete Duplicate Models",
-      "message": "Are you sure you want to delete the selected duplicate models?",
-      "countMessage": "models will be permanently deleted."
+    "deleteDuplicates": {
+      "title": "Delete Selected Duplicates",
+      "message": "Are you sure you want to delete the selected duplicates?",
+      "countMessage": "items will be deleted. An Undo action will be offered when recovery is available.",
+      "emptyGroupsWarning": "This will delete every item in {count} duplicate group(s). No copy will be kept in those groups.",
+      "emptyGroupsConfirm": "I understand that no copy will be kept in these groups."
     },
     "clearCache": {
       "title": "Clear Cache Files",
@@ -2301,6 +2299,7 @@
         "editFileName": "Edit file name",
         "editBaseModel": "Edit base model",
         "editVersionName": "Edit version name",
+        "editPrecision": "Edit precision",
         "viewOnCivitai": "View on CivitAI",
         "viewOnCivitaiText": "View on CivitAI",
         "viewOnHuggingFace": "View on Hugging Face",
@@ -2338,6 +2337,9 @@
         "location": "Location",
         "baseModel": "Base Model",
         "size": "Size",
+        "precision": "Precision",
+        "precisionAuto": "Auto",
+        "precisionManualHint": "Manually set — relinks and rescans will not change it",
         "hashes": "Hashes",
         "hashPending": "Not calculated yet",
         "hashCalculating": "Calculating...",
@@ -2741,9 +2743,14 @@
   },
   "duplicates": {
     "found": "Found {count} duplicate groups",
+    "deleting": "Deleting {count} selected items...",
+    "keepLatest": "Keep Latest Versions",
+    "keepThis": "Keep this",
+    "noGroups": "No duplicate groups remain",
     "showNotification": "Show Duplicates Notification",
     "deleteSelected": "Delete Selected",
     "exitMode": "Exit Mode",
+    "exitDuplicates": "Exit Duplicates",
     "help": {
       "identicalHashes": "Identical hashes mean identical model files, even if they have different names or previews.",
       "keepOne": "Keep only one version (preferably with better metadata/previews) and safely delete the others."
@@ -3148,6 +3155,8 @@
       "nameUpdateFailed": "Failed to update model name",
       "baseModelUpdated": "Base model updated successfully",
       "baseModelUpdateFailed": "Failed to update base model",
+      "precisionUpdated": "Precision updated successfully",
+      "precisionUpdateFailed": "Failed to update precision",
       "baseModelNotSelected": "Please select a base model",
       "bulkBaseModelUpdating": "Updating base model for {count} model(s)...",
       "bulkBaseModelUpdateSuccess": "Successfully updated base model for {count} model(s)",

@@ -190,7 +190,9 @@
         },
         "footer": {
             "versionCount": "{count} גרסאות",
-            "viewAllVersions": "הצג את כל הגרסאות המקומיות"
+            "viewAllVersions": "הצג את כל הגרסאות המקומיות",
+            "quantManual": "הוגדר ידנית — קישור מחדש וסריקה חוזרת לא ישנו אותו",
+            "quantResetAuto": "החזר לאוטומטי"
         }
     },
     "globalContextMenu": {
@@ -1142,6 +1144,7 @@
         "contextMenu": {
             "refreshMetadata": "רענן נתוני CivitAI",
             "checkUpdates": "בדוק עדכונים",
+            "editPrecision": "ערוך דיוק",
             "linkModel": "קישור מודל",
             "linkCivitai": "קשר מחדש ל-CivitAI",
             "linkModelSource": "קישור למקור מודל",
@@ -1400,8 +1403,6 @@
             "finding": "סורק למציאת מתכונים כפולים...",
             "found": "נמצאו {count} קבוצות כפולות",
             "noGroups": "לא נמצאו קבוצות כפולות לפי קריטריון ההתאמה הנוכחי",
-            "keepLatest": "שמור גרסאות אחרונות",
-            "deleteSelected": "מחק נבחרים",
             "includePromptLabel": "כלול פרומפט בהתאמה",
             "basis": {
                 "loraCombo": "התאמה לפי: שילוב LoRA",
@@ -2084,15 +2085,12 @@
             "title": "החרג מודל",
             "message": "האם אתה בטוח שברצונך להחריג מודל זה? מודלים מוחרגים לא יופיעו בחיפושים או ברשימות מודלים."
         },
-        "deleteDuplicateRecipes": {
-            "title": "מחק מתכונים כפולים",
-            "message": "האם אתה בטוח שברצונך למחוק את המתכונים הכפולים שנבחרו?",
-            "countMessage": "מתכונים יימחקו לצמיתות."
-        },
-        "deleteDuplicateModels": {
-            "title": "מחק מודלים כפולים",
-            "message": "האם אתה בטוח שברצונך למחוק את המודלים הכפולים שנבחרו?",
-            "countMessage": "מודלים יימחקו לצמיתות."
+        "deleteDuplicates": {
+            "title": "מחק כפילויות נבחרות",
+            "message": "האם אתה בטוח שברצונך למחוק את הכפילויות שנבחרו?",
+            "countMessage": "פריטים יימחקו. אם ניתן לשחזר, תוצע פעולת «בטל».",
+            "emptyGroupsWarning": "פעולה זו תמחק כל פריט ב-{count} קבוצות כפולות. לא יישמר עותק בקבוצות אלה.",
+            "emptyGroupsConfirm": "אני מבין שלא יישמר עותק בקבוצות אלה."
         },
         "clearCache": {
             "title": "נקה קבצי מטמון",
@@ -2279,6 +2277,7 @@
                 "editFileName": "ערוך שם קובץ",
                 "editBaseModel": "ערוך מודל בסיס",
                 "editVersionName": "ערוך שם גרסה",
+                "editPrecision": "ערוך דיוק",
                 "viewOnCivitai": "הצג ב-CivitAI",
                 "viewOnCivitaiText": "הצג ב-CivitAI",
                 "viewOnHuggingFace": "צפייה ב-Hugging Face",
@@ -2316,6 +2315,9 @@
                 "location": "מיקום",
                 "baseModel": "מודל בסיס",
                 "size": "גודל",
+                "precision": "דיוק",
+                "precisionAuto": "אוטומטי",
+                "precisionManualHint": "הוגדר ידנית — קישור מחדש וסריקה חוזרת לא ישנו אותו",
                 "hashes": "hashes",
                 "hashPending": "טרם חושב",
                 "hashCalculating": "מחושב...",
@@ -2719,9 +2721,14 @@
     },
     "duplicates": {
         "found": "נמצאו {count} קבוצות כפולות",
+        "deleting": "מוחק {count} פריטים נבחרים...",
+        "keepLatest": "שמור גרסאות אחרונות",
+        "keepThis": "שמור פריט זה",
+        "noGroups": "לא נותרו קבוצות כפולות",
         "showNotification": "הצג התראת כפילויות",
         "deleteSelected": "מחק נבחרים",
         "exitMode": "צא ממצב",
+        "exitDuplicates": "צא מכפילויות",
         "help": {
             "identicalHashes": "hashes זהים פירושם קבצי מודל זהים, גם אם יש להם שמות או תצוגות מקדימות שונות.",
             "keepOne": "שמור רק גרסה אחת (רצוי עם מטא-נתונים/תצוגות מקדימות טובות יותר) ומחק בבטחה את האחרות."
@@ -3115,6 +3122,8 @@
             "nameUpdateFailed": "עדכון שם המודל נכשל",
             "baseModelUpdated": "מודל הבסיס עודכן בהצלחה",
             "baseModelUpdateFailed": "עדכון מודל הבסיס נכשל",
+            "precisionUpdated": "הדיוק עודכן בהצלחה",
+            "precisionUpdateFailed": "עדכון הדיוק נכשל",
             "baseModelNotSelected": "אנא בחר מודל בסיס",
             "bulkBaseModelUpdating": "מעדכן מודל בסיס עבור {count} מודל(ים)...",
             "bulkBaseModelUpdateSuccess": "עודכן בהצלחה מודל הבסיס עבור {count} מודל(ים)",

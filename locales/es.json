@@ -190,7 +190,9 @@
         },
         "footer": {
             "versionCount": "{count} versiones",
-            "viewAllVersions": "Ver todas las versiones locales"
+            "viewAllVersions": "Ver todas las versiones locales",
+            "quantManual": "Definido manualmente — volver a vincular o escanear de nuevo no lo cambiará",
+            "quantResetAuto": "Restablecer a Auto"
         }
     },
     "globalContextMenu": {
@@ -1142,6 +1144,7 @@
         "contextMenu": {
             "refreshMetadata": "Actualizar datos de CivitAI",
             "checkUpdates": "Comprobar actualizaciones",
+            "editPrecision": "Editar precisión",
             "linkModel": "Vincular modelo",
             "linkCivitai": "Re-vincular a CivitAI",
             "linkModelSource": "Vincular a una fuente de modelo",
@@ -1400,8 +1403,6 @@
             "finding": "Buscando recetas duplicadas...",
             "found": "Se encontraron {count} grupos de duplicados",
             "noGroups": "No se encontraron grupos de duplicados con el criterio de coincidencia actual",
-            "keepLatest": "Mantener versiones más recientes",
-            "deleteSelected": "Eliminar seleccionados",
             "includePromptLabel": "Incluir prompt en la coincidencia",
             "basis": {
                 "loraCombo": "Coincidencia por: combinación de LoRA",
@@ -2084,15 +2085,12 @@
             "title": "Excluir modelo",
             "message": "¿Estás seguro de que quieres excluir este modelo? Los modelos excluidos no aparecerán en búsquedas o listas de modelos."
         },
-        "deleteDuplicateRecipes": {
-            "title": "Eliminar recetas duplicadas",
-            "message": "¿Estás seguro de que quieres eliminar las recetas duplicadas seleccionadas?",
-            "countMessage": "recetas serán eliminadas permanentemente."
-        },
-        "deleteDuplicateModels": {
-            "title": "Eliminar modelos duplicados",
-            "message": "¿Estás seguro de que quieres eliminar los modelos duplicados seleccionados?",
-            "countMessage": "modelos serán eliminados permanentemente."
+        "deleteDuplicates": {
+            "title": "Eliminar los duplicados seleccionados",
+            "message": "¿Estás seguro de que quieres eliminar los duplicados seleccionados?",
+            "countMessage": "elementos se eliminarán. Se ofrecerá una acción «Deshacer» cuando la recuperación esté disponible.",
+            "emptyGroupsWarning": "Esto eliminará todos los elementos de {count} grupo(s) de duplicados. No se conservará ninguna copia en esos grupos.",
+            "emptyGroupsConfirm": "Entiendo que no se conservará ninguna copia en estos grupos."
         },
         "clearCache": {
             "title": "Limpiar archivos de caché",
@@ -2279,6 +2277,7 @@
                 "editFileName": "Editar nombre de archivo",
                 "editBaseModel": "Editar modelo base",
                 "editVersionName": "Editar nombre de versión",
+                "editPrecision": "Editar precisión",
                 "viewOnCivitai": "Ver en CivitAI",
                 "viewOnCivitaiText": "Ver en CivitAI",
                 "viewOnHuggingFace": "Ver en Hugging Face",
@@ -2316,6 +2315,9 @@
                 "location": "Ubicación",
                 "baseModel": "Modelo base",
                 "size": "Tamaño",
+                "precision": "Precisión",
+                "precisionAuto": "Auto",
+                "precisionManualHint": "Definido manualmente — volver a vincular o escanear de nuevo no lo cambiará",
                 "hashes": "Hashes",
                 "hashPending": "Aún no calculado",
                 "hashCalculating": "Calculando...",
@@ -2719,9 +2721,14 @@
     },
     "duplicates": {
         "found": "Se encontraron {count} grupos de duplicados",
+        "deleting": "Eliminando {count} elemento(s) seleccionado(s)...",
+        "keepLatest": "Mantener versiones más recientes",
+        "keepThis": "Mantener este elemento",
+        "noGroups": "No quedan grupos de duplicados",
         "showNotification": "Mostrar notificación de duplicados",
         "deleteSelected": "Eliminar seleccionados",
         "exitMode": "Salir del modo",
+        "exitDuplicates": "Salir de duplicados",
         "help": {
             "identicalHashes": "Hashes idénticos significan archivos de modelo idénticos, incluso si tienen nombres o vistas previas diferentes.",
             "keepOne": "Mantén solo una versión (preferiblemente con mejores metadatos/vistas previas) y elimina de forma segura las otras."
@@ -3115,6 +3122,8 @@
             "nameUpdateFailed": "Error al actualizar nombre del modelo",
             "baseModelUpdated": "Modelo base actualizado exitosamente",
             "baseModelUpdateFailed": "Error al actualizar modelo base",
+            "precisionUpdated": "Precisión actualizada exitosamente",
+            "precisionUpdateFailed": "Error al actualizar la precisión",
             "baseModelNotSelected": "Por favor selecciona un modelo base",
             "bulkBaseModelUpdating": "Actualizando modelo base para {count} modelo(s)...",
             "bulkBaseModelUpdateSuccess": "Modelo base actualizado exitosamente para {count} modelo(s)",

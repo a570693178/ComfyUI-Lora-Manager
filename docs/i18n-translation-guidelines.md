@@ -4,7 +4,7 @@ This document is the canonical set of conventions for translating LoRA Manager U
 It applies to **human translators and AI agents** alike. Read it before editing anything in
 `locales/`.
 
-Source of truth: `locales/en.json` (10 locales, 2609 leaf keys; all locales share the exact
+Source of truth: `locales/en.json` (10 locales, 2620 leaf keys; all locales share the exact
 same key structure).
 
 Locales: `en`, `zh-CN`, `zh-TW`, `ja`, `ko`, `fr`, `de`, `es`, `ru`, `he` (RTL).
@@ -370,6 +370,27 @@ Locales: `en`, `zh-CN`, `zh-TW`, `ja`, `ko`, `fr`, `de`, `es`, `ru`, `he` (RTL).
 > are active" while `en.json` now says the folder is not scanned and the page stays disabled), so
 > the translations follow the current source: `sync_translation_keys.py` only inserts missing keys,
 > it never refreshes the English text of a placeholder that already exists.
+
+> **Status (2026-11, duplicate keeper controls):** the duplicates manager gained a per-card
+> keeper button, a single undoable batch for the selection, a toolbar exit action and a guard
+> that asks for explicit acknowledgement when the selection would empty whole groups. That added
+> 10 keys — `duplicates.deleting` / `.keepThis` / `.noGroups` / `.exitDuplicates` and the five
+> `modals.deleteDuplicates.*` strings — while `duplicates.keepLatest` moved up from
+> `recipes.duplicates` (the banner is shared) and the model- and recipe-specific duplicate delete
+> dialogs were replaced by the single `deleteDuplicates` one. All 9 locales are translated
+> (renderings in §2, "Duplicates manager (keeper controls and deletion safeguards)"), so no
+> `[TODO: Translate]` placeholder remains.
+
+> **Status (2026-11, precision override):** model precision (the quantization level a card
+> shows, e.g. FP8 / Q4_K_M) can now be set by hand and survives relinks and rescans: the footer
+> quant badge and the context menu's Edit Precision entry open one editor popover, whose Auto
+> path clears the manual value. That added 9 keys — `modelCard.footer.quantManual` /
+> `.quantResetAuto`, `loras.contextMenu.editPrecision`, `modals.model.actions.editPrecision`,
+> `modals.model.metadata.precision` / `.precisionAuto` / `.precisionManualHint`, and
+> `toast.models.precisionUpdated` / `.precisionUpdateFailed`. All 9 locales are translated
+> (renderings in §2, "Precision override feature"), so no `[TODO: Translate]` placeholder
+> remains; the older setting `settings.layoutSettings.showQuantizationOnCard` keeps its
+> Quantization wording in the source.
 
 ---
 
@@ -1310,6 +1331,70 @@ auto-organize from `settings.sections.autoOrganize` / `loras.bulkOperations.auto
   fr Organiser · de Organisieren · es Organizar · ru Организовать · he ארגן); the disabled
   `noMoves` label negates the same verb. `copyReport` and `retry` stay byte-identical to their
   sibling keys in `modals.rematchSummary` / `initialization.error`.
+
+### Duplicates manager (keeper controls and deletion safeguards)
+
+The duplicates view (models and recipes share `DuplicatesViewManager`) selects cards for
+deletion, deletes the selection as one undoable batch, and asks for explicit acknowledgement
+when the selection would empty whole groups. The copy reuses the existing duplicate nouns
+(`duplicates.found`, `recipes.duplicates.*`) and the folder sidebar's **copy** row (§2,
+"Multi-root folder operations"); only the keeper button and the toolbar label are new surface.
+
+| Term | Rendering |
+|---|---|
+| keep this (per-card button) | zh-CN 保留此项 · zh-TW 保留此項 · ja これを保持 · ko 이 항목 유지 · fr Garder cet élément · de Dieses behalten · es Mantener este elemento · ru Оставить этот элемент · he שמור פריט זה |
+| keep latest versions (banner button) | zh-CN 保留最新版本 · zh-TW 保留最新版本 · ja 最新バージョンを保持 · ko 최신 버전 유지 · fr Garder les dernières versions · de Neueste Versionen behalten · es Mantener versiones más recientes · ru Оставить последние версии · he שמור גרסאות אחרונות |
+| delete selected duplicates (dialog title) | zh-CN 删除已选重复项 · zh-TW 刪除所選重複項 · ja 選択した重複を削除 · ko 선택한 중복 삭제 · fr Supprimer les doublons sélectionnés · de Ausgewählte Duplikate löschen · es Eliminar los duplicados seleccionados · ru Удалить выбранные дубликаты · he מחק כפילויות נבחרות |
+| exit duplicates (toolbar button) | zh-CN 退出重复项 · zh-TW 離開重複項 · ja 重複を終了 · ko 중복 종료 · fr Quitter les doublons · de Duplikate beenden · es Salir de duplicados · ru Выйти из дубликатов · he צא מכפילויות |
+| item (a selected card) | reuse the undo copy: zh-CN 项目 · zh-TW 項目 · ja 項目 · ko 항목 · fr élément · de Element · es elemento · ru элемент · he פריט |
+
+- `modals.deleteDuplicates.countMessage` is the continuation after the count span the template
+  renders (same shape as `modals.bulkDelete.countMessage`), so it starts with the plural noun
+  that follows the number. It quotes the Undo action with each locale's UI-label quoting style
+  and reuses `toast.undo.action` (zh-CN “撤销”, zh-TW/ja 「復原」/「元に戻す」, ko '실행 취소',
+  fr « Annuler », de „Rückgängig“, es «Deshacer», ru «Отменить», he «בטל»).
+- `emptyGroupsWarning` carries `{count}` — the number of duplicate **groups** the selection
+  would empty, not the number of selected items — and keeps the group noun of
+  `duplicates.found`. `emptyGroupsConfirm` is the acknowledgement checkbox that enables the
+  delete button; it is a full sentence with a period in every locale.
+- `duplicates.deleting` is the loading line; it follows the count-with-verb shape of
+  `toast.models.bulkUnfavoriteUpdating` (de "Lösche {count} …", fr "Suppression de {count} …",
+  es "Eliminando {count} …", ru "Удаление {count} …", zh "正在删除 {count} …").
+- `duplicates.exitDuplicates` replaces the "Find Duplicates" toolbar label while duplicate mode
+  is on; the banner's `duplicates.exitMode` button is a separate, unchanged string. Keep it
+  short — it is a toolbar label.
+- `duplicates.noGroups` is the models page's empty state once the last group is resolved; the
+  recipes page keeps `recipes.duplicates.noGroups`, which describes the matching basis instead.
+
+### Precision override feature (weight precision / quantization level)
+
+Precision is stored as `quantization` (`FP8`, `NVFP4`, `INT8`, `Q4_K_M`, …) with a
+`quantization_source` of `auto` or `manual`. The card footer's quant badge and the context
+menu's **Edit Precision** entry open one editor popover (`QuantizationEditor.js`); a manual
+value is relink- and rescan-proof, and the badge's hover text says so (`quantManual`, identical
+to `precisionManualHint`). The editor's strings live under `modals.model.*` because that is
+where the popover was designed to hang, even though the visible entry points are the card and
+the context menu. The source keeps two nouns on purpose: the editor surface says **Precision**,
+while the older layout setting `settings.layoutSettings.showQuantizationOnCard` stays
+**Quantization** because it names the badge itself — do not merge them in `en.json`.
+
+| Term | zh-CN | zh-TW | ja | ko | fr | de | es | ru | he |
+|---|---|---|---|---|---|---|---|---|---|
+| Precision | 精度 | 精度 | 精度 | 정밀도 | Précision | Präzision | Precisión | Точность | דיוק |
+| Auto (automatic detection) | 自动 | 自動 | 自動 | 자동 | Auto | Auto | Auto | Авто | אוטומטי |
+| Reset to Auto (editor button) | 重置为自动 | 重設為自動 | 自動に戻す | 자동으로 재설정 | Réinitialiser sur Auto | Auf Auto zurücksetzen | Restablecer a Auto | Сбросить на «Авто» | החזר לאוטומטי |
+
+- `precisionAuto` is the input **placeholder** (the field holds the current value, and the hint
+  below it marks a manual one), so it reuses each locale's `header.theme.auto` rendering.
+- The manual hint reuses the locale's existing **relink** and **scan** verbs instead of
+  inventing per-feature ones: fr relier à nouveau / analyser, de erneutes Verknüpfen / Scannen,
+  es volver a vincular / escanear, ru пересвязывание / сканирование, he קישור מחדש / סריקה
+  חוזרת, ja 再リンク / 再スキャン, ko 다시 연결 / 다시 스캔, zh 重新关联 / 重新扫描 (zh-TW
+  重新連結 / 重新掃描).
+- Both `editPrecision` labels read the same in every locale: CJK has no capitalisation to carry
+  the source's Title/sentence-case split, and the Latin and Hebrew locales sentence-case this
+  action anyway.
+- The toasts follow the sibling `baseModelUpdated` / `baseModelUpdateFailed` shapes.
 
 ---
 

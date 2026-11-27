@@ -190,7 +190,9 @@
         },
         "footer": {
             "versionCount": "{count} バージョン",
-            "viewAllVersions": "ローカルの全バージョンを表示"
+            "viewAllVersions": "ローカルの全バージョンを表示",
+            "quantManual": "手動設定 — 再リンクや再スキャンでは変更されません",
+            "quantResetAuto": "自動に戻す"
         }
     },
     "globalContextMenu": {
@@ -1142,6 +1144,7 @@
         "contextMenu": {
             "refreshMetadata": "CivitAIデータを更新",
             "checkUpdates": "更新確認",
+            "editPrecision": "精度を編集",
             "linkModel": "モデルをリンク",
             "linkCivitai": "CivitAI にリンク",
             "linkModelSource": "モデルソースにリンク",
@@ -1400,8 +1403,6 @@
             "finding": "重複レシピをスキャンしています...",
             "found": "{count} 個の重複グループが見つかりました",
             "noGroups": "現在の一致基準では重複グループが見つかりませんでした",
-            "keepLatest": "最新バージョンを保持",
-            "deleteSelected": "選択したものを削除",
             "includePromptLabel": "一致判定にプロンプトを含める",
             "basis": {
                 "loraCombo": "一致基準: LoRA の組み合わせ",
@@ -2084,15 +2085,12 @@
             "title": "モデルを除外",
             "message": "このモデルを除外してもよろしいですか？除外されたモデルは検索やモデルリストに表示されません。"
         },
-        "deleteDuplicateRecipes": {
-            "title": "重複レシピを削除",
-            "message": "選択した重複レシピを削除してもよろしいですか？",
-            "countMessage": "レシピが完全に削除されます。"
-        },
-        "deleteDuplicateModels": {
-            "title": "重複モデルを削除",
-            "message": "選択した重複モデルを削除してもよろしいですか？",
-            "countMessage": "モデルが完全に削除されます。"
+        "deleteDuplicates": {
+            "title": "選択した重複を削除",
+            "message": "選択した重複を削除してもよろしいですか？",
+            "countMessage": "件の項目が削除されます。復元可能な場合は「元に戻す」操作が表示されます。",
+            "emptyGroupsWarning": "{count} 個の重複グループ内のすべての項目が削除されます。これらのグループにはコピーが残りません。",
+            "emptyGroupsConfirm": "これらのグループにはコピーが残らないことを理解しました。"
         },
         "clearCache": {
             "title": "キャッシュファイルをクリア",
@@ -2279,6 +2277,7 @@
                 "editFileName": "ファイル名を編集",
                 "editBaseModel": "ベースモデルを編集",
                 "editVersionName": "バージョン名を編集",
+                "editPrecision": "精度を編集",
                 "viewOnCivitai": "CivitAIで表示",
                 "viewOnCivitaiText": "CivitAIで表示",
                 "viewOnHuggingFace": "Hugging Face で見る",
@@ -2316,6 +2315,9 @@
                 "location": "場所",
                 "baseModel": "ベースモデル",
                 "size": "サイズ",
+                "precision": "精度",
+                "precisionAuto": "自動",
+                "precisionManualHint": "手動設定 — 再リンクや再スキャンでは変更されません",
                 "hashes": "ハッシュ",
                 "hashPending": "未計算",
                 "hashCalculating": "計算中...",
@@ -2719,9 +2721,14 @@
     },
     "duplicates": {
         "found": "{count} 個の重複グループが見つかりました",
+        "deleting": "選択した {count} 件の項目を削除中...",
+        "keepLatest": "最新バージョンを保持",
+        "keepThis": "これを保持",
+        "noGroups": "重複グループは残っていません",
         "showNotification": "重複通知を表示",
         "deleteSelected": "選択したものを削除",
         "exitMode": "モードを終了",
+        "exitDuplicates": "重複を終了",
         "help": {
             "identicalHashes": "同一のハッシュは、名前やプレビューが異なっていても、同一のモデルファイルを意味します。",
             "keepOne": "1つのバージョンのみを保持し（より良いメタデータ/プレビューを持つものが望ましい）、他は安全に削除してください。"
@@ -3115,6 +3122,8 @@
             "nameUpdateFailed": "モデル名の更新に失敗しました",
             "baseModelUpdated": "ベースモデルが正常に更新されました",
             "baseModelUpdateFailed": "ベースモデルの更新に失敗しました",
+            "precisionUpdated": "精度が正常に更新されました",
+            "precisionUpdateFailed": "精度の更新に失敗しました",
             "baseModelNotSelected": "ベースモデルを選択してください",
             "bulkBaseModelUpdating": "{count} モデルのベースモデルを更新中...",
             "bulkBaseModelUpdateSuccess": "{count} モデルのベースモデルが正常に更新されました",

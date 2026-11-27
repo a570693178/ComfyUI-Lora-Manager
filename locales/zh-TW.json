@@ -190,7 +190,9 @@
         },
         "footer": {
             "versionCount": "{count} 個版本",
-            "viewAllVersions": "檢視所有本地版本"
+            "viewAllVersions": "檢視所有本地版本",
+            "quantManual": "手動設定 — 重新連結和重新掃描不會變更此值",
+            "quantResetAuto": "重設為自動"
         }
     },
     "globalContextMenu": {
@@ -1142,6 +1144,7 @@
         "contextMenu": {
             "refreshMetadata": "刷新 CivitAI 資料",
             "checkUpdates": "檢查更新",
+            "editPrecision": "編輯精度",
             "linkModel": "連結模型",
             "linkCivitai": "連結到 CivitAI",
             "linkModelSource": "連結到模型來源",
@@ -1400,8 +1403,6 @@
             "finding": "正在掃描重複配方...",
             "found": "發現 {count} 組重複項",
             "noGroups": "按目前判重依據未找到重複組",
-            "keepLatest": "保留最新版本",
-            "deleteSelected": "刪除所選",
             "includePromptLabel": "將提示詞納入判重",
             "basis": {
                 "loraCombo": "判重依據：LoRA 組合",
@@ -2084,15 +2085,12 @@
             "title": "排除模型",
             "message": "您確定要排除此模型嗎？被排除的模型將不會出現在搜尋或模型列表中。"
         },
-        "deleteDuplicateRecipes": {
-            "title": "刪除重複配方",
-            "message": "您確定要刪除所選的重複配方嗎？",
-            "countMessage": "配方將被永久刪除。"
-        },
-        "deleteDuplicateModels": {
-            "title": "刪除重複模型",
-            "message": "您確定要刪除所選的重複模型嗎？",
-            "countMessage": "模型將被永久刪除。"
+        "deleteDuplicates": {
+            "title": "刪除所選重複項",
+            "message": "您確定要刪除所選的重複項嗎？",
+            "countMessage": "個項目將被刪除。若可還原，將提供「復原」操作。",
+            "emptyGroupsWarning": "這將刪除 {count} 個重複項群組中的所有項目，這些群組將不會保留任何副本。",
+            "emptyGroupsConfirm": "我了解這些群組將不會保留任何副本。"
         },
         "clearCache": {
             "title": "清除快取檔案",
@@ -2279,6 +2277,7 @@
                 "editFileName": "編輯檔案名稱",
                 "editBaseModel": "編輯基礎模型",
                 "editVersionName": "編輯版本名稱",
+                "editPrecision": "編輯精度",
                 "viewOnCivitai": "在 CivitAI 查看",
                 "viewOnCivitaiText": "在 CivitAI 查看",
                 "viewOnHuggingFace": "在 Hugging Face 查看",
@@ -2316,6 +2315,9 @@
                 "location": "位置",
                 "baseModel": "基礎模型",
                 "size": "大小",
+                "precision": "精度",
+                "precisionAuto": "自動",
+                "precisionManualHint": "手動設定 — 重新連結和重新掃描不會變更此值",
                 "hashes": "雜湊值",
                 "hashPending": "尚未計算",
                 "hashCalculating": "計算中...",
@@ -2719,9 +2721,14 @@
     },
     "duplicates": {
         "found": "發現 {count} 組重複項",
+        "deleting": "正在刪除 {count} 個已選項目...",
+        "keepLatest": "保留最新版本",
+        "keepThis": "保留此項",
+        "noGroups": "沒有剩餘的重複項",
         "showNotification": "顯示重複項通知",
         "deleteSelected": "刪除所選",
         "exitMode": "離開模式",
+        "exitDuplicates": "離開重複項",
         "help": {
             "identicalHashes": "相同雜湊值代表模型檔案完全一致，即使名稱或預覽不同。",
             "keepOne": "僅保留一個版本（建議選擇 metadata 或預覽較佳者），安全刪除其他版本。"
@@ -3115,6 +3122,8 @@
             "nameUpdateFailed": "更新模型名稱失敗",
             "baseModelUpdated": "基礎模型已成功更新",
             "baseModelUpdateFailed": "更新基礎模型失敗",
+            "precisionUpdated": "精度已成功更新",
+            "precisionUpdateFailed": "更新精度失敗",
             "baseModelNotSelected": "請選擇基礎模型",
             "bulkBaseModelUpdating": "正在為 {count} 個模型更新基礎模型...",
             "bulkBaseModelUpdateSuccess": "已成功為 {count} 個模型更新基礎模型",

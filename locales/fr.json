@@ -190,7 +190,9 @@
         },
         "footer": {
             "versionCount": "{count} versions",
-            "viewAllVersions": "Voir toutes les versions locales"
+            "viewAllVersions": "Voir toutes les versions locales",
+            "quantManual": "Défini manuellement — relier à nouveau ou analyser à nouveau ne le modifiera pas",
+            "quantResetAuto": "Réinitialiser sur Auto"
         }
     },
     "globalContextMenu": {
@@ -1142,6 +1144,7 @@
         "contextMenu": {
             "refreshMetadata": "Actualiser les données CivitAI",
             "checkUpdates": "Vérifier les mises à jour",
+            "editPrecision": "Modifier la précision",
             "linkModel": "Lier le modèle",
             "linkCivitai": "Relier à nouveau à CivitAI",
             "linkModelSource": "Lier à une source de modèle",
@@ -1400,8 +1403,6 @@
             "finding": "Recherche de Recipes en doublon...",
             "found": "Trouvé {count} groupes de doublons",
             "noGroups": "Aucun groupe de doublons trouvé avec le critère de correspondance actuel",
-            "keepLatest": "Garder les dernières versions",
-            "deleteSelected": "Supprimer la sélection",
             "includePromptLabel": "Inclure le prompt dans la correspondance",
             "basis": {
                 "loraCombo": "Correspondance : combinaison de LoRA",
@@ -2084,15 +2085,12 @@
             "title": "Exclure le modèle",
             "message": "Êtes-vous sûr de vouloir exclure ce modèle ? Les modèles exclus n'apparaîtront pas dans les recherches ou listes de modèles."
         },
-        "deleteDuplicateRecipes": {
-            "title": "Supprimer les Recipes en double",
-            "message": "Êtes-vous sûr de vouloir supprimer les Recipes en double sélectionnées ?",
-            "countMessage": "recipes seront définitivement supprimées."
-        },
-        "deleteDuplicateModels": {
-            "title": "Supprimer les modèles en double",
-            "message": "Êtes-vous sûr de vouloir supprimer les modèles en double sélectionnés ?",
-            "countMessage": "modèles seront définitivement supprimés."
+        "deleteDuplicates": {
+            "title": "Supprimer les doublons sélectionnés",
+            "message": "Êtes-vous sûr de vouloir supprimer les doublons sélectionnés ?",
+            "countMessage": "éléments seront supprimés. Une action « Annuler » sera proposée lorsque la récupération est possible.",
+            "emptyGroupsWarning": "Cela supprimera chaque élément de {count} groupe(s) de doublons. Aucune copie ne sera conservée dans ces groupes.",
+            "emptyGroupsConfirm": "Je comprends qu’aucune copie ne sera conservée dans ces groupes."
         },
         "clearCache": {
             "title": "Vider les fichiers de cache",
@@ -2279,6 +2277,7 @@
                 "editFileName": "Modifier le nom de fichier",
                 "editBaseModel": "Modifier le modèle de base",
                 "editVersionName": "Modifier le nom de la version",
+                "editPrecision": "Modifier la précision",
                 "viewOnCivitai": "Voir sur CivitAI",
                 "viewOnCivitaiText": "Voir sur CivitAI",
                 "viewOnHuggingFace": "Voir sur Hugging Face",
@@ -2316,6 +2315,9 @@
                 "location": "Emplacement",
                 "baseModel": "Modèle de base",
                 "size": "Taille",
+                "precision": "Précision",
+                "precisionAuto": "Auto",
+                "precisionManualHint": "Défini manuellement — relier à nouveau ou analyser à nouveau ne le modifiera pas",
                 "hashes": "Hashes",
                 "hashPending": "Pas encore calculé",
                 "hashCalculating": "Calcul en cours...",
@@ -2719,9 +2721,14 @@
     },
     "duplicates": {
         "found": "Trouvé {count} groupes de doublons",
+        "deleting": "Suppression de {count} élément(s) sélectionné(s)...",
+        "keepLatest": "Garder les dernières versions",
+        "keepThis": "Garder cet élément",
+        "noGroups": "Plus aucun groupe de doublons",
         "showNotification": "Afficher la notification de doublons",
         "deleteSelected": "Supprimer la sélection",
         "exitMode": "Quitter le mode",
+        "exitDuplicates": "Quitter les doublons",
         "help": {
             "identicalHashes": "Des hash identiques signifient des fichiers de modèle identiques, même s'ils ont des noms ou aperçus différents.",
             "keepOne": "Gardez seulement une version (de préférence avec de meilleures métadonnées/aperçus) et supprimez les autres en toute sécurité."
@@ -3115,6 +3122,8 @@
             "nameUpdateFailed": "Échec de la mise à jour du nom du modèle",
             "baseModelUpdated": "Modèle de base mis à jour avec succès",
             "baseModelUpdateFailed": "Échec de la mise à jour du modèle de base",
+            "precisionUpdated": "Précision mise à jour avec succès",
+            "precisionUpdateFailed": "Échec de la mise à jour de la précision",
             "baseModelNotSelected": "Veuillez sélectionner un modèle de base",
             "bulkBaseModelUpdating": "Mise à jour du modèle de base pour {count} modèle(s)...",
             "bulkBaseModelUpdateSuccess": "Modèle de base mis à jour avec succès pour {count} modèle(s)",

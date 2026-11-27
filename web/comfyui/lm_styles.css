@@ -1,4 +1,74 @@
 /* Shared styling for the LoRA Manager frontend widgets */
+
+/* Slim, theme-aware scrollbars on every LM surface (node widgets and popovers).
+   The thumb stays hidden until the scrollable element is hovered. WebKit gets a
+   10px hit area whose transparent border shrinks the visible bar to ~4px;
+   Firefox/standard engines use scrollbar-width/color instead. */
+.lm-widget-root,
+.lm-widget-root *,
+.lm-popover,
+.lm-popover * {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.lm-widget-root:hover,
+.lm-widget-root *:hover,
+.lm-popover:hover,
+.lm-popover *:hover {
+  scrollbar-color: var(--lm-border) transparent;
+}
+
+.lm-widget-root::-webkit-scrollbar,
+.lm-widget-root *::-webkit-scrollbar,
+.lm-popover::-webkit-scrollbar,
+.lm-popover *::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.lm-widget-root::-webkit-scrollbar-track,
+.lm-widget-root *::-webkit-scrollbar-track,
+.lm-popover::-webkit-scrollbar-track,
+.lm-popover *::-webkit-scrollbar-track,
+.lm-widget-root::-webkit-scrollbar-corner,
+.lm-widget-root *::-webkit-scrollbar-corner,
+.lm-popover::-webkit-scrollbar-corner,
+.lm-popover *::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.lm-widget-root::-webkit-scrollbar-button,
+.lm-widget-root *::-webkit-scrollbar-button,
+.lm-popover::-webkit-scrollbar-button,
+.lm-popover *::-webkit-scrollbar-button {
+  display: none;
+}
+
+.lm-widget-root::-webkit-scrollbar-thumb,
+.lm-widget-root *::-webkit-scrollbar-thumb,
+.lm-popover::-webkit-scrollbar-thumb,
+.lm-popover *::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  background-clip: padding-box;
+  border: 3px solid transparent;
+  border-radius: 5px;
+}
+
+.lm-widget-root:hover::-webkit-scrollbar-thumb,
+.lm-widget-root *:hover::-webkit-scrollbar-thumb,
+.lm-popover:hover::-webkit-scrollbar-thumb,
+.lm-popover *:hover::-webkit-scrollbar-thumb {
+  background-color: var(--lm-border);
+}
+
+.lm-widget-root::-webkit-scrollbar-thumb:hover,
+.lm-widget-root *::-webkit-scrollbar-thumb:hover,
+.lm-popover::-webkit-scrollbar-thumb:hover,
+.lm-popover *::-webkit-scrollbar-thumb:hover {
+  background-color: var(--lm-fg-subtle);
+}
+
 .lm-tooltip {
   position: fixed;
   z-index: 10001;
@@ -769,10 +839,14 @@ body.lm-lora-reordering * {
   color: inherit;
 }
 
+/* Group with partially active children. The foreground must stay inherited: an
+   active chip is accent-filled and carries --lm-on-accent, which is dark ink on
+   a bright accent, while --lm-fg is light in dark theme — overriding the colour
+   turned the count into light-on-light. The ring therefore follows currentColor
+   too, and the fill stays the base translucent tint so only the ring marks the
+   partial state. */
 .lm-trigger-count-badge--edited {
-  color: var(--lm-fg);
-  background-color: color-mix(in srgb, var(--lm-fg) 8%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lm-fg) 28%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 40%, transparent);
 }
 
 .lm-trigger-group-edit-button {
@@ -925,28 +999,6 @@ body.lm-lora-reordering * {
   box-shadow: var(--lm-shadow-lg);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-}
-
-.comfy-autocomplete-dropdown::-webkit-scrollbar,
-.comfy-autocomplete-scroll-container::-webkit-scrollbar {
-  width: 8px;
-}
-
-.comfy-autocomplete-dropdown::-webkit-scrollbar-track,
-.comfy-autocomplete-scroll-container::-webkit-scrollbar-track {
-  background: var(--lm-surface-raised);
-  border-radius: 4px;
-}
-
-.comfy-autocomplete-dropdown::-webkit-scrollbar-thumb,
-.comfy-autocomplete-scroll-container::-webkit-scrollbar-thumb {
-  background: var(--lm-border);
-  border-radius: 4px;
-}
-
-.comfy-autocomplete-dropdown::-webkit-scrollbar-thumb:hover,
-.comfy-autocomplete-scroll-container::-webkit-scrollbar-thumb:hover {
-  background: var(--lm-fg-subtle);
 }
 
 .comfy-autocomplete-item {
@@ -2291,36 +2343,40 @@ body.lm-lora-reordering * {
 .lm-quick-actions-menu {
   position: fixed;
   z-index: 10000;
-  min-width: 230px;
-  padding: 6px;
-  background: var(--lm-surface);
-  border: 1px solid var(--lm-border-soft);
+  display: flex;
+  flex-direction: column;
+  min-width: 208px;
+  max-height: calc(100vh - 16px);
+  max-width: calc(100vw - 16px);
+  padding: 4px;
+  background: var(--background, var(--lm-surface));
+  border: 1px solid var(--border, var(--lm-border-soft));
   border-radius: 8px;
   box-shadow: var(--lm-shadow-lg);
-  color: var(--lm-fg);
+  color: var(--foreground, var(--lm-fg));
 }
 
 .lm-quick-actions-menu__item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
+  gap: 16px;
   width: 100%;
-  min-height: 34px;
-  padding: 6px 10px;
+  min-height: 32px;
+  padding: 4px 8px;
   background: transparent;
   border: 0;
-  border-radius: 5px;
+  border-radius: 4px;
   color: inherit;
   font: inherit;
-  font-size: 14px;
+  font-size: 12px;
   text-align: left;
   cursor: pointer;
 }
 
 .lm-quick-actions-menu__item:hover,
 .lm-quick-actions-menu__item:focus-visible {
-  background: var(--lm-surface-hover);
+  background: var(--accent, var(--lm-surface-hover));
   outline: none;
 }
 
@@ -2330,21 +2386,21 @@ body.lm-lora-reordering * {
   justify-content: center;
   min-width: 20px;
   min-height: 18px;
-  padding: 0 6px;
-  background: var(--interface-menu-keybind-surface-default, var(--lm-surface-raised));
+  padding: 2px 6px;
+  background: var(--secondary, var(--interface-menu-keybind-surface-default, var(--lm-surface-raised)));
   border: 0;
   border-radius: 4px;
-  color: var(--lm-fg);
+  color: var(--muted-foreground, var(--lm-fg));
   font: inherit;
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1;
   white-space: nowrap;
 }
 
 .lm-quick-actions-menu__divider {
   height: 1px;
-  margin: 5px 4px;
-  background: var(--lm-border-soft);
+  margin: 4px 0;
+  background: var(--border, var(--lm-border-soft));
 }
 
 /* ---- Wildcard quick panel ---- */
