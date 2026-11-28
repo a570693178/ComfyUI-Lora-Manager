@@ -11,8 +11,8 @@ assignees: ''
 - Version: `vX.X.X`
 
 ### **Environment Information**
-- **Operating System**: (e.g., Windows 11, macOS Ventura, Ubuntu 22.04)
-- **Browser & Version**: (e.g., Chrome 120.0.0, Edge 115.0.0)
+- In LoRA Manager, open **Settings → About**, click **Copy**, then paste the copied block here. It includes the ComfyUI and ComfyUI Frontend versions, Python, OS and browser, which the report usually hinges on.
+- For UI or canvas problems, also say whether it still happens with **Nodes 2.0** turned off, and list the other custom nodes you have installed.
 
 ### **Issue Description**
 - Describe the issue in detail.
