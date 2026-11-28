@@ -374,6 +374,159 @@ async def test_migrate_conflict_keeps_newer_file(
 
 
 @pytest.mark.asyncio
+async def test_migrate_conflict_prefers_richer_metadata_over_newer_skeleton(
+    library_root: Path, sidecar_root: Path
+):
+    """A regenerated skeleton is always newer; that alone must not win."""
+
+    _set_mode("centralized")
+    mirror = _mirror_dir(library_root, sidecar_root)
+
+    model = _write_model(library_root, "model_rich")
+    rich = _write_sidecar(mirror, "model_rich", model, preview_ext=".preview.webp")
+    rich_payload = json.loads(rich.read_text(encoding="utf-8"))
+    rich_payload.update(
+        {
+            "civitai": {"id": 42, "modelId": 7},
+            "sha256": "a" * 64,
+            "tags": ["portrait"],
+            "notes": "keep me",
+        }
+    )
+    rich.write_text(json.dumps(rich_payload), encoding="utf-8")
+    os.utime(rich, (1000, 1000))
+
+    skeleton = _write_sidecar(library_root, "model_rich", model, preview_ext=None)
+    os.utime(skeleton, (9000, 9000))
+
+    use_case = _make_use_case([str(model)])
+    summary = await use_case.migrate_to_centralized(force=True)
+
+    assert summary["conflicts"] == 1
+    assert summary["moved"] == 0
+    assert not skeleton.exists(), "the stub is the file that must go away"
+
+    kept = json.loads(rich.read_text(encoding="utf-8"))
+    assert kept["civitai"] == {"id": 42, "modelId": 7}
+    assert kept["sha256"] == "a" * 64
+    assert kept["notes"] == "keep me"
+
+
+@pytest.mark.asyncio
+async def test_migrate_conflict_richer_source_replaces_newer_skeleton(
+    library_root: Path, sidecar_root: Path
+):
+    """The richer side wins in both directions, not just when it is the target."""
+
+    _set_mode("centralized")
+    mirror = _mirror_dir(library_root, sidecar_root)
+
+    model = _write_model(library_root, "model_rich")
+    rich = _write_sidecar(library_root, "model_rich", model, preview_ext=".preview.webp")
+    rich_payload = json.loads(rich.read_text(encoding="utf-8"))
+    rich_payload.update({"civitai": {"id": 43}, "sha256": "b" * 64})
+    rich.write_text(json.dumps(rich_payload), encoding="utf-8")
+    os.utime(rich, (1000, 1000))
+
+    skeleton = _write_sidecar(mirror, "model_rich", model, preview_ext=None)
+    os.utime(skeleton, (9000, 9000))
+
+    use_case = _make_use_case([str(model)])
+    summary = await use_case.migrate_to_centralized(force=True)
+
+    assert summary["conflicts"] == 1
+    assert summary["moved"] == 1
+
+    stored = json.loads(skeleton.read_text(encoding="utf-8"))
+    assert stored["civitai"] == {"id": 43}
+    assert stored["sha256"] == "b" * 64
+
+
+@pytest.mark.asyncio
+async def test_migrate_conflict_merges_complementary_metadata(
+    library_root: Path, sidecar_root: Path
+):
+    """A scalar richness score must not discard the other side's local data."""
+
+    _set_mode("centralized")
+    mirror = _mirror_dir(library_root, sidecar_root)
+
+    model = _write_model(library_root, "model_mixed")
+    source = _write_sidecar(library_root, "model_mixed", model, preview_ext=None)
+    source_payload = json.loads(source.read_text(encoding="utf-8"))
+    source_payload.update(
+        {
+            "civitai": {"id": 44, "model": {"name": "Remote"}},
+            "favorite": True,
+            "notes": "old notes",
+            "tags": ["source"],
+        }
+    )
+    source.write_text(json.dumps(source_payload), encoding="utf-8")
+    os.utime(source, (1000, 1000))
+
+    destination = _write_sidecar(
+        mirror, "model_mixed", model, preview_ext=".preview.webp"
+    )
+    destination_payload = json.loads(destination.read_text(encoding="utf-8"))
+    destination_payload.update(
+        {
+            "sha256": "c" * 64,
+            "notes": "new notes",
+            "tags": ["destination"],
+        }
+    )
+    destination.write_text(json.dumps(destination_payload), encoding="utf-8")
+    os.utime(destination, (9000, 9000))
+
+    use_case = _make_use_case([str(model)])
+    summary = await use_case.migrate_to_centralized(force=True)
+
+    assert summary["conflicts"] == 1
+    assert summary["moved"] == 0
+    assert not source.exists()
+    stored = json.loads(destination.read_text(encoding="utf-8"))
+    assert stored["civitai"] == {"id": 44, "model": {"name": "Remote"}}
+    assert stored["sha256"] == "c" * 64
+    assert stored["preview_url"].endswith("model_mixed.preview.webp")
+    assert stored["favorite"] is True
+    assert stored["notes"] == "new notes"
+    assert stored["tags"] == ["destination", "source"]
+
+
+@pytest.mark.asyncio
+async def test_migrate_conflict_merges_into_a_newer_source(
+    library_root: Path, sidecar_root: Path
+):
+    """Complementary destination data survives when the source is moved."""
+
+    _set_mode("centralized")
+    mirror = _mirror_dir(library_root, sidecar_root)
+    model = _write_model(library_root, "model_source_wins")
+
+    source = _write_sidecar(library_root, "model_source_wins", model, preview_ext=None)
+    source_payload = json.loads(source.read_text(encoding="utf-8"))
+    source_payload.update({"civitai": {"id": 45}, "notes": "new notes"})
+    source.write_text(json.dumps(source_payload), encoding="utf-8")
+    os.utime(source, (9000, 9000))
+
+    destination = _write_sidecar(mirror, "model_source_wins", model, preview_ext=None)
+    destination_payload = json.loads(destination.read_text(encoding="utf-8"))
+    destination_payload.update({"sha256": "d" * 64, "notes": "old notes"})
+    destination.write_text(json.dumps(destination_payload), encoding="utf-8")
+    os.utime(destination, (1000, 1000))
+
+    use_case = _make_use_case([str(model)])
+    summary = await use_case.migrate_to_centralized(force=True)
+
+    assert summary["moved"] == 1
+    stored = json.loads(destination.read_text(encoding="utf-8"))
+    assert stored["civitai"] == {"id": 45}
+    assert stored["sha256"] == "d" * 64
+    assert stored["notes"] == "new notes"
+
+
+@pytest.mark.asyncio
 async def test_migrate_missing_model_file_is_skipped(
     library_root: Path, sidecar_root: Path
 ):

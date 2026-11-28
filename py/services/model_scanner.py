@@ -916,6 +916,8 @@ class ModelScanner:
         self._deferred_persist_pending = False
         self._autov3_backfill_scheduled = False  # One-time AutoV3 backfill trigger per process
         self._quantization_backfill_scheduled = False  # One-time quantization backfill trigger per process
+        self._published_at_backfill_done = False
+        self._published_at_backfill_lock = asyncio.Lock()
         # Summary of the last incremental reconcile (see last_reconcile_summary)
         self._last_reconcile_summary: Optional[Dict[str, Any]] = None
         # Guard against concurrent all-folders backfill walks (cold fallback
@@ -998,6 +1000,7 @@ class ModelScanner:
         self._excluded_models = []
         self._is_initializing = False
         self._init_error = None
+        self._published_at_backfill_done = False
         self._name_display_mode = self._resolve_name_display_mode()
         self.bump_cache_version()
 
@@ -1051,7 +1054,7 @@ class ModelScanner:
             return None
 
         slim: Dict[str, Any] = {}
-        for key in ('id', 'modelId', 'name'):
+        for key in ('id', 'modelId', 'name', 'publishedAt'):
             value = civitai.get(key)
             if value not in (None, '', []):
                 slim[key] = value
@@ -1697,6 +1700,81 @@ class ModelScanner:
             if path not in bucket:
                 bucket.append(path)
         return snapshot
+
+    @staticmethod
+    def _read_published_at_values(file_paths: Sequence[str]) -> Dict[str, str]:
+        values: Dict[str, str] = {}
+        for file_path in file_paths:
+            try:
+                metadata_path = get_metadata_path(file_path)
+                with open(metadata_path, "r", encoding="utf-8") as handle:
+                    payload = json.load(handle)
+                civitai = payload.get("civitai") if isinstance(payload, dict) else None
+                published_at = civitai.get("publishedAt") if isinstance(civitai, dict) else None
+                if isinstance(published_at, str) and published_at.strip():
+                    values[file_path] = published_at
+            except (OSError, json.JSONDecodeError, TypeError):
+                continue
+        return values
+
+    async def ensure_published_at_backfill(self) -> int:
+        """Backfill publication dates from local sidecars on first published sort."""
+        if self._published_at_backfill_done:
+            return 0
+
+        async with self._published_at_backfill_lock:
+            if self._published_at_backfill_done:
+                return 0
+
+            cache = await self.get_cached_data()
+            pending_paths = []
+            for item in cache.raw_data:
+                civitai = item.get("civitai")
+                published_at = civitai.get("publishedAt") if isinstance(civitai, dict) else None
+                if isinstance(published_at, str) and published_at.strip():
+                    continue
+                file_path = item.get("file_path")
+                if file_path:
+                    pending_paths.append(file_path)
+
+            loop = asyncio.get_running_loop()
+            published_values = await loop.run_in_executor(
+                None,
+                self._read_published_at_values,
+                pending_paths,
+            )
+
+            updated = 0
+            if published_values:
+                for item in cache.raw_data:
+                    file_path = item.get("file_path")
+                    published_at = published_values.get(file_path)
+                    if not published_at:
+                        continue
+                    civitai = item.get("civitai")
+                    if not isinstance(civitai, dict):
+                        civitai = {}
+                        item["civitai"] = civitai
+                    existing = civitai.get("publishedAt")
+                    if isinstance(existing, str) and existing.strip():
+                        continue
+                    civitai["publishedAt"] = published_at
+                    updated += 1
+
+                if updated:
+                    await cache.resort()
+                    await self._persist_current_cache()
+                    self.bump_cache_version()
+
+            self._published_at_backfill_done = True
+            if pending_paths:
+                logger.info(
+                    "Published-at backfill: updated %d/%d models for %s",
+                    updated,
+                    len(pending_paths),
+                    self.model_type,
+                )
+            return updated
 
     async def _persist_current_cache(self, *, force: bool = False) -> None:
         if self._cache is None or not getattr(self, '_persistent_cache', None):
@@ -3924,6 +4002,26 @@ class ModelScanner:
             )
         return normalized_sha
 
+    @staticmethod
+    def _recover_preview_url(file_path: str) -> str:
+        """Return the on-disk preview path for *file_path*, or "" when absent.
+
+        The lookup mirrors the one the creation paths use, so a sidecar that
+        lost its ``preview_url`` is repaired to exactly the value a fresh scan
+        would have recorded.
+        """
+
+        try:
+            if not os.path.exists(file_path):
+                return ""
+            found = find_preview_file(
+                get_sidecar_base_name(file_path), get_preview_dir(file_path)
+            )
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.debug("Preview recovery failed for %s: %s", file_path, exc)
+            return ""
+        return (found or "").replace(os.sep, "/")
+
     async def _process_model_file(
         self,
         file_path: str,
@@ -4062,10 +4160,31 @@ class ModelScanner:
 
         model_data = self._build_cache_entry(metadata, folder=normalized_folder)
 
+        # Preview self-heal: a sidecar can be written before its preview lands
+        # beside it (or be regenerated by a path that has no preview lookup),
+        # and the entry then keeps preview_url="" for good — Refresh and
+        # Rebuild Cache only re-read the same sidecar, so the card stays on its
+        # placeholder even though the image is on disk. The file is the ground
+        # truth, so re-derive the value once and persist the repair.
+        if not model_data.get('preview_url'):
+            recovered_preview = self._recover_preview_url(file_path)
+            if recovered_preview:
+                model_data['preview_url'] = recovered_preview
+                if isinstance(metadata, BaseModelMetadata):
+                    metadata.preview_url = recovered_preview
+                    await MetadataManager.save_metadata(file_path, metadata)
+                elif isinstance(metadata, dict):
+                    metadata['preview_url'] = recovered_preview
+                    await MetadataManager.save_metadata(file_path, metadata)
+
         # Most libraries trust a stored hash to avoid reading large weight files.
         # Workflow artifacts opt into verification on every full scan because
         # their older shared sidecars could assign one artifact's hash to another.
-        # Respect hash_status='pending' for scanners that defer large-file hashing.
+        # Respect hash_status='pending' for scanners that defer large-file
+        # hashing. The contract is one-directional: a scan must never re-read a
+        # pending file, and the lazy path (calculate_hash_for_model on the
+        # checkpoint/other scanners) is what persists "calculating"/"completed"
+        # once it has actually read the file.
         hash_status = model_data.get('hash_status', '')
         stored_sha = (model_data.get('sha256') or '').strip()
         # The empty-string placeholder is not an identity: models poisoned by a

@@ -43,6 +43,8 @@ import json
 import logging
 import os
 import shutil
+from copy import deepcopy
+from dataclasses import fields as dataclass_fields
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Protocol, Sequence, Tuple
 
 from ..service_registry import ServiceRegistry
@@ -50,6 +52,7 @@ from ..settings_manager import get_settings_manager
 from ...utils.constants import PREVIEW_EXTENSIONS
 from ...utils.file_utils import find_preview_file, get_preview_extension
 from ...utils.metadata_manager import MetadataManager
+from ...utils.models import BaseModelMetadata
 from ...utils.sidecar_paths import (
     METADATA_SUFFIX,
     ROOT_MAP_FILENAME,
@@ -79,6 +82,12 @@ DIRECTION_RELOCATE_ROOT = "relocate_root"
 # Same candidate set find_preview_file recognizes: every PREVIEW_EXTENSIONS
 # suffix plus the legacy ".example.0.jpeg" (issue #225).
 _PREVIEW_CANDIDATE_EXTENSIONS = tuple(PREVIEW_EXTENSIONS) + (".example.0.jpeg",)
+_METADATA_FIELDS = {
+    field.name
+    for model_class in (BaseModelMetadata, *BaseModelMetadata.__subclasses__())
+    for field in dataclass_fields(model_class)
+    if not field.name.startswith("_")
+}
 
 
 def _enumerate_preview_names(directory: str, stem: str) -> List[str]:
@@ -176,7 +185,7 @@ class SidecarMigrationUseCase:
         disappear from the application. Moves every file keeping the
         root-relative structure, rewrites the ``preview_url`` prefix inside
         moved sidecars, reconciles scanner caches, and prunes the emptied old
-        tree. Keep-newer conflict resolution matches :meth:`_transfer`.
+        tree. Conflict resolution matches :meth:`_transfer`.
         """
 
         if not force and get_storage_mode() != STORAGE_MODE_CENTRALIZED:
@@ -243,7 +252,10 @@ class SidecarMigrationUseCase:
 
         for index, (src, dst) in enumerate(files, start=1):
             try:
-                if self._transfer(src, dst, counters) and src.endswith(METADATA_SUFFIX):
+                moved_file = self._transfer(src, dst, counters)
+                if src.endswith(METADATA_SUFFIX) and (moved_file or os.path.exists(dst)):
+                    # A kept destination can acquire an old-root preview URL
+                    # while complementary metadata is merged from the source.
                     moved_sidecars.append(dst)
             except Exception as exc:
                 self._logger.error(
@@ -589,12 +601,12 @@ class SidecarMigrationUseCase:
                 moved_previews.append(dst)
 
         sidecar_src = os.path.join(src_dir, sidecar_name)
-        sidecar_moved = False
         sidecar_dst = os.path.join(dst_dir, sidecar_name)
-        if os.path.exists(sidecar_src):
-            sidecar_moved = self._transfer(sidecar_src, sidecar_dst, result)
+        sidecar_found = os.path.exists(sidecar_src)
+        if sidecar_found:
+            self._transfer(sidecar_src, sidecar_dst, result)
 
-        if sidecar_moved:
+        if sidecar_found and os.path.exists(sidecar_dst):
             await self._rewrite_sidecar_paths(sidecar_dst, model_path, moved_previews)
 
         # Ground truth from the destination directory: covers conflict-keep
@@ -667,24 +679,141 @@ class SidecarMigrationUseCase:
             ) from exc
         raise exc
 
-    def _transfer(self, src: str, dst: str, result: Dict[str, Any]) -> bool:
-        """Move ``src`` to ``dst`` with keep-newer conflict resolution.
+    #: Weights used to compare two sidecars during a conflict. A real sidecar
+    #: carries CivitAI data, a hash and a preview; a regenerated skeleton
+    #: carries none of them yet is always *newer*, so mtime alone would let the
+    #: skeleton replace the real thing.
+    _RICHNESS_WEIGHTS = (("civitai", 8), ("sha256", 4), ("preview_url", 2))
 
-        Returns True when the file was actually moved to the destination. On a
-        conflict the newer file wins: a newer source replaces the destination;
-        a newer (or equal) destination is kept and the source is deleted.
+    @classmethod
+    def _metadata_richness(cls, path: str) -> Optional[int]:
+        """Score a sidecar by how much real metadata it carries.
+
+        Returns ``None`` for anything that is not a readable metadata sidecar,
+        which makes the caller fall back to the plain mtime rule.
+        """
+
+        if not path.endswith(METADATA_SUFFIX):
+            return None
+        try:
+            with open(path, "r", encoding="utf-8") as handle:
+                payload = json.load(handle)
+        except (OSError, ValueError):
+            return None
+        if not isinstance(payload, dict):
+            return None
+
+        score = 0
+        for key, weight in cls._RICHNESS_WEIGHTS:
+            value = payload.get(key)
+            if isinstance(value, (dict, list, str)) and value:
+                score += weight
+        for key in ("tags", "notes", "modelDescription"):
+            if payload.get(key):
+                score += 1
+        return score
+
+    @classmethod
+    def _merge_metadata_values(cls, preferred: Any, fallback: Any) -> Any:
+        """Keep preferred values while retaining complementary fallback data."""
+
+        if preferred is None or (
+            isinstance(preferred, (str, dict, list)) and not preferred
+        ):
+            return deepcopy(fallback)
+        if isinstance(preferred, dict) and isinstance(fallback, dict):
+            merged = deepcopy(preferred)
+            for key, fallback_value in fallback.items():
+                if key not in merged:
+                    merged[key] = deepcopy(fallback_value)
+                else:
+                    merged[key] = cls._merge_metadata_values(
+                        merged[key], fallback_value
+                    )
+            return merged
+        if isinstance(preferred, list) and isinstance(fallback, list):
+            merged = deepcopy(preferred)
+            for item in fallback:
+                if item not in merged:
+                    merged.append(deepcopy(item))
+            return merged
+        return preferred
+
+    @classmethod
+    def _merge_metadata_sidecars(cls, winner: str, loser: str) -> None:
+        """Merge complementary fields into the winner before deleting the loser."""
+
+        if not winner.endswith(METADATA_SUFFIX) or not loser.endswith(METADATA_SUFFIX):
+            return
+        try:
+            with open(winner, "r", encoding="utf-8") as handle:
+                preferred = json.load(handle)
+            with open(loser, "r", encoding="utf-8") as handle:
+                fallback = json.load(handle)
+        except (OSError, ValueError):
+            return
+        if not isinstance(preferred, dict) or not isinstance(fallback, dict):
+            return
+
+        known_fallback = {
+            key: value for key, value in fallback.items() if key in _METADATA_FIELDS
+        }
+        merged = cls._merge_metadata_values(preferred, known_fallback)
+        if known_fallback.get("favorite") is True:
+            merged["favorite"] = True
+        if merged == preferred:
+            return
+
+        temp_path = f"{winner}.{os.getpid()}.{os.urandom(4).hex()}.merge.tmp"
+        try:
+            with open(temp_path, "x", encoding="utf-8") as handle:
+                json.dump(merged, handle, ensure_ascii=False, indent=2)
+            os.replace(temp_path, winner)
+        finally:
+            try:
+                os.remove(temp_path)
+            except OSError:
+                pass
+
+    def _conflict_prefers_source(self, src: str, dst: str) -> bool:
+        """Prefer richer metadata only when the other side is a skeleton.
+
+        Two non-empty sidecars can carry complementary or conflicting user
+        edits, so their recency remains the winner selection rule. Complementary
+        fields are merged separately before either file is deleted.
+        """
+
+        src_score = self._metadata_richness(src)
+        dst_score = self._metadata_richness(dst)
+        if src_score is not None and dst_score is not None:
+            if src_score == 0 and dst_score > 0:
+                return False
+            if dst_score == 0 and src_score > 0:
+                return True
+        return os.path.getmtime(src) > os.path.getmtime(dst)
+
+    def _transfer(self, src: str, dst: str, result: Dict[str, Any]) -> bool:
+        """Move ``src`` to ``dst`` without discarding complementary metadata.
+
+        Returns True when the file was actually moved to the destination. A
+        richer sidecar replaces an empty skeleton; otherwise the newer file
+        wins. Before the loser is deleted, its missing fields and collection
+        entries are merged into the winner.
         """
 
         if os.path.exists(dst):
             result["conflicts"] += 1
-            if os.path.getmtime(src) > os.path.getmtime(dst):
+            prefer_source = self._conflict_prefers_source(src, dst)
+            winner, loser = (src, dst) if prefer_source else (dst, src)
+            self._merge_metadata_sidecars(winner, loser)
+            if prefer_source:
                 self._logger.info(
-                    "Sidecar migration: conflict at %s; source is newer, replacing", dst
+                    "Sidecar migration: conflict at %s; source wins, replacing", dst
                 )
                 os.remove(dst)
             else:
                 self._logger.info(
-                    "Sidecar migration: conflict at %s; destination is newer, keeping it",
+                    "Sidecar migration: conflict at %s; destination wins, keeping it",
                     dst,
                 )
                 os.remove(src)
@@ -722,6 +851,10 @@ class SidecarMigrationUseCase:
                 moved_previews[0],
             )
             metadata["preview_url"] = chosen.replace(os.sep, "/")
+
+        final_preview = find_preview_file(stem, os.path.dirname(sidecar_path))
+        if final_preview and (not moved_previews or not metadata.get("preview_url")):
+            metadata["preview_url"] = final_preview.replace(os.sep, "/")
 
         await MetadataManager.save_metadata(sidecar_path, metadata)
 
