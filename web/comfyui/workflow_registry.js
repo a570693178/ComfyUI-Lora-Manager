@@ -1,7 +1,7 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 import { lmUrl } from "./base_path.js";
-import { getAllGraphNodes, getNodeReference, getNodeFromGraph, getChildGraphs, chainCallback, getLinkFromGraph, interceptModeChange } from "./utils.js";
+import { getAllGraphNodes, getNodeReference, getNodeFromGraph, getChildGraphs, chainCallback, getLinkFromGraph, hasTrackedNodeMode, interceptModeChange } from "./utils.js";
 import { ensureLmStyles } from "./lm_styles_loader.js";
 import {
     hasLoraNodeAdapter,
@@ -347,6 +347,46 @@ function ensureComboValue(widget, value) {
     }
 }
 
+/**
+ * One `node:property:changed` listener per graph, so a mode toggle can refresh
+ * the registry without an instance-level `mode` accessor on every candidate
+ * node. Handlers are keyed by node id; a node observed twice keeps the last
+ * handler (the registry refresh re-registers candidates on every pass).
+ */
+const trackedModeHandlersByGraph = new WeakMap();
+
+/**
+ * Subscribe `onModeChanged` to a node's tracked mode changes.
+ *
+ * @param {Object} graph - Graph owning the event bus (root graph or subgraph)
+ * @param {Object} node - LiteGraph node instance
+ * @param {() => void} onModeChanged - Called when the node's mode changes
+ * @returns {boolean} False when the graph has no event bus to subscribe to
+ */
+function observeTrackedNodeMode(graph, node, onModeChanged) {
+    if (!graph || typeof graph.events?.addEventListener !== "function") {
+        return false;
+    }
+
+    let handlers = trackedModeHandlersByGraph.get(graph);
+    if (!handlers) {
+        handlers = new Map();
+        trackedModeHandlersByGraph.set(graph, handlers);
+        graph.events.addEventListener("node:property:changed", (event) => {
+            // `graph.trigger()` dispatches a CustomEvent whose detail is the
+            // trigger payload; accept a bare payload too for older builds.
+            const detail = event?.detail ?? event;
+            if (detail?.property !== "mode") {
+                return;
+            }
+            handlers.get(detail.nodeId)?.();
+        });
+    }
+
+    handlers.set(node.id, onModeChanged);
+    return true;
+}
+
 app.registerExtension({
     name: "LoraManager.WorkflowRegistry",
 
@@ -467,20 +507,38 @@ app.registerExtension({
     /**
      * Observe mute/bypass toggles on a candidate node so the registry's
      * `mode` field (consumed by the web UI's enabled-filter) stays fresh.
-     * interceptModeChange supports multiple listeners per node, so this
-     * composes with the Lora Loader's own mode observation.
+     *
+     * Frontends that track `mode` in node shell state (1.53+) announce every
+     * write with a `node:property:changed` graph event, so this listens there
+     * and never touches the node's `mode` property. Installing an instance
+     * accessor on such frontends would shadow the tracked setter and leave
+     * Nodes 2.0 rendering the previous mode until a page reload (#1233).
+     *
+     * Only legacy frontends, where `mode` is a plain data property with no
+     * change event, fall back to interceptModeChange.
      */
     _ensureModeHook(node) {
         if (!node || node.__lmRegistryModeHooked) {
             return;
         }
         node.__lmRegistryModeHooked = true;
-        interceptModeChange(node, () => {
+
+        const onModeChanged = () => {
             this._scheduleRefresh("mode");
             if (hasLoraNodeAdapter(node)) {
                 notifyLoraNodeChanged(node);
             }
-        });
+        };
+
+        const graph = node.graph ?? app.graph;
+        if (
+            hasTrackedNodeMode(node)
+            && observeTrackedNodeMode(graph, node, onModeChanged)
+        ) {
+            return;
+        }
+
+        interceptModeChange(node, onModeChanged);
     },
 
     refreshCustomTriggerWords() {

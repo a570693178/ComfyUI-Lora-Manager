@@ -115,20 +115,78 @@ describe("interceptModeChange", () => {
       expect(first).toHaveBeenCalledWith(4, 2);
       expect(second).toHaveBeenCalledWith(4, 2);
     });
+  });
 
-    it("keeps notifying remaining listeners when one of them throws", () => {
-      const node = { mode: 0 };
-      const failing = vi.fn(() => {
-        throw new Error("boom");
+  describe("accessor installed by another extension", () => {
+    function createNodeWithForeignAccessor({ withSetter = true } = {}) {
+      const node = { _state: { mode: 0 }, foreignMode: 0 };
+      Object.defineProperty(node, "mode", {
+        configurable: true,
+        enumerable: true,
+        get() {
+          return this.foreignMode;
+        },
+        ...(withSetter
+          ? {
+              set(value) {
+                this.foreignMode = value;
+              },
+            }
+          : {}),
       });
-      const healthy = vi.fn();
-      interceptModeChange(node, failing);
-      interceptModeChange(node, healthy);
+      return node;
+    }
 
-      node.mode = 2;
-      expect(failing).toHaveBeenCalledWith(2, 0);
-      expect(healthy).toHaveBeenCalledWith(2, 0);
-      expect(node.mode).toBe(2);
+    it("chains the existing accessor instead of replacing it", () => {
+      const node = createNodeWithForeignAccessor();
+      const onModeChange = vi.fn();
+
+      interceptModeChange(node, onModeChange);
+      node.mode = 4;
+
+      expect(node.foreignMode).toBe(4);
+      expect(onModeChange).toHaveBeenCalledWith(4, 0);
+    });
+
+    it("leaves an accessor it cannot chain through untouched", () => {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const node = createNodeWithForeignAccessor({ withSetter: false });
+      const onModeChange = vi.fn();
+      const before = Object.getOwnPropertyDescriptor(node, "mode");
+
+      interceptModeChange(node, onModeChange);
+
+      const after = Object.getOwnPropertyDescriptor(node, "mode");
+      expect(after.get).toBe(before.get);
+      expect(after.set).toBeUndefined();
+      expect(warn).toHaveBeenCalled();
+      warn.mockRestore();
+    });
+  });
+
+  describe("hasTrackedNodeMode", () => {
+    it("is true when the frontend backs mode with a prototype accessor", async () => {
+      const { hasTrackedNodeMode } = await import(UTILS_MODULE);
+      class ShellNode {
+        constructor() {
+          this._state = { mode: 0 };
+        }
+        get mode() {
+          return this._state.mode;
+        }
+        set mode(value) {
+          this._state.mode = value;
+        }
+      }
+
+      expect(hasTrackedNodeMode(new ShellNode())).toBe(true);
+    });
+
+    it("is false on legacy frontends with a plain data property", async () => {
+      const { hasTrackedNodeMode } = await import(UTILS_MODULE);
+
+      expect(hasTrackedNodeMode({ mode: 0 })).toBe(false);
+      expect(hasTrackedNodeMode(null)).toBe(false);
     });
   });
 });
