@@ -209,6 +209,23 @@ function findModeAccessor(node) {
 }
 
 /**
+ * True when the frontend tracks `mode` in node shell state (ComfyUI frontend
+ * 1.53+) instead of keeping a plain data property on the node.
+ *
+ * Such frontends announce every mode write on the graph event bus
+ * (`node:property:changed`), so mode changes can be observed there without
+ * touching the node's `mode` property at all. Prefer that over
+ * {@link interceptModeChange}, which has to redefine `mode` to see writes on
+ * legacy frontends.
+ *
+ * @param {Object} node - The litegraph node instance
+ * @returns {boolean}
+ */
+export function hasTrackedNodeMode(node) {
+  return Boolean(node) && findModeAccessor(node) !== null;
+}
+
+/**
  * Observe node mode changes (Always/Never/On Trigger/Bypass) without
  * breaking the frontend's own `mode` property.
  *
@@ -218,6 +235,10 @@ function findModeAccessor(node) {
  * reaches the serialized workflow and silently reverts to Always on reload.
  * When a prototype accessor exists we delegate to it and only observe the
  * change; on legacy frontends we keep the value in a closure as before.
+ *
+ * An accessor another extension already installed on the instance is chained
+ * rather than replaced: overwriting it would silently disable that extension's
+ * own mode handling.
  *
  * Multiple listeners can be registered on the same node; the accessor is
  * intercepted only once and every change is broadcast to all listeners.
@@ -259,21 +280,56 @@ export function interceptModeChange(node, onModeChange) {
   };
 
   const delegate = findModeAccessor(node);
+  const own = Object.getOwnPropertyDescriptor(node, "mode");
+  const hasOwnAccessor = Boolean(
+    own && (typeof own.get === "function" || typeof own.set === "function")
+  );
 
-  if (delegate && typeof delegate.get === "function" && typeof delegate.set === "function") {
+  const readMode =
+    hasOwnAccessor && typeof own.get === "function"
+      ? function () {
+          return own.get.call(this);
+        }
+      : delegate && typeof delegate.get === "function"
+        ? function () {
+            return delegate.get.call(this);
+          }
+        : null;
+
+  const writeMode =
+    hasOwnAccessor && typeof own.set === "function"
+      ? function (value) {
+          own.set.call(this, value);
+        }
+      : delegate && typeof delegate.set === "function"
+        ? function (value) {
+            delegate.set.call(this, value);
+          }
+        : null;
+
+  if (readMode && writeMode) {
     Object.defineProperty(node, "mode", {
       configurable: true,
       get() {
-        return delegate.get.call(this);
+        return readMode.call(this);
       },
       set(value) {
-        const oldValue = delegate.get.call(this);
-        delegate.set.call(this, value);
+        const oldValue = readMode.call(this);
+        writeMode.call(this, value);
         if (oldValue !== value) {
           notify(value, oldValue);
         }
       },
     });
+    return;
+  }
+
+  if (hasOwnAccessor) {
+    // Another extension owns an accessor we cannot chain through (missing
+    // getter or setter). Leave it intact instead of clobbering it.
+    console.warn(
+      "LoRA Manager: node already defines an incomplete 'mode' accessor, skipping mode observation"
+    );
     return;
   }
 

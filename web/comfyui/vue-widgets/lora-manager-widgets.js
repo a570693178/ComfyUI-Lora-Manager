@@ -16050,20 +16050,40 @@ function interceptModeChange(node, onModeChange) {
     }
   };
   const delegate = findModeAccessor(node);
-  if (delegate && typeof delegate.get === "function" && typeof delegate.set === "function") {
+  const own = Object.getOwnPropertyDescriptor(node, "mode");
+  const hasOwnAccessor = Boolean(
+    own && (typeof own.get === "function" || typeof own.set === "function")
+  );
+  const readMode = hasOwnAccessor && typeof own.get === "function" ? function() {
+    return own.get.call(this);
+  } : delegate && typeof delegate.get === "function" ? function() {
+    return delegate.get.call(this);
+  } : null;
+  const writeMode = hasOwnAccessor && typeof own.set === "function" ? function(value) {
+    own.set.call(this, value);
+  } : delegate && typeof delegate.set === "function" ? function(value) {
+    delegate.set.call(this, value);
+  } : null;
+  if (readMode && writeMode) {
     Object.defineProperty(node, "mode", {
       configurable: true,
       get() {
-        return delegate.get.call(this);
+        return readMode.call(this);
       },
       set(value) {
-        const oldValue = delegate.get.call(this);
-        delegate.set.call(this, value);
+        const oldValue = readMode.call(this);
+        writeMode.call(this, value);
         if (oldValue !== value) {
           notify(value, oldValue);
         }
       }
     });
+    return;
+  }
+  if (hasOwnAccessor) {
+    console.warn(
+      "LoRA Manager: node already defines an incomplete 'mode' accessor, skipping mode observation"
+    );
     return;
   }
   let currentMode = node.mode;
